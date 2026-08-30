@@ -79,4 +79,3 @@ node triz-worker-innovation-research/scripts/lookup_matrix.mjs --self-test
 ## Contributing
 
 欢迎提交问题、修正来源、改进跨平台兼容性，或贡献不含企业秘密和个人信息的通用测试问题。请勿提交真实项目照片、型号清单、现场数据、内部规程或未获授权的完整案例。
-

@@ -15,4 +15,3 @@ The bundled matrix representation was independently normalized and verified usin
 The public JSON file is a machine-readable normalization containing parameter identifiers, short labels, principle identifiers, integrity metadata and an audit trail. It does not include third-party worked cases, course pages, book chapters or website UI code.
 
 If you believe any bundled material requires corrected attribution or removal, please open a repository issue with the specific file, item and supporting rights information.
-

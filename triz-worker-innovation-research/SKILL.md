@@ -160,4 +160,3 @@ node scripts/lookup_matrix.mjs --improve <1..39> --worsen <1..39> --format markd
 - 普通模型分步执行和修复：[weak-model-playbook.md](references/weak-model-playbook.md)
 - 单技能能力覆盖、跨平台等效和独立安装验收：[standalone-capability-map.md](references/standalone-capability-map.md)
 - 矩阵来源与审计：[matrix-audit.md](references/matrix-audit.md)
-

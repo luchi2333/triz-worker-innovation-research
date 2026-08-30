@@ -86,4 +86,3 @@ node scripts/lookup_matrix.mjs --improve 1 --worsen 28 --format markdown
 - 若无法运行脚本，是否从内置 JSON 定位并做行列复核？
 - 原理是否落到作用机制、风险和试验？
 - 是否明确“矩阵不证明方案成立”？
-

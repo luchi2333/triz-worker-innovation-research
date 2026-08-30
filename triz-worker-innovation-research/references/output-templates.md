@@ -217,4 +217,3 @@
 ### 12.2 主报告、证据附件和台账
 
 完整章节、图示和逐页检查要求见 [final-report-blueprint.md](final-report-blueprint.md)。
-
