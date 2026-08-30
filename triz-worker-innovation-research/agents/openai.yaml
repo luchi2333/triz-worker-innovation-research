@@ -1,0 +1,8 @@
+interface:
+  display_name: "TRIZ 职工创新研究"
+  short_description: "独立完成矩阵、深研、工程硬闸门、方案验证与技术报告"
+  default_prompt: "Use $triz-worker-innovation-research to turn this frontline problem into a traceable TRIZ study and technical-solution report."
+
+policy:
+  allow_implicit_invocation: true
+
