@@ -1,5 +1,7 @@
 # TRIZ Worker Innovation Research Skill
 
+![TRIZ Worker Innovation Research：从现场问题、矛盾矩阵与深度研究到方案验证和技术报告的赛博科技流程图](assets/triz-worker-innovation-research-hero-v1.png)
+
 一个面向一线职工创新课题的、可独立安装的 TRIZ 深度研究 Skill。它将现场问题转化为证据标记的问题模型，完成经典阿奇舒勒矛盾矩阵检索、物理矛盾与物—场分析、系统查新、候选方案构建、验证设计、效益测算和技术报告编制。
 
 This repository contains a standalone agent skill for evidence-based TRIZ research on frontline engineering problems involving tools, equipment, maintenance and work processes.
