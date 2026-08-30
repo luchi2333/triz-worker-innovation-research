@@ -1,16 +1,14 @@
-# TRIZ Worker Innovation Research Skill
+# TRIZ 职工创新研究技能
 
-![TRIZ Worker Innovation Research：从现场问题、矛盾矩阵与深度研究到方案验证和技术报告的赛博科技流程图](assets/triz-worker-innovation-research-hero-v1.png)
+![TRIZ 职工创新研究：从现场问题、矛盾矩阵与实证研究到方案创新、工程验证和技术报告的赛博科技流程图](assets/triz-worker-innovation-research-hero-v2.png)
 
-一个面向一线职工创新课题的、可独立安装的 TRIZ 深度研究 Skill。它将现场问题转化为证据标记的问题模型，完成经典阿奇舒勒矛盾矩阵检索、物理矛盾与物—场分析、系统查新、候选方案构建、验证设计、效益测算和技术报告编制。
-
-This repository contains a standalone agent skill for evidence-based TRIZ research on frontline engineering problems involving tools, equipment, maintenance and work processes.
+这是一个面向一线职工创新课题、可独立安装的 TRIZ 深度研究技能。它将工具、设备、检修和作业流程中的现场问题转化为带证据标记的问题模型，完成经典阿奇舒勒矛盾矩阵检索、物理矛盾与物—场分析、系统查新、候选方案构建、工程验证设计、效益测算和技术报告编制。
 
 ## 特点
 
 - 内置经典 39×39 矛盾矩阵、39 个参数、40 条发明原理；
 - Python 与 Node.js 双查询器，均只使用标准库；
-- 不依赖外部 deep-research skill、矩阵插件或多智能体框架；
+- 不依赖外部 deep-research 技能、矩阵插件或多智能体框架；
 - 内置七轨检索、来源核验、命题级证据矩阵、跨来源综合和三次反证检查；
 - 首次完整 TRIZ 分析后必须等待用户确认，才能进入系统深研；
 - 包含适合普通模型执行的状态机、判断树、填空模板和复核闸门；
@@ -78,6 +76,6 @@ node triz-worker-innovation-research/scripts/lookup_matrix.mjs --self-test
 
 本项目原创代码、工作流、模板和说明采用 MIT License。经典 TRIZ 方法、参数、发明原理和矩阵归其原始作者及相关权利人；数据来源与再分发说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
-## Contributing
+## 参与贡献
 
 欢迎提交问题、修正来源、改进跨平台兼容性，或贡献不含企业秘密和个人信息的通用测试问题。请勿提交真实项目照片、型号清单、现场数据、内部规程或未获授权的完整案例。
