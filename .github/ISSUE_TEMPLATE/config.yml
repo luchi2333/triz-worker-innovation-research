@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security or confidential-data concern
+    url: https://github.com/luchi2333/triz-worker-innovation-research/security
+    about: 请勿在公开 Issue 中提交漏洞细节、凭据或企业敏感材料。
