@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="720" viewBox="0 0 1600 720" role="img" aria-labelledby="title desc">
+  <title id="title">TRIZ Worker Innovation Research</title>
+  <desc id="desc">Evidence-based Engineering Innovation Agent Skill workflow from field problem to validation.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071321"/>
+      <stop offset="0.55" stop-color="#0b2236"/>
+      <stop offset="1" stop-color="#071923"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#39d9f9"/>
+      <stop offset="1" stop-color="#2dd4bf"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f6c85f"/>
+      <stop offset="1" stop-color="#f59e0b"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#3bd5f4" stroke-opacity=".055" stroke-width="1"/>
+    </pattern>
+    <style>
+      .sans{font-family:"Segoe UI","Microsoft YaHei",Arial,sans-serif}
+      .mono{font-family:"Cascadia Mono","SFMono-Regular",Consolas,monospace}
+      .node{fill:#0d293d;stroke:#2a6076;stroke-width:2}
+      .nodeTitle{font-size:25px;font-weight:700;fill:#f4fbff}
+      .nodeSub{font-size:16px;font-weight:500;fill:#8fb4c6;letter-spacing:1px}
+      .num{font-size:17px;font-weight:800;fill:#06202c}
+    </style>
+  </defs>
+
+  <rect width="1600" height="720" rx="32" fill="url(#bg)"/>
+  <rect width="1600" height="720" rx="32" fill="url(#grid)"/>
+  <circle cx="1420" cy="90" r="260" fill="#0cb9d1" opacity=".06"/>
+  <circle cx="110" cy="660" r="290" fill="#2dd4bf" opacity=".05"/>
+
+  <g class="sans">
+    <text x="92" y="112" font-size="58" font-weight="800" fill="#f4fbff" letter-spacing="-1">TRIZ Worker Innovation Research</text>
+    <text x="95" y="160" font-size="26" font-weight="600" fill="#4be4f6">Evidence-based Engineering Innovation Agent Skill</text>
+    <text x="95" y="202" font-size="22" fill="#a8c8d7">从现场问题到可追溯、可反证、可验证的工程方案</text>
+  </g>
+
+  <g opacity=".55" stroke="url(#cyan)" stroke-width="3" fill="none">
+    <path d="M264 380H326"/>
+    <path d="M524 380H586"/>
+    <path d="M784 380H846"/>
+    <path d="M1044 380H1106"/>
+    <path d="M1304 380H1366"/>
+  </g>
+  <g fill="#39d9f9" filter="url(#glow)">
+    <path d="M312 371l18 9-18 9z"/>
+    <path d="M572 371l18 9-18 9z"/>
+    <path d="M832 371l18 9-18 9z"/>
+    <path d="M1092 371l18 9-18 9z"/>
+    <path d="M1352 371l18 9-18 9z"/>
+  </g>
+
+  <g class="sans" transform="translate(70 292)">
+    <rect class="node" width="190" height="176" rx="20"/>
+    <circle cx="32" cy="32" r="17" fill="url(#cyan)"/>
+    <text class="num" x="32" y="38" text-anchor="middle">01</text>
+    <path d="M61 92h68M61 110h96M61 128h78" stroke="#39d9f9" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+    <text class="nodeTitle" x="20" y="154">现场问题</text>
+    <text class="nodeSub" x="20" y="174">FIELD PROBLEM</text>
+  </g>
+
+  <g class="sans" transform="translate(330 292)">
+    <rect class="node" width="190" height="176" rx="20"/>
+    <circle cx="32" cy="32" r="17" fill="url(#cyan)"/>
+    <text class="num" x="32" y="38" text-anchor="middle">02</text>
+    <circle cx="94" cy="103" r="34" fill="none" stroke="#39d9f9" stroke-width="4"/>
+    <path d="M94 69v68M60 103h68M70 79l48 48M118 79l-48 48" stroke="#39d9f9" stroke-width="2" opacity=".65"/>
+    <text class="nodeTitle" x="20" y="154">TRIZ 建模</text>
+    <text class="nodeSub" x="20" y="174">TRIZ MODEL</text>
+  </g>
+
+  <g class="sans" transform="translate(590 292)">
+    <rect class="node" width="190" height="176" rx="20"/>
+    <circle cx="32" cy="32" r="17" fill="url(#cyan)"/>
+    <text class="num" x="32" y="38" text-anchor="middle">03</text>
+    <g transform="translate(58 70)" stroke="#39d9f9" fill="none">
+      <rect width="76" height="68" rx="4" stroke-width="3"/>
+      <path d="M19 0v68M38 0v68M57 0v68M0 17h76M0 34h76M0 51h76" opacity=".45"/>
+      <rect x="37" y="33" width="21" height="19" fill="#f6c85f" stroke="none" opacity=".95"/>
+    </g>
+    <text class="nodeTitle" x="20" y="154">39×39 矩阵</text>
+    <text class="nodeSub" x="20" y="174">MATRIX LOOKUP</text>
+  </g>
+
+  <g class="sans" transform="translate(850 292)">
+    <rect class="node" width="190" height="176" rx="20"/>
+    <circle cx="32" cy="32" r="17" fill="url(#gold)"/>
+    <text class="num" x="32" y="38" text-anchor="middle">04</text>
+    <circle cx="88" cy="101" r="31" fill="none" stroke="#f6c85f" stroke-width="4"/>
+    <path d="M111 124l23 23M74 91h29M74 103h20M74 115h25" stroke="#f6c85f" stroke-width="5" stroke-linecap="round"/>
+    <text class="nodeTitle" x="20" y="154">深度研究</text>
+    <text class="nodeSub" x="20" y="174">DEEP RESEARCH</text>
+  </g>
+
+  <g class="sans" transform="translate(1110 292)">
+    <rect class="node" width="190" height="176" rx="20"/>
+    <circle cx="32" cy="32" r="17" fill="url(#cyan)"/>
+    <text class="num" x="32" y="38" text-anchor="middle">05</text>
+    <path d="M58 122l35-54 37 23 24-15v62H58z" fill="none" stroke="#39d9f9" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="93" cy="68" r="6" fill="#f6c85f"/>
+    <circle cx="130" cy="91" r="6" fill="#f6c85f"/>
+    <text class="nodeTitle" x="20" y="154">工程方案</text>
+    <text class="nodeSub" x="20" y="174">CONCEPTS</text>
+  </g>
+
+  <g class="sans" transform="translate(1370 292)">
+    <rect class="node" width="160" height="176" rx="20"/>
+    <circle cx="32" cy="32" r="17" fill="url(#cyan)"/>
+    <text class="num" x="32" y="38" text-anchor="middle">06</text>
+    <path d="M80 67l39 15v30c0 23-16 39-39 50-23-11-39-27-39-50V82z" fill="none" stroke="#39d9f9" stroke-width="4"/>
+    <path d="M60 111l14 14 29-34" fill="none" stroke="#f6c85f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="nodeTitle" x="18" y="154">验证</text>
+    <text class="nodeSub" x="18" y="174">VALIDATION</text>
+  </g>
+
+  <g class="sans">
+    <rect x="92" y="548" width="1416" height="92" rx="18" fill="#091d2c" stroke="#21485b"/>
+    <text x="118" y="585" font-size="17" font-weight="700" fill="#f6c85f" letter-spacing="2">EVIDENCE-BACKED WORKFLOW</text>
+    <text x="118" y="618" font-size="20" fill="#c6dde7">Products  ·  Patents  ·  Standards  ·  Papers  ·  Evidence  ·  FMEA  ·  Technical Report</text>
+    <rect x="1270" y="573" width="214" height="38" rx="19" fill="#10364a" stroke="#2dd4bf"/>
+    <text x="1377" y="599" text-anchor="middle" font-size="17" font-weight="700" fill="#62ead9">CODEX · SKILL.md</text>
+  </g>
+</svg>

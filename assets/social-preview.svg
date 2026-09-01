@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">TRIZ Worker Innovation Research</title>
+  <desc id="desc">Social preview for an evidence-based Engineering Innovation Agent Skill.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071321"/>
+      <stop offset=".6" stop-color="#0c2639"/>
+      <stop offset="1" stop-color="#071923"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#39d9f9"/>
+      <stop offset="1" stop-color="#2dd4bf"/>
+    </linearGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#3bd5f4" stroke-opacity=".06"/>
+    </pattern>
+    <style>.sans{font-family:"Segoe UI","Microsoft YaHei",Arial,sans-serif}</style>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect width="1280" height="640" fill="url(#grid)"/>
+  <circle cx="1130" cy="70" r="260" fill="#19c9df" opacity=".08"/>
+  <g class="sans">
+    <text x="86" y="122" font-size="32" font-weight="700" fill="#48dff2" letter-spacing="2">EVIDENCE-BASED ENGINEERING INNOVATION</text>
+    <text x="82" y="205" font-size="68" font-weight="850" fill="#f4fbff">TRIZ Worker</text>
+    <text x="82" y="279" font-size="68" font-weight="850" fill="#f4fbff">Innovation Research</text>
+    <text x="86" y="330" font-size="25" fill="#aacbd9">从现场问题到可追溯、可反证、可验证的工程方案</text>
+
+    <g transform="translate(86 402)">
+      <rect width="250" height="88" rx="18" fill="#0d2b40" stroke="#2b6077" stroke-width="2"/>
+      <text x="125" y="39" text-anchor="middle" font-size="25" font-weight="750" fill="#f4fbff">FIELD PROBLEM</text>
+      <text x="125" y="67" text-anchor="middle" font-size="17" fill="#81b1c5">F / M / S / H</text>
+    </g>
+    <path d="M348 446h70" stroke="url(#cyan)" stroke-width="4"/><path d="M408 436l20 10-20 10z" fill="#39d9f9"/>
+    <g transform="translate(438 402)">
+      <rect width="250" height="88" rx="18" fill="#0d2b40" stroke="#2b6077" stroke-width="2"/>
+      <text x="125" y="39" text-anchor="middle" font-size="25" font-weight="750" fill="#f4fbff">TRIZ + 39×39</text>
+      <text x="125" y="67" text-anchor="middle" font-size="17" fill="#81b1c5">DETERMINISTIC</text>
+    </g>
+    <path d="M700 446h70" stroke="url(#cyan)" stroke-width="4"/><path d="M760 436l20 10-20 10z" fill="#39d9f9"/>
+    <g transform="translate(790 402)">
+      <rect width="250" height="88" rx="18" fill="#0d2b40" stroke="#f6c85f" stroke-width="2"/>
+      <text x="125" y="39" text-anchor="middle" font-size="25" font-weight="750" fill="#f4fbff">DEEP RESEARCH</text>
+      <text x="125" y="67" text-anchor="middle" font-size="17" fill="#f6c85f">EVIDENCE</text>
+    </g>
+    <path d="M1052 446h60" stroke="url(#cyan)" stroke-width="4"/><path d="M1102 436l20 10-20 10z" fill="#39d9f9"/>
+    <g transform="translate(1135 402)">
+      <rect width="92" height="88" rx="18" fill="#0d2b40" stroke="#2dd4bf" stroke-width="2"/>
+      <path d="M46 18l25 10v20c0 15-10 25-25 32-15-7-25-17-25-32V28z" fill="none" stroke="#39d9f9" stroke-width="3"/>
+      <path d="M32 47l9 9 18-22" fill="none" stroke="#f6c85f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <text x="88" y="568" font-size="20" font-weight="650" fill="#7fe3ef">Agent Skill · OpenAI Codex · Portable SKILL.md</text>
+    <text x="1195" y="568" text-anchor="end" font-size="20" fill="#9fbfce">v2.2.0</text>
+  </g>
+</svg>
