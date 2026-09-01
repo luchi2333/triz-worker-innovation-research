@@ -43,6 +43,7 @@ REQUIRED = [
     "references/contradiction-matrix.json",
     "references/matrix-usage.md",
     "references/matrix-audit.md",
+    "references/intake-guide.md",
     "references/inventive-principles.md",
     "references/triz-extended-tools.md",
     "references/research-workflow.md",
@@ -207,6 +208,9 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "不得要求用户另装",
         "不得以相似名称静默纠错",
         "对象自身材料",
+        "交付层级",
+        "intake-guide.md",
+        "沉默不算确认",
     ]:
         if required_phrase not in skill:
             fail(errors, f"SKILL.md missing required contract: {required_phrase}")
@@ -253,6 +257,9 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "两轮最终复核",
         "标识不纠错",
         "七问",
+        "阶段播报",
+        "暂停与恢复",
+        "现场否决回灌",
     ]:
         if required_phrase not in weak:
             fail(errors, f"Weak-model playbook missing: {required_phrase}")
@@ -279,6 +286,8 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "G1.5",
         "唯一编号体系",
         "验证成熟度",
+        "白话确认卡",
+        "intake-guide.md",
     ]:
         if required_phrase not in workflow:
             fail(errors, f"Research workflow missing: {required_phrase}")
@@ -288,6 +297,32 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
     audit = files.get("references/matrix-audit.md", "")
     if "golden_cells" not in audit:
         fail(errors, "Matrix audit missing golden_cells regression description")
+
+    analysis = files.get("references/triz-analysis-output.md", "")
+    for required_phrase in [
+        "白话确认卡",
+        "回复选项",
+        "你看着办",
+    ]:
+        if required_phrase not in analysis:
+            fail(errors, f"TRIZ analysis output missing: {required_phrase}")
+
+    templates = files.get("references/output-templates.md", "")
+    for required_phrase in [
+        "一页纸成果速览",
+        "会话检查点",
+        "暂停点",
+    ]:
+        if required_phrase not in templates:
+            fail(errors, f"Output templates missing: {required_phrase}")
+
+    intake = files.get("references/intake-guide.md", "")
+    for required_phrase in [
+        "先抽取",
+        "代理证据模式",
+    ]:
+        if required_phrase not in intake:
+            fail(errors, f"Intake guide missing: {required_phrase}")
 
 
 def check_placeholders(files: dict[str, str], errors: list[str]) -> None:
