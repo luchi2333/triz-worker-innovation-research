@@ -1,67 +1,137 @@
-# TRIZ 职工创新研究技能
+# TRIZ Worker Innovation Research
 
-![TRIZ 职工创新研究：从现场问题、矛盾矩阵与实证研究到方案创新、工程验证和技术报告的赛博科技流程图](assets/triz-worker-innovation-research-hero-v2.png)
+**Evidence-based Engineering Innovation Agent Skill**
 
-这是一个面向一线职工创新课题、可独立安装的 TRIZ 深度研究技能。它将工具、设备、检修和作业流程中的现场问题转化为带证据标记的问题模型，完成经典阿奇舒勒矛盾矩阵检索、物理矛盾与物—场分析、系统查新、候选方案构建、工程验证设计、效益测算和技术报告编制。
+[English](README_EN.md) · [安装](#一分钟开始) · [演示](#一个输入如何变成工程研究包) · [贡献](CONTRIBUTING.md)
 
-## 特点
+[![Release](https://img.shields.io/github/v/release/luchi2333/triz-worker-innovation-research?label=release)](https://github.com/luchi2333/triz-worker-innovation-research/releases)
+[![Validation](https://github.com/luchi2333/triz-worker-innovation-research/actions/workflows/validate.yml/badge.svg)](https://github.com/luchi2333/triz-worker-innovation-research/actions/workflows/validate.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-16a085.svg)](LICENSE)
 
-- 内置经典 39×39 矛盾矩阵、39 个参数、40 条发明原理；
-- 内置七轨检索、来源核验、命题级证据矩阵、跨来源综合和三次反证检查；
-- 包含适合普通模型执行的状态机、判断树、填空模板和复核闸门；
-- 最终报告明确区分成熟已有技术、场景集成和候选创新。
+> **不是让 AI 帮你“想几个点子”，而是让 AI 完成一次可追溯、可反证、可验证的工程创新研究。**
 
-## 5 分钟上手
+将真实工程现场问题转化为：
 
-以一个**完全虚构**的示例走一遍流程（不含任何真实企业信息）：
+**问题建模 → TRIZ 矛盾分析 → 39×39 矩阵 → Deep Research → 候选方案 → 风险与 FMEA → 验证试验 → 效益测算 → 技术报告**
 
-> 虚构场景：某教学车间用台虎钳夹持薄壁铜管进行锯切，经常把管子夹瘪，锯完还要校圆，费时且报废率高。
+![TRIZ Worker Innovation Research：从现场问题到可验证工程方案](assets/triz-worker-innovation-research-hero-v3.png)
 
-1. **直接描述问题**。安装后对智能体说：
+适用于工具改进、设备优化、检修工艺和作业流程创新。正式安装路径面向 **OpenAI Codex**；同时按可移植 `SKILL.md` 结构设计，可由支持 Skill 目录或上下文加载的其他 Agent 平台适配使用。
 
-   ```text
-   请使用 $triz-worker-innovation-research 研究这个职工创新问题：
-   我们用台虎钳夹薄壁铜管锯切，管子经常被夹瘪，锯完要校圆，
-   有时直接报废。希望不买新设备，先把报废率降下来。
-   ```
+## 一分钟开始
 
-2. **技能先抽取、再补问**（G0→G1）。它会从你的描述里先提取已有信息，最多追问 1～3 个关键问题，例如管径范围、钳口是平的还是 V 形、报废率大概多少。
-
-3. **确认方向**（G1.5）。技能用大白话复述矛盾，并给出编号方向表让你选，例如“既要夹得稳，又不能夹变形”。你回复 A/B/C/D 或提出修正，沉默不会被视为同意。
-
-4. **矩阵查询**。技能将矛盾映射为工程参数（本例：欲改善 `#10 力（强度）`、随之恶化 `#12 形状`，即 `10×12`），用确定性查询查出推荐原理（#10 预先作用、#35 参数变化、#40 复合材料、#34 抛弃与再生），并把每条原理翻译成现场可用的方案雏形——例如“钳口加开槽软衬块”。
-
-5. **获得交付**。默认交付标准研究（含查新、候选路线决策表、验证设计和效益测算）；只有你明确只要快速讨论时才给方向稿。每条结论都带证据标记：`F` 现场报告 / `M` 受控实测 / `S` 可追溯来源 / `H` 工程假设。
-
-整个过程你只需要回答问题和做决策，方法推导由技能按固定状态机推进。
-
-## 仓库结构
+把下面一句话复制给 Codex：
 
 ```text
-triz-worker-innovation-research/          # 仓库根
-├── README.md
-├── LICENSE / THIRD_PARTY_NOTICES.md
-├── assets/                               # 仓库宣传图
-└── triz-worker-innovation-research/      # 发布源（Skill 目录本体）
-    ├── SKILL.md                          # 技能入口与顶层契约
-    ├── CHANGELOG.md
-    ├── agents/openai.yaml                # OpenAI 平台配置入口
-    ├── references/                       # 工作流、模板、矩阵行分片等 40+ 文档
-    └── scripts/                          # lookup_matrix.py / .mjs、validate_skill.py
-```
-
-## 安装
-
-### Codex
-
-可直接告诉 Codex：
-
-```text
-请使用 skill-installer 从以下地址安装技能：
+请使用 skill-installer 从以下地址安装技能，安装后告诉我如何开始：
 https://github.com/luchi2333/triz-worker-innovation-research/tree/main/triz-worker-innovation-research
 ```
 
-或运行 Codex 内置安装脚本（Bash）：
+安装完成后直接描述问题：
+
+```text
+请使用 $triz-worker-innovation-research 研究这个职工创新问题：
+目前……；主要困难……；希望改善……；不能牺牲……。
+```
+
+无需先懂 TRIZ，也无需另外安装矩阵或 Deep Research Skill。实时产品、专利、标准和论文研究仍依赖宿主 Agent 自身具备联网检索能力。
+
+## 为什么不直接让 AI 脑暴？
+
+普通问答往往从一句现场描述直接跳到方案，问题边界、矩阵结果、来源和验证条件难以复核。本 Skill 把研究组织成一条带人工决策点的闭环：
+
+```text
+现场问题 → 工序与系统边界 → TRIZ 矛盾 → 矩阵查询 → 用户确认
+        → 产品/专利/标准/论文查新 → 候选路线 → 反证与风险 → 试验 → 报告
+```
+
+| 普通 TRIZ Prompt / 查询器 | 本 Skill |
+|---|---|
+| 给出若干发明原理或点子 | 先还原工序、根因、系统边界和约束 |
+| 可能凭模型记忆回答矩阵 | 内置 JSON、Python、Node 和 39 个行分片，结果可复算 |
+| 搜到资料即作为结论 | 记录检索式，核验来源身份、适配性与反对证据 |
+| 输出单一方案 | 同时比较成熟基准、低风险后备、探索路线和超系统替代 |
+| 方案写完即结束 | 继续给出 FMEA、决定性试验、停止条件和证据边界 |
+
+目标不是生成更多文字，而是让 **Engineering Research / Engineering Innovation** 的过程可以被工程师检查、修正和复现。
+
+## 一个输入如何变成工程研究包
+
+以下是**完全虚构的教学示例**，不包含真实企业、型号、项目数据或实测效果。完整结构见 [examples/thin-wall-tube-clamping.md](examples/thin-wall-tube-clamping.md)。
+
+> 某教学车间用台虎钳夹持薄壁铜管锯切，管子容易被夹瘪，后续需要校圆甚至报废。希望夹持更稳，但不能增加管壁变形。
+
+### 1. 先把现场描述变成可检查的问题
+
+- `F`：现场人员报告“夹持后容易失圆”；
+- `M`：夹紧力、失圆量和报废率尚未受控测量；
+- `S`：后续检索获得的标准、产品、专利和论文来源；
+- `H`：钳口接触面积过小导致局部压强过高，是待验证的工程假设。
+
+Skill 会补齐对象、动作链、边界、测量方法和不能牺牲的约束，而不是把假设写成事实。
+
+### 2. 用 TRIZ 把“夹得稳又不夹瘪”变成可查询矛盾
+
+本例把主矛盾映射为：欲改善 **#10 力（强度）**，随之恶化 **#12 形状**，查询方向为 **10×12**。
+
+内置经典 Contradiction Matrix 确定性返回：**#10 预先作用、#35 参数变化、#40 复合材料、#34 抛弃与再生**。这些原理不会停留在编号，而会继续翻译为可试验机制，例如预装可替换衬块、改变接触面形状与刚度、采用硬支承与柔性表层组合、把磨损件设计成可快速更换件。
+
+### 3. 用户先确认，才进入 Deep Research
+
+第一次完整 TRIZ 分析后，Skill 在 `G1.5` 暂停。用户可以修正现场条件、参数映射和研究方向；沉默不等于同意。确认后才检索：
+
+**Products · Patents · Standards · Papers · Manufacturer Documentation · Cross-industry Analogies · Negative Evidence**
+
+### 4. 输出的不是一个点子，而是一套决策材料
+
+```text
+问题模型 + TRIZ 推导 + 可复现检索日志 + 证据矩阵
+        + 候选方案对比 + FMEA + 决定性试验 + 效益情景 + 技术报告
+```
+
+示例只展示工作流，不声称现场性能、专利性或可推广性。
+
+## 一次完整运行会得到什么
+
+| 交付物 | 解决的问题 |
+|---|---|
+| 问题模型 | 保留原始标识，区分 `F/M/S/H`，明确工序、边界和硬约束 |
+| 完整 TRIZ 分析 | 因果/功能、IFR、资源、技术与物理矛盾、物—场和演化方向 |
+| 39×39 矩阵记录 | 改善参数作行、恶化参数作列；结果来自确定性资源而非记忆 |
+| Deep Research 证据包 | 产品、专利、标准、论文、厂家资料、跨行业类比和反对证据 |
+| 候选方案决策表 | 写清“用什么方法解决什么难点”、来源、创新、风险和试验 |
+| 验证与 FMEA | 样本、指标、验收/停止条件、决定性试验和 V0—V3 成熟度 |
+| 效益模型 | 把现场报告、受控实测和情景假设分开，提供可复算公式 |
+| 正式报告 | 决策摘要、主报告、技术证据附件、来源与图示台账 |
+
+## Human-in-the-loop by Design
+
+```text
+G0 问题锚定 → G1 TRIZ 建模 → G1.5 用户确认 → G2 深度研究
+            → G3 候选方案 → G4 验证/安全/效益 → G5 正式报告
+```
+
+用户确认不是装饰。第一次完整 TRIZ 方向稿后，用户可以：
+
+- 修正事实、术语、系统边界和参数映射；
+- 保留、暂停、删除或新增研究方向；
+- 决定哪些路线值得投入系统查新。
+
+这道门避免错误假设被一路包装成完整报告。
+
+## 技术可信性如何建立
+
+- **确定性矩阵**：内置 39 个工程参数、40 条发明原理、39×39 经典矩阵和 1248 个非空单元；Python、Node 与行分片三种路径可交叉复核。
+- **证据可追溯**：结论绑定现场事实、测量、外部来源或工程假设；检索记录保留原始查询式和纳入/排除理由。
+- **适配与反证**：相似产品不自动等于适用，跨行业机理不自动等于可行，“未检得”不扩写成市场空白。
+- **硬门槛先于评分**：对象身份、证据、适配、类比、安全、专利边界和验证任一关键项失败，成熟度必须降级。
+- **普通模型可执行**：状态机、判断树、填空模板和逐阶段检查卡帮助能力一般的模型稳定推进。
+
+## 安装与兼容
+
+### OpenAI Codex
+
+推荐使用上面的“一句话安装”。也可运行内置安装器：
 
 ```bash
 python ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
@@ -77,56 +147,66 @@ python "$env:USERPROFILE\.codex\skills\.system\skill-installer\scripts\install-s
   --path triz-worker-innovation-research
 ```
 
-### Claude / Claude Code
+### Claude Code 与其他 Agent 平台
 
-将仓库中的 `triz-worker-innovation-research` 整个目录复制到个人技能目录（如 `~/.claude/skills/`），确保 `SKILL.md` 位于技能目录根部。
+本项目采用可移植 Skill 目录结构。将 `triz-worker-innovation-research/` 整体复制到平台的 Skill 目录，并以 `SKILL.md` 为入口；没有 Skill 机制的平台可把 `SKILL.md` 作为顶层任务指令，再按其中路由读取 `references/`。
 
-### 其他智能体平台
+这些平台的版本、权限模型和工具接口各不相同，因此这里表达的是**设计适配方式**，不是对所有平台的已验证兼容承诺。欢迎通过 [Compatibility Report](https://github.com/luchi2333/triz-worker-innovation-research/issues/new?template=compatibility_report.md) 提交真实测试结果。
 
-通用做法：把 `triz-worker-innovation-research` 整个目录复制到平台的 skills 目录，并确保平台能把 `SKILL.md` 作为技能入口读取。若平台没有 skills 机制：
-
-1. 在任务开始时把 `SKILL.md` 全文加载给智能体；
-2. 按 `SKILL.md` 中的资源路由表按需加载 `references/` 下的文档；
-3. 无脚本平台让智能体直接读取 `references/matrix-rows/R01.md`～`R39.md` 行分片查矩阵，不需要 Python/Node。
-
-完成实时深度研究仍需要平台自身具备联网检索能力；没有 Python/Node 时可直接读取内置 JSON 矩阵与行分片，不影响确定性查询。
-
-## 验证
+## 本地验证
 
 ```bash
-python triz-worker-innovation-research/scripts/validate_skill.py
+python triz-worker-innovation-research/scripts/validate_skill.py --strict
 node triz-worker-innovation-research/scripts/lookup_matrix.mjs --self-test
 ```
 
-完整性检查包括：39 个参数、40 条原理、39×39 矩阵、1248 个非空单元、固定哈希、16 个黄金回归锚点、行分片一致性和双运行时（Python/Node）输出逐字一致。
+严格校验覆盖文件清单、版本、矩阵哈希、黄金单元、39 个行分片、README 示例和 Python/Node 18 组行为一致性。
 
-## FAQ
+## 本 Skill 不声称什么
 
-**Q：必须联网才能用吗？**
-不是。矛盾矩阵检索、参数映射、物理矛盾分析、方案模板都不需要联网。只有“深度查新”（产品、标准、专利、论文检索）需要平台具备联网检索能力；无联网时技能会明确标注“检索日志未闭合”，不会假装查过。
+这是 **AI-assisted engineering research workflow**，不是 automatic invention generator。它不会：
 
-**Q：没有 Python 或 Node 能用吗？**
-能。矩阵数据内置为 JSON，并预生成了 39 个行分片（`references/matrix-rows/`），智能体可直接读文件查表。脚本只是提供更快、可校验的查询方式。
+1. 把模型输出当成受控实测；
+2. 在没有 `M` 数据时宣称提效、无损或现场收益；
+3. 把相似产品参数当成目标现场适配证明；
+4. 把跨行业类比直接认定为工程可行；
+5. 把有限专利检索当成专利性或 FTO 法律意见；
+6. 在没有验证和审批时声称可以现场推广；
+7. 自动代替工程师进行最终安全决策。
 
-**Q：我的项目数据会被上传或内置到技能里吗？**
-技能本身不含任何真实案例，也不会主动把你的项目信息写入技能文件或本仓库。但对话数据的传输、保留和训练政策取决于你使用的平台及所在单位的规定，本技能无法替平台承诺；请勿把真实项目照片、型号清单或内部规程提交到本仓库。
+## 仓库结构
 
-**Q：我不回复确认，技能会继续往下做吗？**
-不会。方向确认门（G1.5）要求显式回复；沉默不视为授权。这是顶层契约的一部分。
+```text
+.
+├── README.md / README_EN.md
+├── CONTRIBUTING.md
+├── assets/                         # Hero 与 Social Preview
+├── examples/                       # 完全虚构、脱敏的工作流示例
+├── docs/launch/                    # 中英文首发传播材料
+└── triz-worker-innovation-research/
+    ├── SKILL.md                    # Skill 入口与执行契约
+    ├── agents/openai.yaml
+    ├── references/                # 工作流、矩阵、查新、模板和报告蓝图
+    └── scripts/                   # Python / Node 查询与严格校验
+```
 
-**Q：和直接问大模型“帮我用 TRIZ 分析一下”有什么区别？**
-直接问模型容易得到难以复核的自由发挥。本技能提供固定状态机、判断树和填空模板，矩阵结果来自带哈希校验的本地数据，每个结论带证据分层和来源追溯，并通过分阶段加载、检查清单和确定性查询，帮助不同能力的模型按同一流程执行。
+## Roadmap
 
-**Q：矩阵数据可靠吗？**
-经典 39×39 矩阵来自阿奇舒勒原著转译版本，与常见英文版存在个别历史转录差异。本仓库固定了一个版本并给出 SHA-256 哈希与 16 个黄金回归锚点，任何改动都会被自检发现；差异清单记录在 `references/matrix-audit.md`。
-
-**Q：怎么确认安装完整？**
-运行上面的验证命令，看到 `SELF_TEST_PASS` 和校验器 `status: PASS` 即可。校验器同时检查发布清单完整性和双运行时一致性。
-
-## 许可与归属
-
-本项目原创代码、工作流、模板和说明采用 MIT License。经典 TRIZ 方法、参数、发明原理和矩阵归其原始作者及相关权利人；数据来源与再分发说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+- [x] 经典 39×39 矩阵与三种确定性查询路径
+- [x] G0—G5 + G1.5 人工确认工作流
+- [x] Deep Research、证据分层、验证与 FMEA
+- [x] Python / Node 跨平台回归与 GitHub Actions
+- [x] 中英文首页、公开演示和社区问题模板
+- [ ] 增加更多公开、脱敏的工程示例
+- [ ] 建立更多 Agent 平台的实测兼容记录
+- [ ] 建立社区贡献的回归问题集
 
 ## 参与贡献
 
-欢迎提交问题、修正来源、改进跨平台兼容性，或贡献不含企业秘密和个人信息的通用测试问题。请勿提交真实项目照片、型号清单、现场数据、内部规程或未获授权的完整案例。
+欢迎报告矩阵或脚本错误、安装问题、Agent 兼容结果，或贡献完全公开且脱敏的工程测试问题。具体方式和隐私边界见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+如果这个项目帮助你把“AI 脑暴”变成了可复核的工程研究，欢迎给仓库一个 Star，或提交一个真实的改进建议。
+
+## 许可与归属
+
+原创代码、工作流、模板和说明采用 [MIT License](LICENSE)。经典 TRIZ 方法、参数、发明原理和矩阵归其原始作者及相关权利人；来源与再分发说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
