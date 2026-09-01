@@ -28,9 +28,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8", newline="\n")
 if hasattr(sys.stderr, "reconfigure"):
-    sys.stderr.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8", newline="\n")
 
 
 # 发布清单：必须存在
@@ -41,6 +41,7 @@ REQUIRED = [
     "scripts/lookup_matrix.mjs",
     "scripts/validate_skill.py",
     "references/contradiction-matrix.json",
+    "references/parameter-guidance.json",
     "references/matrix-usage.md",
     "references/matrix-audit.md",
     "references/intake-guide.md",
@@ -90,6 +91,9 @@ CASE_LEAK_PATTERNS: list[tuple[str, str]] = [
     (r"case-example|案例格式示例", "内部案例文件引用"),
 ]
 
+# 矩阵行分片：references/matrix-rows/R01.md .. R39.md（生成产物，单独校验）
+ROW_SHARD_PATTERN = re.compile(r"^references/matrix-rows/R(0[1-9]|[12][0-9]|3[0-9])\.md$")
+
 SEMVER = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
 
 SELF_TEST_TIMEOUT_SECONDS = 120
@@ -123,7 +127,7 @@ def check_manifest(errors: list[str], warnings: list[str]) -> list[str]:
         if path.suffix.lower() in FORBIDDEN_SUFFIXES:
             fail(errors, f"Forbidden file type inside package: {rel}")
             continue
-        if rel not in allowed:
+        if rel not in allowed and not ROW_SHARD_PATTERN.match(rel):
             unexpected.append(rel)
 
     for rel in unexpected:
@@ -132,6 +136,11 @@ def check_manifest(errors: list[str], warnings: list[str]) -> list[str]:
     for rel in REQUIRED:
         if not (ROOT / rel).is_file():
             fail(errors, f"Missing required file: {rel}")
+
+    for row in range(1, 40):
+        shard = f"references/matrix-rows/R{row:02d}.md"
+        if not (ROOT / shard).is_file():
+            fail(errors, f"Missing matrix row shard: {shard}")
 
     for rel in OPTIONAL:
         if not (ROOT / rel).is_file():
@@ -297,6 +306,20 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
     audit = files.get("references/matrix-audit.md", "")
     if "golden_cells" not in audit:
         fail(errors, "Matrix audit missing golden_cells regression description")
+    if "行分片" not in audit:
+        fail(errors, "Matrix audit missing row-shard note")
+
+    usage = files.get("references/matrix-usage.md", "")
+    for required_phrase in [
+        "--search",
+        "--explain",
+        "--batch",
+        "--version",
+        "行分片",
+        "映射候选",
+    ]:
+        if required_phrase not in usage:
+            fail(errors, f"Matrix usage missing: {required_phrase}")
 
     analysis = files.get("references/triz-analysis-output.md", "")
     for required_phrase in [
@@ -352,6 +375,7 @@ def run_self_test(
     errors: list[str],
     warnings: list[str],
     strict: bool,
+    marker: str = "SELF_TEST_PASS",
 ) -> dict[str, object]:
     """以子进程运行自检；不使用 importlib，避免生成 `__pycache__`。"""
     try:
@@ -377,13 +401,29 @@ def run_self_test(
     stdout = proc.stdout.strip()
     if proc.returncode != 0:
         fail(errors, f"{label} self-test exit {proc.returncode}: {stdout or proc.stderr.strip()}")
-    elif "SELF_TEST_PASS" not in stdout:
-        fail(errors, f"{label} self-test did not print SELF_TEST_PASS: {stdout!r}")
+    elif marker not in stdout:
+        fail(errors, f"{label} self-test did not print {marker}: {stdout!r}")
     return {
         "runtime": command[0],
         "status": "PASS" if proc.returncode == 0 else "FAIL",
         "stdout": stdout,
     }
+
+
+def check_row_shards(errors: list[str], warnings: list[str], strict: bool) -> dict[str, object]:
+    """子进程运行行分片校验：分片内容必须与矩阵 JSON 完全一致。"""
+    result = run_self_test(
+        [sys.executable, "scripts/lookup_matrix.py", "--verify-rows"],
+        "RowShards",
+        errors,
+        warnings,
+        strict,
+        marker="ROWS_VERIFY_PASS",
+    )
+    if result.get("status") == "PASS" and "ROWS_VERIFY_PASS" not in str(result.get("stdout", "")):
+        fail(errors, "Row-shard verification did not print ROWS_VERIFY_PASS")
+        result["status"] = "FAIL"
+    return result
 
 
 def check_dual_runtime(errors: list[str], warnings: list[str], strict: bool) -> dict[str, object]:
@@ -461,6 +501,7 @@ def main(argv: list[str]) -> int:
     check_placeholders(files, errors)
     case_leak_hits = check_case_leaks(files, errors)
     runtimes = check_dual_runtime(errors, warnings, strict)
+    row_shards = check_row_shards(errors, warnings, strict)
     data = load_matrix(errors)
 
     inventory = []
@@ -497,6 +538,7 @@ def main(argv: list[str]) -> int:
             "sha256": data.get("audit", {}).get("matrix_payload_sha256") if data else None,
         },
         "runtimes": runtimes,
+        "row_shards": row_shards,
         "case_leak_hits": case_leak_hits,
         "warnings": warnings,
         "errors": errors,

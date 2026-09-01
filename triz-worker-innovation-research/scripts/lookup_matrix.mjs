@@ -1,13 +1,33 @@
 #!/usr/bin/env node
-/** Deterministic lookup for the bundled classical 39x39 TRIZ matrix. */
+/** Deterministic lookup for the bundled classical 39x39 TRIZ matrix.
+ *
+ * 与 lookup_matrix.py 的同名子命令输出保持一致（--self-test/--version/--search/--explain/--batch/--improve --worsen/--list-parameters）。
+ * 行分片生成与校验（--emit-rows/--verify-rows）仅由 Python 版提供。
+ */
 
 import {createHash} from 'node:crypto';
-import {readFileSync} from 'node:fs';
+import {existsSync, readFileSync} from 'node:fs';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const DEFAULT_DATA = resolve(HERE, '..', 'references', 'contradiction-matrix.json');
+const ROOT = resolve(HERE, '..');
+const DEFAULT_DATA = resolve(ROOT, 'references', 'contradiction-matrix.json');
+const DEFAULT_GUIDANCE = resolve(ROOT, 'references', 'parameter-guidance.json');
+
+const USAGE = [
+  'Usage: node lookup_matrix.mjs --improve N --worsen N [--format markdown|json]',
+  '       node lookup_matrix.mjs --batch "1x28,39x30"',
+  '       node lookup_matrix.mjs --search "现场说法"',
+  '       node lookup_matrix.mjs --explain 30',
+  '       node lookup_matrix.mjs --list-parameters',
+  '       node lookup_matrix.mjs --version',
+  '       node lookup_matrix.mjs --self-test',
+].join('\n');
+
+function usageError(problem, given, fix) {
+  return new Error(`${problem} | 给定: ${given} | 修复建议: ${fix}`);
+}
 
 function stableMatrixPayload(matrix) {
   return JSON.stringify(matrix);
@@ -64,9 +84,37 @@ function loadResource(path) {
   return data;
 }
 
+function loadGuidance(path) {
+  const guidance = JSON.parse(readFileSync(path, 'utf8'));
+  const entries = guidance.parameters;
+  if (!Array.isArray(entries) || entries.length !== 39) {
+    throw new Error('parameter-guidance.json must contain exactly 39 entries');
+  }
+  if (entries.some((item, index) => item.id !== index + 1)) {
+    throw new Error('Guidance entry IDs must be consecutive from 1 through 39');
+  }
+  for (const item of entries) {
+    if (!Array.isArray(item.field_terms) || item.field_terms.length === 0) {
+      throw new Error(`Guidance entry #${item.id} lacks field_terms`);
+    }
+  }
+  return guidance;
+}
+
+function readSkillVersion() {
+  const text = readFileSync(resolve(ROOT, 'SKILL.md'), 'utf8');
+  const match = text.match(/version:\s*"([^"]+)"/);
+  if (!match) throw new Error('SKILL.md frontmatter version not found');
+  return match[1];
+}
+
 function lookup(data, improve, worsen) {
   if (!Number.isInteger(improve) || improve < 1 || improve > 39 || !Number.isInteger(worsen) || worsen < 1 || worsen > 39) {
-    throw new Error('Both parameter IDs must be integers from 1 through 39');
+    throw usageError(
+      '参数编号超出范围',
+      `--improve ${improve} --worsen ${worsen}`,
+      '使用 1..39 的整数；运行 --list-parameters 查看参数表',
+    );
   }
   const improvingParameter = data.parameters[improve - 1];
   const worseningParameter = data.parameters[worsen - 1];
@@ -122,6 +170,61 @@ function renderParameters(data) {
   ].join('\n');
 }
 
+function searchParameters(guidance, query) {
+  const queryLower = query.trim().toLowerCase();
+  const rows = [];
+  for (const entry of guidance.parameters) {
+    let hit = null;
+    for (const term of entry.field_terms) {
+      if (term.toLowerCase().includes(queryLower)) {
+        hit = `现场说法：${term}`;
+        break;
+      }
+    }
+    if (hit === null && entry.zh.toLowerCase().includes(queryLower)) hit = '参数名（中文）';
+    if (hit === null && entry.en.toLowerCase().includes(queryLower)) hit = '参数名（英文）';
+    if (hit === null && entry.definition_zh.toLowerCase().includes(queryLower)) hit = '定义';
+    if (hit !== null) {
+      rows.push(`| ${entry.id} | ${entry.zh} (${entry.en}) | ${hit} |`);
+    }
+  }
+  if (rows.length === 0) {
+    return [
+      `没有找到匹配“${query}”的参数候选。`,
+      '可换一个现场说法重试，或运行 --list-parameters 查看全部 39 个参数。',
+    ].join('\n');
+  }
+  return [
+    `参数映射候选（只是候选，不能自动替代工程判断）：搜索词“${query}”`,
+    '| 编号 | 参数 | 命中 |',
+    '|---:|---|---|',
+    ...rows,
+    '提示：候选之间易混时，运行 --explain <编号> 查看定义和区分判据。',
+  ].join('\n');
+}
+
+function explainParameter(guidance, parameterId) {
+  if (!Number.isInteger(parameterId) || parameterId < 1 || parameterId > 39) {
+    throw usageError(
+      '参数编号超出范围',
+      `--explain ${parameterId}`,
+      '使用 1..39 的整数；运行 --list-parameters 查看参数表',
+    );
+  }
+  const entry = guidance.parameters[parameterId - 1];
+  const lines = [
+    `参数 #${entry.id}：${entry.zh} (${entry.en})`,
+    `- 定义：${entry.definition_zh}`,
+    `- 现场常见说法：${entry.field_terms.join('、')}`,
+    `- 可测量：${entry.measurable_zh}`,
+    '- 易混参数：',
+  ];
+  for (const item of entry.confusable ?? []) {
+    lines.push(`  - #${item.id} ${guidance.parameters[item.id - 1].zh}：${item.how}`);
+  }
+  return lines.join('\n');
+}
+
 function selfTest(data) {
   const known = new Map([
     ['1,28', [28, 27, 35, 26]],
@@ -155,11 +258,35 @@ function selfTest(data) {
   const forward = lookup(data, 1, 39).principles.map((item) => item.id);
   const reverse = lookup(data, 39, 1).principles.map((item) => item.id);
   if (JSON.stringify(forward) === JSON.stringify(reverse)) throw new Error('Directional lookup regression');
+  const guidance = loadGuidance(DEFAULT_GUIDANCE);
+  if (guidance.matrix_version !== data.matrix_version) {
+    throw new Error('Guidance matrix_version drifted from matrix');
+  }
   return `SELF_TEST_PASS parameters=39 principles=40 rows=39 columns=39 populated=${data.audit.populated_cells} golden_cells=${known.size} matrix_sha256=${data.audit.matrix_payload_sha256}`;
 }
 
+function parseBatch(spec) {
+  const tokens = spec.trim().split(/[,，;；\s]+/).filter((token) => token.length > 0);
+  const pairs = [];
+  for (const token of tokens) {
+    const match = token.match(/^(\d+)[xX×:：](\d+)$/);
+    if (!match) {
+      throw usageError(
+        '批量查询格式无效',
+        `“${token}”`,
+        '每对写成 改善x恶化 并用逗号分隔，如 --batch "1x28,39x30"',
+      );
+    }
+    pairs.push([Number(match[1]), Number(match[2])]);
+  }
+  if (pairs.length === 0) {
+    throw usageError('批量查询为空', `“${spec}”`, '至少一对，如 --batch "1x28"');
+  }
+  return pairs;
+}
+
 function parseArgs(argv) {
-  const args = {format: 'markdown', data: DEFAULT_DATA, improve: null, worsen: null, list: false, selfTest: false};
+  const args = {format: 'markdown', data: DEFAULT_DATA, improve: null, worsen: null, list: false, selfTest: false, version: false, search: null, explain: null, batch: null};
   for (let i = 0; i < argv.length; i += 1) {
     const item = argv[i];
     if (item === '--improve') args.improve = Number(argv[++i]);
@@ -168,8 +295,12 @@ function parseArgs(argv) {
     else if (item === '--data') args.data = resolve(argv[++i]);
     else if (item === '--list-parameters') args.list = true;
     else if (item === '--self-test') args.selfTest = true;
+    else if (item === '--version') args.version = true;
+    else if (item === '--search') args.search = argv[++i] ?? '';
+    else if (item === '--explain') args.explain = Number(argv[++i]);
+    else if (item === '--batch') args.batch = argv[++i];
     else if (item === '--help' || item === '-h') {
-      process.stdout.write('Usage: node lookup_matrix.mjs --improve N --worsen N [--format markdown|json]\n       node lookup_matrix.mjs --list-parameters\n       node lookup_matrix.mjs --self-test\n');
+      process.stdout.write(`${USAGE}\n`);
       process.exit(0);
     } else throw new Error(`Unknown argument: ${item}`);
   }
@@ -179,13 +310,51 @@ function parseArgs(argv) {
 
 try {
   const args = parseArgs(process.argv.slice(2));
-  const data = loadResource(args.data);
-  if (args.selfTest) process.stdout.write(`${selfTest(data)}\n`);
-  else if (args.list) process.stdout.write(`${renderParameters(data)}\n`);
-  else {
-    if (args.improve === null || args.worsen === null) throw new Error('--improve and --worsen are required unless --self-test or --list-parameters is used');
-    const result = lookup(data, args.improve, args.worsen);
-    process.stdout.write(args.format === 'json' ? `${JSON.stringify(result, null, 2)}\n` : `${renderMarkdown(result)}\n`);
+
+  if (args.version) {
+    const guidance = loadGuidance(DEFAULT_GUIDANCE);
+    const data = loadResource(args.data);
+    process.stdout.write(`lookup-matrix skill=${readSkillVersion()} matrix=${data.matrix_version} guidance=${guidance.guidance_version}\n`);
+  } else if (args.search !== null) {
+    const query = args.search.trim();
+    if (!query) {
+      throw usageError('搜索词为空', '--search ""', '提供一个现场说法，如 --search "看不清"');
+    }
+    const guidance = loadGuidance(DEFAULT_GUIDANCE);
+    process.stdout.write(`${searchParameters(guidance, query)}\n`);
+  } else if (args.explain !== null) {
+    const guidance = loadGuidance(DEFAULT_GUIDANCE);
+    process.stdout.write(`${explainParameter(guidance, args.explain)}\n`);
+  } else {
+    const data = loadResource(args.data);
+    if (args.selfTest) {
+      process.stdout.write(`${selfTest(data)}\n`);
+    } else if (args.list) {
+      process.stdout.write(`${renderParameters(data)}\n`);
+    } else if (args.batch !== null) {
+      const pairs = parseBatch(args.batch);
+      const results = pairs.map(([improve, worsen]) => lookup(data, improve, worsen));
+      if (args.format === 'json') {
+        process.stdout.write(`${JSON.stringify(results, null, 2)}\n`);
+      } else {
+        const blocks = [`## 批量查询：${results.length} 对`];
+        for (const result of results) {
+          blocks.push(`### ${result.direction}`);
+          blocks.push(renderMarkdown(result));
+        }
+        process.stdout.write(`${blocks.join('\n\n')}\n`);
+      }
+    } else {
+      if (args.improve === null || args.worsen === null) {
+        throw usageError(
+          '缺少查询参数',
+          '无 --improve/--worsen',
+          '使用 --improve N --worsen N，或 --batch/--search/--explain/--list-parameters/--self-test',
+        );
+      }
+      const result = lookup(data, args.improve, args.worsen);
+      process.stdout.write(args.format === 'json' ? `${JSON.stringify(result, null, 2)}\n` : `${renderMarkdown(result)}\n`);
+    }
   }
 } catch (error) {
   process.stderr.write(`ERROR: ${error.message}\n`);

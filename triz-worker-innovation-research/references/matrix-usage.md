@@ -30,18 +30,48 @@ python scripts/lookup_matrix.py --list-parameters
 node scripts/lookup_matrix.mjs --list-parameters
 ```
 
+不确定现场说法对应哪个参数时，先查候选（结果只是映射候选，不能自动替代工程判断）：
+
+```bash
+python scripts/lookup_matrix.py --search "看不清"
+node scripts/lookup_matrix.mjs --search "费劲"
+```
+
+查参数定义、现场说法、可测量方式和易混参数判据：
+
+```bash
+python scripts/lookup_matrix.py --explain 30
+node scripts/lookup_matrix.mjs --explain 30
+```
+
+`--search` 与 `--explain` 的数据来自 [parameter-guidance.json](parameter-guidance.json)（39 参数现场词汇表），与受审计的矩阵 JSON 相互独立。易混对重点核对：#30/#31（外界伤害对象 vs 对象伤害外界）、#28/#29（测得准 vs 做得准）、#9/#39（局部速度 vs 整体产出）、#25/#15（时间浪费 vs 动作时长）。
+
 ## 4. 强制查询
 
-对每个最终采用的参数对运行：
+对每个最终采用的参数对运行（本节是查询命令的权威定义）：
 
 ```bash
 python scripts/lookup_matrix.py --improve 1 --worsen 28 --format markdown
 node scripts/lookup_matrix.mjs --improve 1 --worsen 28 --format markdown
 ```
 
-不要手抄或凭记忆填单元。两个脚本都只使用标准库，读取 `contradiction-matrix.json`、校验 39×39 结构和哈希，并返回参数名称、方向与原理原顺序。
+多个参数对用一次批量查询，避免多次调用并便于同屏比较：
 
-若平台没有 Python 和 Node，直接读取 JSON：取 `matrix[改善编号-1][恶化编号-1]`，再按 `principles[id-1]` 映射名称。输出中标注“未执行脚本的确定性资源读取”，复核一次反向单元以确认行列没有颠倒。不得改用模型记忆。
+```bash
+python scripts/lookup_matrix.py --batch "1x28,39x30,25x27"
+node scripts/lookup_matrix.mjs --batch "1x28,39x30,25x27"
+```
+
+版本核对（skill 版本、矩阵版本、词汇表版本）：
+
+```bash
+python scripts/lookup_matrix.py --version
+node scripts/lookup_matrix.mjs --version
+```
+
+不要手抄或凭记忆填单元。两个脚本都只使用标准库，读取 `contradiction-matrix.json`、校验 39×39 结构和哈希，并返回参数名称、方向与原理原顺序。Python 与 Node 对同一子命令的输出逐字一致；错误信息统一为“问题 | 给定 | 修复建议”格式，退出码 0 为成功、2 为失败。
+
+若平台没有 Python 和 Node，**只读取目标行分片**：打开 `references/matrix-rows/R{改善编号}.md`，定位“恶化参数”所在列，按原顺序取原理编号和名称；`null` 表示对角线（转物理矛盾），`空` 表示无优选原理。输出中标注“未执行脚本的确定性资源读取”，复核一次反向单元（读 `R{恶化编号}.md` 中的对应列）以确认行列没有颠倒。不得改用模型记忆，也不必再读取完整 `contradiction-matrix.json`（约 85 KB，人工定位二维数组易错）。
 
 ## 5. 用户可见输出模板
 
@@ -83,6 +113,6 @@ node scripts/lookup_matrix.mjs --improve 1 --worsen 28 --format markdown
 - 行列是否正确？
 - #30/#31 是否混淆？
 - 查询是否由脚本执行？
-- 若无法运行脚本，是否从内置 JSON 定位并做行列复核？
+- 若无法运行脚本，是否只读取目标行分片并做行列反向复核？
 - 原理是否落到作用机制、风险和试验？
 - 是否明确“矩阵不证明方案成立”？

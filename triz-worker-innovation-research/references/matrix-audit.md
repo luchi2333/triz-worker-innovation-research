@@ -46,7 +46,7 @@ python scripts/lookup_matrix.py --self-test
 node scripts/lookup_matrix.mjs --self-test
 ```
 
-两个脚本使用各自语言标准库独立校验：参数/原理数量、39×39 结构、1248 个非空单元、值域 1～40、`null` 对角线转物理矛盾、空单元报 `no_preferred_principle`、矩阵载荷哈希、#30/#31 译名、黄金单元及行列方向非对称性。
+两个脚本使用各自语言标准库独立校验：参数/原理数量、39×39 结构、1248 个非空单元、值域 1～40、`null` 对角线转物理矛盾、空单元报 `no_preferred_principle`、矩阵载荷哈希、#30/#31 译名、黄金单元及行列方向非对称性；同时校验 [parameter-guidance.json](parameter-guidance.json) 的 39 条词汇表与矩阵版本一致。
 
 两个脚本的 `SELF_TEST_PASS` 输出必须逐字一致，形如：
 
@@ -87,6 +87,17 @@ SELF_TEST_PASS parameters=39 principles=40 rows=39 columns=39 populated=1248 gol
 - R35C36 → 15, 29, 37, 28
 
 回归单元不因某个具体课题用过而增删；新增锚点必须说明它守护的是转录、清理、方向还是边界语义。
+
+## 行分片
+
+`references/matrix-rows/R01.md … R39.md` 是矩阵 JSON 的确定性派生产物，供无 Python/Node 的平台只读目标行完成查询。生成与校验：
+
+```bash
+python scripts/lookup_matrix.py --emit-rows    # 由矩阵 JSON 重新生成全部 39 个行分片
+python scripts/lookup_matrix.py --verify-rows  # 校验分片内容与矩阵载荷完全一致
+```
+
+行分片禁止手改；矩阵更新后必须重新生成。`validate_skill.py` 在每次校验时运行行分片一致性检查，分片与矩阵载荷任何不一致都判失败。
 
 ## 使用边界
 
