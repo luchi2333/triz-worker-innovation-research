@@ -42,6 +42,35 @@ class UsageError(ValueError):
     """统一格式的用户可见错误：问题 | 给定 | 修复建议。"""
 
 
+class UnifiedArgumentParser(argparse.ArgumentParser):
+    """argparse 层错误同样输出统一格式，与 lookup_matrix.mjs 的错误逐字一致。"""
+
+    def error(self, message: str) -> None:
+        raise UsageError(translate_argparse_error(message))
+
+
+def translate_argparse_error(message: str) -> str:
+    match = re.match(r"unrecognized arguments: (.+)", message)
+    if match:
+        return f"未知参数 | 给定: {match.group(1).strip()} | 修复建议: 运行 --help 查看支持的参数"
+    match = re.match(r"argument (--\S+): invalid int value: '(.*)'", message)
+    if match:
+        return (
+            f"参数编号无效 | 给定: {match.group(1)} {match.group(2)} | "
+            "修复建议: 使用 1..39 的整数；运行 --list-parameters 查看参数表"
+        )
+    match = re.match(r"argument (--\S+): invalid choice: '(.*?)'", message)
+    if match:
+        return (
+            f"参数值无效 | 给定: {match.group(1)} {match.group(2)} | "
+            "修复建议: --format 只接受 markdown 或 json"
+        )
+    match = re.match(r"argument (--\S+): expected one argument", message)
+    if match:
+        return f"缺少参数值 | 给定: {match.group(1)} | 修复建议: 在 {match.group(1)} 后提供一个值"
+    return f"命令行参数错误 | 给定: {message} | 修复建议: 运行 --help 查看用法"
+
+
 def fail(problem: str, given: str, fix: str) -> None:
     raise UsageError(f"{problem} | 给定: {given} | 修复建议: {fix}")
 
@@ -387,7 +416,7 @@ def parse_batch(spec: str) -> list[tuple[int, int]]:
 # ---------------------------------------------------------------------------
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
+    parser = UnifiedArgumentParser(
         description="Look up the bundled classical Altshuller contradiction matrix."
     )
     parser.add_argument("--improve", type=int, help="Improving-parameter ID, 1..39")
@@ -402,9 +431,9 @@ def main() -> int:
     parser.add_argument("--batch", metavar="SPEC", help='Batch lookup, e.g. "1x28,39x30"')
     parser.add_argument("--emit-rows", nargs="?", const=DEFAULT_ROWS_DIR, type=Path, metavar="DIR")
     parser.add_argument("--verify-rows", action="store_true")
-    args = parser.parse_args()
-
     try:
+        args = parser.parse_args()
+
         if args.version:
             guidance = load_guidance(DEFAULT_GUIDANCE)
             data = load_resource(args.data)

@@ -15,7 +15,7 @@
 | 对象标识与接口冻结 | `engineering-claim-safety-checks.md` 的身份门 | 原始标识、候选解释、直接证据和阻断项 | 不静默纠错；身份未冻结不外推结构/适配 |
 | 研究问题与方法架构 | `deep-research-protocol.md` 第 1—2 节 | 研究问题树、命题清单、检索计划 | 每个关键结论在检索前已形成待证命题 |
 | TRIZ 问题建模 | `triz-analysis-output.md`、`matrix-usage.md`、`triz-extended-tools.md` | 工艺瓶颈、技术矛盾、物理矛盾、物—场模型 | 参数映射含因果句与备选参数；矩阵结果可复算 |
-| 确定性矛盾矩阵检索 | `contradiction-matrix.json`、Python/Node 查询器 | 改善参数、恶化参数、矩阵单元格、推荐原理 | 两种脚本或脚本与 JSON 人工读取结果一致 |
+| 确定性矛盾矩阵检索 | `contradiction-matrix.json`、Python/Node 查询器、`matrix-rows/` 行分片 | 改善参数、恶化参数、矩阵单元格、推荐原理 | Python、Node 或行分片三选一，结果一致且反向单元交叉复核 |
 | 发明原理工程化 | `inventive-principles.md`、`weak-model-playbook.md` | 原理到结构、动作、控制和验证的映射 | 不把原理名称直接当方案 |
 | 物理矛盾、物—场、标准解、裁剪和演化 | `triz-extended-tools.md` | 分离条件、Su-Field 模型、标准解族、演化方向 | 标准解编号仅在内置表或经核验时使用 |
 | 系统检索与书目发现 | `deep-research-protocol.md` 的七轨检索 | 标准、产品、专利、论文、跨行业、反证检索日志 | 每轨记录查询式、范围、结果和未命中项 |
@@ -56,19 +56,21 @@
 | PDF/网页读取 | 原文解析或浏览器 | 下载后文本提取；无法读取时只记录题录并标“未核全文” | 根据标题猜测结论 |
 | 矩阵查询 | Python 或 Node 脚本 | 只读取 `references/matrix-rows/R{改善}.md` 行分片定位目标列，并交叉复核反向单元 | 凭记忆或二手网页返回原理 |
 | 数据计算 | 表格或脚本 | 写出公式后手工复算关键数字 | 只给收益结论而无参数和公式 |
-| 原理图 | CAD/绘图/图像生成工具 | 使用 Mermaid、SVG、ASCII 或带编号的文字结构图 | 把概念图标为制造图、施工图 |
+| 原理图 | CAD/绘图/图像生成工具 | 流程/因果图可用 Mermaid；机理/几何图用 SVG、平台原生可编辑图形或带编号的文字结构图（选型规则见 `final-report-blueprint.md` §5.1） | 把概念图标为制造图、施工图；用 Mermaid 表达复杂机械空间结构 |
 | DOCX/PDF | 文档工具 | 交付完整 Markdown 与独立图表文件 | 因无文档工具删减内容或证据 |
 | 多智能体 | 并行角色 | 单模型按五角色串行执行 | 删除反对者或来源核验环节 |
 
-## 四、普通模型的最小上下文装载顺序
+## 四、普通模型的分阶段上下文装载
 
-不要一次加载全部参考文件。按当前阶段只读取最少集合，可降低遗忘和指令漂移：
+不要一次加载全部参考文件。按当前阶段只读取最少集合；长文件允许只读当前 G 阶段对应小节，进入新阶段再读下一段：
 
-1. 开始任务：`SKILL.md` + `research-workflow.md` + `weak-model-playbook.md` + `engineering-claim-safety-checks.md`。
-2. 首次 TRIZ：再读 `triz-analysis-output.md`、`matrix-usage.md`、`inventive-principles.md`；需要扩展工具时读 `triz-extended-tools.md`。
-3. 用户确认后深研：读 `deep-research-protocol.md` 和 `output-templates.md`，再次执行 `engineering-claim-safety-checks.md`。
-4. 形成方案及报告：读 `final-report-blueprint.md`，按其中统一模板组装成果。
-5. 交付前：运行 `validate_skill.py` 只验证技能包；对项目报告则执行 `final-report-blueprint.md` 的内容和视觉检查。
+1. **G0 立项**：`SKILL.md` + `research-workflow.md` 的 G0 小节 + `intake-guide.md`；需要冻结对象身份时加读 `engineering-claim-safety-checks.md` 的身份门一节。
+2. **G1 建模**：`triz-analysis-output.md` + `matrix-usage.md` + `inventive-principles.md`（需要扩展工具时加 `triz-extended-tools.md`）；收尾对照 `weak-model-playbook.md` 的 G1 检查清单。
+3. **G1.5 确认**：只保留方向稿与确认卡所需内容，等待用户回复。
+4. **G2/G3 深研与选型**：`deep-research-protocol.md` + `output-templates.md`，并执行 `engineering-claim-safety-checks.md` 全文闸门。
+5. **G4 验证**：`research-workflow.md` 的 G4 与 V0—V3 小节 + `engineering-claim-safety-checks.md` 的验证一致性门。
+6. **G5 报告**：`final-report-blueprint.md`，按其中统一模板组装成果。
+7. **交付前**：运行 `validate_skill.py` 只验证技能包；对项目报告则执行 `final-report-blueprint.md` 的内容和视觉检查。
 
 模型每完成一个阶段，只保留“进度卡 + 已确认事实 + 决策 + 证据台账索引”进入下一阶段，避免把大段搜索材料直接塞进最终写作上下文。
 

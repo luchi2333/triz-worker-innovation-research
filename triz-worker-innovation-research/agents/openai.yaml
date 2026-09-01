@@ -1,15 +1,7 @@
 interface:
   display_name: "TRIZ 职工创新研究"
-  short_description: "独立完成矩阵、深研、工程硬闸门、方案验证与技术报告。Covering contradiction matrix, deep research, engineering gates, and technical reporting."
-  default_prompt: |
-    请使用 $triz-worker-innovation-research 技能，把这个一线现场问题转成可追溯的 TRIZ 研究与技术方案报告。
-
-    启动时先读取技能根目录的 SKILL.md，按其中的资源路由与七状态状态机（G0→G5）推进。
-    关键约束：G1.5 方向确认门要求显式回复，沉默不视为授权；每个结论必须带 F/M/S/H 证据标记；
-    最终报告按 references/final-report-blueprint.md 交付，包含决策摘要、主报告、技术证据附件与来源/图示台账。
-
-    If the user prefers English, the same flow applies via the bilingual resources under references/.
-    Use $triz-worker-innovation-research to turn this frontline problem into a traceable TRIZ study and technical-solution report.
+  short_description: "独立完成矛盾矩阵检索、深度查新、工程硬闸门验证与技术报告编制"
+  default_prompt: "请使用 $triz-worker-innovation-research 技能研究这个一线职工创新问题，先读取 SKILL.md 并按七状态状态机推进。"
 
 policy:
   allow_implicit_invocation: true

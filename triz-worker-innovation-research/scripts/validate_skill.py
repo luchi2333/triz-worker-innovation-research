@@ -11,7 +11,12 @@
 - 版本号从 SKILL.md frontmatter 读取，不在本文件里硬编码，避免版本升级被校验器拦住。
 - 矩阵自检一律走子进程，不在包内 import，避免生成 `scripts/__pycache__`。
 - 包内文件必须全部列入发布清单，未列入的文件（尤其内部案例文件）直接判失败。
-- 内部案例词扫描让"具体项目内容回灌公开包"这类倒退被自动拦截。
+- 内容合规只保留通用规则（内部案例引用、本机绝对路径）；具体项目的案例词扫描
+  属于项目工作区的私有发布前 QA，不进入公开包。
+- 跨文件一致性：禁止第二套验证成熟度定义（全包只允许一套 V0—V3），禁止"只允许脚本"
+  类措辞，检查清单文件必须显式给出 Python/Node/行分片三选一路径。
+- 双运行时表驱动回归：成功与失败路径的 stdout、stderr、退出码必须逐字一致。
+- README 首页示例（仓库根）必须与矩阵本体复算结果一致。
 """
 
 from __future__ import annotations
@@ -79,16 +84,36 @@ FORBIDDEN_SUFFIXES = {".pyc", ".pyo", ".zip", ".tar", ".gz", ".bak", ".orig", ".
 
 TEXT_SUFFIXES = {".md", ".py", ".mjs", ".json", ".yaml"}
 
-# 内部案例词扫描：命中即判失败，防止具体项目内容回灌公开包
-CASE_SCAN_SKIP = {"scripts/validate_skill.py"}  # 本文件容纳词表，必须跳过
-CASE_LEAK_PATTERNS: list[tuple[str, str]] = [
-    (r"电缆", "具体项目对象（电缆）"),
-    (r"接地尾段", "具体项目结构（接地尾段）"),
-    (r"开剥", "具体项目工序（开剥）"),
-    (r"线芯|铜网|护套", "具体项目结构（线芯/铜网/护套）"),
-    (r"屏蔽形式|导电/屏蔽", "具体项目结构（屏蔽形式）"),
-    (r"每端|min/端", "具体项目口径（每端）"),
-    (r"case-example|案例格式示例", "内部案例文件引用"),
+# 通用内容合规扫描（不含任何具体项目案例词）。
+# 具体项目的案例特征词扫描属于项目工作区的私有发布前 QA，不进入公开包。
+# 注意：模式串用拼接写法，避免本文件自身命中扫描（不再设跳过名单）。
+GENERIC_LEAK_PATTERNS: list[tuple[str, str]] = [
+    ("case" + "-example" + r"|案例格式" + "示例", "内部案例文件引用"),
+    (r"[A-Za-z]:[\\/]+Users[\\/]", "本机绝对路径（Windows 用户目录）"),
+    (r"/Users/[A-Za-z0-9._-]+/|/home/[A-Za-z0-9._-]+/", "本机绝对路径（Unix 用户目录）"),
+]
+
+# 禁止出现第二套验证成熟度定义：全包只允许一套 V0—V3（见 research-workflow.md）
+FORBIDDEN_MATURITY_PATTERNS: list[tuple[str, str]] = [
+    (r"\bV" + r"4\b", "出现第四级成熟度编号（全包只允许一套 V0—V3）"),
+    ("V0[—–-]V" + "4", "出现四级成熟度区间表述"),
+]
+
+# 禁止“只允许脚本”措辞：确定性查询必须三选一（Python/Node/行分片）
+FORBIDDEN_SCRIPT_ONLY_PATTERNS: list[tuple[str, str]] = [
+    ("是否由" + "脚本执行", "检查清单只允许脚本执行"),
+    ("单独执行" + "脚本", "检查清单只允许脚本执行"),
+    ("脚本" + "查表", "通过条件限定脚本路径"),
+    ("脚本或" + " JSON 人工读取", "未包含行分片路径"),
+]
+
+# 这些文件必须显式包含“三选一”确定性查询路径
+TRI_PATH_REQUIRED_FILES = [
+    "references/triz-analysis-output.md",
+    "references/weak-model-playbook.md",
+    "references/matrix-usage.md",
+    "references/research-workflow.md",
+    "references/standalone-capability-map.md",
 ]
 
 # 矩阵行分片：references/matrix-rows/R01.md .. R39.md（生成产物，单独校验）
@@ -356,17 +381,65 @@ def check_placeholders(files: dict[str, str], errors: list[str]) -> None:
                 fail(errors, f"Unfinished placeholder in {rel}: {pattern}")
 
 
-def check_case_leaks(files: dict[str, str], errors: list[str]) -> int:
+def check_generic_leaks(files: dict[str, str], errors: list[str]) -> int:
+    """通用合规扫描：不含具体项目词表；项目案例词由私有 QA 在工作区执行。"""
     hits = 0
     for rel, text in files.items():
-        if rel in CASE_SCAN_SKIP:
-            continue
         for lineno, line in enumerate(text.splitlines(), start=1):
-            for pattern, reason in CASE_LEAK_PATTERNS:
+            for pattern, reason in GENERIC_LEAK_PATTERNS:
                 if re.search(pattern, line):
-                    fail(errors, f"Case-specific content leaked into public package: {rel}:{lineno} ({reason})")
+                    fail(errors, f"Non-generic content in public package: {rel}:{lineno} ({reason})")
                     hits += 1
     return hits
+
+
+def check_consistency(files: dict[str, str], errors: list[str]) -> None:
+    """跨文件语义一致性：唯一成熟度定义、唯一确定性查询路径。"""
+    for rel, text in files.items():
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            for pattern, reason in FORBIDDEN_MATURITY_PATTERNS:
+                if re.search(pattern, line):
+                    fail(errors, f"Conflicting maturity definition: {rel}:{lineno} ({reason})")
+            for pattern, reason in FORBIDDEN_SCRIPT_ONLY_PATTERNS:
+                if re.search(pattern, line):
+                    fail(errors, f"Script-only wording: {rel}:{lineno} ({reason})")
+    for rel in TRI_PATH_REQUIRED_FILES:
+        text = files.get(rel, "")
+        if "三选一" not in text:
+            fail(errors, f"{rel} does not state the tri-path (Python/Node/行分片) deterministic lookup")
+
+
+def check_readme_golden(data: dict | None, errors: list[str], warnings: list[str]) -> dict[str, object]:
+    """README 首页示例必须与实际矩阵数据一致（README 位于仓库根，即包外上一级）。"""
+    readme_path = ROOT.parent / "README.md"
+    result: dict[str, object] = {"path": str(readme_path), "status": "SKIPPED"}
+    if not readme_path.is_file():
+        warnings.append("Repo README.md not found next to package; README golden test skipped")
+        return result
+
+    try:
+        text = readme_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        fail(errors, f"UTF-8 read failed: {readme_path.name}: {exc}")
+        return result
+
+    # 示例参数名称必须正确：#10 力（强度）、#12 形状；查询方向 10×12
+    for phrase in ["#10 力（强度）", "#12 形状", "10×12"]:
+        if phrase not in text:
+            fail(errors, f"README quickstart example missing or incorrect: {phrase}")
+
+    # 用矩阵本体复算示例单元：R10×C12 必须返回 README 展示的原理序列
+    if data is not None:
+        cell = data["matrix"][9][11]
+        expected = [10, 35, 40, 34]
+        if cell != expected:
+            fail(errors, f"Matrix R10xC12 drifted from README example: {cell} != {expected}")
+        for principle_no in ["#10 预先作用", "#35 参数变化", "#40 复合材料", "#34 抛弃与再生"]:
+            if principle_no not in text:
+                fail(errors, f"README quickstart example missing principle: {principle_no}")
+
+    result["status"] = "PASS"
+    return result
 
 
 def run_self_test(
@@ -426,7 +499,57 @@ def check_row_shards(errors: list[str], warnings: list[str], strict: bool) -> di
     return result
 
 
+# 双运行时表驱动回归：成功与失败路径的 stdout、stderr、退出码必须逐字一致。
+DUAL_RUNTIME_CASES: list[list[str]] = [
+    ["--improve", "10", "--worsen", "12"],
+    ["--improve", "10", "--worsen", "12", "--format", "json"],
+    ["--improve", "10", "--worsen", "10"],
+    ["--improve", "1", "--worsen", "2"],
+    ["--batch", "1x28,39x30"],
+    ["--batch", "1x28,39x30", "--format", "json"],
+    ["--search", "划伤"],
+    ["--search", "不存在的词xyz"],
+    ["--explain", "30"],
+    ["--list-parameters"],
+    ["--version"],
+    ["--self-test"],
+    ["--explain", "abc"],
+    ["--format", "xml", "--improve", "1", "--worsen", "2"],
+    ["--bogus"],
+    ["--improve"],
+    ["--improve", "0", "--worsen", "2"],
+    ["--batch", "1x"],
+]
+
+
+def run_command(command: list[str], env: dict[str, str] | None = None) -> tuple[int, str, str]:
+    import os
+
+    merged_env = dict(os.environ)
+    if env:
+        merged_env.update(env)
+    proc = subprocess.run(
+        command,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=SELF_TEST_TIMEOUT_SECONDS,
+        env=merged_env,
+    )
+    return proc.returncode, proc.stdout, proc.stderr
+
+
 def check_dual_runtime(errors: list[str], warnings: list[str], strict: bool) -> dict[str, object]:
+    node = shutil.which("node") or shutil.which("node.exe")
+    node_missing = node is None
+    if node_missing:
+        message = "Node runtime not found"
+        if strict:
+            fail(errors, message + " (--strict)")
+        else:
+            warnings.append(message + "（加 --strict 可使缺失运行时判失败）")
+
     python_result = run_self_test(
         [sys.executable, "scripts/lookup_matrix.py", "--self-test"],
         "Python",
@@ -434,12 +557,7 @@ def check_dual_runtime(errors: list[str], warnings: list[str], strict: bool) -> 
         warnings,
         strict,
     )
-    node = shutil.which("node") or shutil.which("node.exe")
-    if node is None:
-        if strict:
-            fail(errors, "Node runtime not found (--strict)")
-        else:
-            warnings.append("Node runtime not found（加 --strict 可使缺失运行时判失败）")
+    if node_missing:
         node_result: dict[str, object] = {"runtime": "node", "status": "SKIPPED"}
     else:
         node_result = run_self_test(
@@ -450,19 +568,46 @@ def check_dual_runtime(errors: list[str], warnings: list[str], strict: bool) -> 
             strict,
         )
 
-    identical = False
-    if python_result.get("status") == "PASS" and node_result.get("status") == "PASS":
-        identical = python_result.get("stdout") == node_result.get("stdout")
-        if not identical:
-            fail(
-                errors,
-                "Python/Node SELF_TEST_PASS output drift: "
-                f"python={python_result.get('stdout')!r} node={node_result.get('stdout')!r}",
-            )
+    # 表驱动一致性：逐用例比较 stdout、stderr 和退出码。
+    # NODE_OPTIONS=--no-warnings 屏蔽托管运行时自身的实验特性警告，与脚本输出无关。
+    parity: list[dict[str, object]] = []
+    if node_missing:
+        parity_status = "SKIPPED"
+    else:
+        parity_status = "PASS"
+        for case in DUAL_RUNTIME_CASES:
+            try:
+                py_rc, py_out, py_err = run_command([sys.executable, "scripts/lookup_matrix.py", *case])
+                nd_rc, nd_out, nd_err = run_command(
+                    [node, "scripts/lookup_matrix.mjs", *case],
+                    env={"NODE_OPTIONS": "--no-warnings"},
+                )
+            except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+                fail(errors, f"Dual-runtime case {case} failed to execute: {exc}")
+                parity_status = "FAIL"
+                continue
+            same = py_rc == nd_rc and py_out == nd_out and py_err == nd_err
+            parity.append({"args": case, "rc": py_rc, "identical": same})
+            if not same:
+                parity_status = "FAIL"
+                fail(
+                    errors,
+                    f"Python/Node output drift on {case}: "
+                    f"rc {py_rc}/{nd_rc}; py_out={py_out!r}; nd_out={nd_out!r}; "
+                    f"py_err={py_err!r}; nd_err={nd_err!r}",
+                )
+
+    identical = (
+        python_result.get("status") == "PASS"
+        and node_result.get("status") == "PASS"
+        and parity_status == "PASS"
+    )
 
     return {
         "python": python_result,
         "node": node_result,
+        "parity_cases": len(parity),
+        "parity_status": parity_status,
         "outputs_identical": identical,
     }
 
@@ -485,7 +630,7 @@ def main(argv: list[str]) -> int:
     errors: list[str] = []
     warnings: list[str] = []
 
-    check_manifest(errors, warnings)
+    unexpected = check_manifest(errors, warnings)
 
     files: dict[str, str] = {}
     for path in sorted(ROOT.rglob("*")):
@@ -499,10 +644,12 @@ def main(argv: list[str]) -> int:
     check_changelog(version, files, errors)
     check_required_content(files, errors)
     check_placeholders(files, errors)
-    case_leak_hits = check_case_leaks(files, errors)
+    check_consistency(files, errors)
+    leak_hits = check_generic_leaks(files, errors)
     runtimes = check_dual_runtime(errors, warnings, strict)
     row_shards = check_row_shards(errors, warnings, strict)
     data = load_matrix(errors)
+    readme_golden = check_readme_golden(data, errors, warnings)
 
     inventory = []
     for path in sorted(ROOT.rglob("*")):
@@ -516,6 +663,12 @@ def main(argv: list[str]) -> int:
                 }
             )
 
+    generated_row_shards = sum(
+        1
+        for path in ROOT.rglob("*")
+        if path.is_file() and ROW_SHARD_PATTERN.match(path.relative_to(ROOT).as_posix())
+    )
+
     report = {
         "skill": ROOT.name,
         "version": version,
@@ -524,11 +677,8 @@ def main(argv: list[str]) -> int:
         "manifest": {
             "required": len(REQUIRED),
             "optional": len(OPTIONAL),
-            "unexpected": sorted(
-                set(path.relative_to(ROOT).as_posix() for path in ROOT.rglob("*") if path.is_file())
-                - set(REQUIRED)
-                - set(OPTIONAL)
-            ),
+            "generated_row_shards": generated_row_shards,
+            "unexpected": unexpected,
         },
         "matrix": {
             "parameters": len(data["parameters"]) if data else None,
@@ -539,7 +689,8 @@ def main(argv: list[str]) -> int:
         },
         "runtimes": runtimes,
         "row_shards": row_shards,
-        "case_leak_hits": case_leak_hits,
+        "readme_golden": readme_golden,
+        "generic_leak_hits": leak_hits,
         "warnings": warnings,
         "errors": errors,
         "status": "PASS" if not errors else "FAIL",

@@ -287,24 +287,60 @@ function parseBatch(spec) {
 
 function parseArgs(argv) {
   const args = {format: 'markdown', data: DEFAULT_DATA, improve: null, worsen: null, list: false, selfTest: false, version: false, search: null, explain: null, batch: null};
+  const unknown = [];
+  const takeValue = (index, flag) => {
+    const next = argv[index + 1];
+    if (next === undefined || (next.startsWith('-') && !/^-\d/.test(next))) {
+      throw usageError('缺少参数值', flag, `在 ${flag} 后提供一个值`);
+    }
+    return next;
+  };
+  const parseId = (flag, raw) => {
+    const trimmed = raw.trim();
+    if (!/^[+-]?\d+$/.test(trimmed)) {
+      throw usageError(
+        '参数编号无效',
+        `${flag} ${raw}`,
+        '使用 1..39 的整数；运行 --list-parameters 查看参数表',
+      );
+    }
+    return Number(trimmed);
+  };
   for (let i = 0; i < argv.length; i += 1) {
-    const item = argv[i];
-    if (item === '--improve') args.improve = Number(argv[++i]);
-    else if (item === '--worsen') args.worsen = Number(argv[++i]);
-    else if (item === '--format') args.format = argv[++i];
-    else if (item === '--data') args.data = resolve(argv[++i]);
+    let item = argv[i];
+    let inlineValue = null;
+    const eq = item.indexOf('=');
+    if (item.startsWith('--') && eq > 0) {
+      inlineValue = item.slice(eq + 1);
+      item = item.slice(0, eq);
+    }
+    const value = (flag) => {
+      if (inlineValue !== null) return inlineValue;
+      const raw = takeValue(i, flag);
+      i += 1;
+      return raw;
+    };
+    if (item === '--improve') args.improve = parseId(item, value(item));
+    else if (item === '--worsen') args.worsen = parseId(item, value(item));
+    else if (item === '--format') args.format = value(item);
+    else if (item === '--data') args.data = resolve(value(item));
     else if (item === '--list-parameters') args.list = true;
     else if (item === '--self-test') args.selfTest = true;
     else if (item === '--version') args.version = true;
-    else if (item === '--search') args.search = argv[++i] ?? '';
-    else if (item === '--explain') args.explain = Number(argv[++i]);
-    else if (item === '--batch') args.batch = argv[++i];
+    else if (item === '--search') args.search = value(item);
+    else if (item === '--explain') args.explain = parseId(item, value(item));
+    else if (item === '--batch') args.batch = value(item);
     else if (item === '--help' || item === '-h') {
       process.stdout.write(`${USAGE}\n`);
       process.exit(0);
-    } else throw new Error(`Unknown argument: ${item}`);
+    } else unknown.push(argv[i]);
   }
-  if (!['markdown', 'json'].includes(args.format)) throw new Error('--format must be markdown or json');
+  if (unknown.length > 0) {
+    throw usageError('未知参数', unknown.join(' '), '运行 --help 查看支持的参数');
+  }
+  if (!['markdown', 'json'].includes(args.format)) {
+    throw usageError('参数值无效', `--format ${args.format}`, '--format 只接受 markdown 或 json');
+  }
   return args;
 }
 
