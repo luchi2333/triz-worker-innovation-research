@@ -36,7 +36,7 @@
 
 ### 修复（发布前审核回归）
 
-- 验证成熟度全包统一为唯一一套 `V0—V3`（V0 概念证据 / V1 代表性短样 / V2 完整流程 / V3 受控现场）：`engineering-claim-safety-checks.md`、`output-templates.md` 原 `V0—V4` 定义及冲突编号含义已全部替换；校验器新增全包扫描，出现第四级成熟度编号或区间表述即判失败。
+- 验证成熟度全包统一为唯一一套 `V0—V3`（V0 概念证据 / V1 代表性短样 / V2 完整流程 / V3 受控现场）：`engineering-claim-safety-checks.md`、`output-templates.md` 中原有的第二套五级试验分级及冲突编号含义已全部替换为该唯一定义；校验器新增全包扫描，出现第四级成熟度编号或区间表述即判失败。
 - 确定性查询路径贯穿全部执行清单：`triz-analysis-output.md`、`weak-model-playbook.md`、`matrix-usage.md`、`research-workflow.md`、`standalone-capability-map.md` 统一为"Python / Node / `Rxx.md` 行分片三选一"，通过清单接受行分片并要求反向单元复核；校验器新增"只允许脚本"措辞回归扫描。
 - README 5 分钟示例修正为真实查询结果：欲改善 `#10 力（强度）`、随之恶化 `#12 形状`，`R10×C12` 返回原理 #10 预先作用、#35 参数变化、#40 复合材料、#34 抛弃与再生；该示例已纳入校验器黄金测试（用矩阵本体复算）。
 - 公共校验器不再硬编码任何具体项目案例词，只保留通用规则（内部案例引用、本机绝对路径）；具体案例词扫描移到项目工作区的私有发布前 QA 脚本。
@@ -45,6 +45,14 @@
 - `agents/openai.yaml` 元数据合规：简介压缩至 64 字符内，默认提示改为一句启动语。
 - 普通模型上下文改为按阶段分片装载（G0 只读入口与采集指南，后续阶段按需加载）。
 - 校验报告修正：合法行分片不再列入 `manifest.unexpected`，另设 `generated_row_shards` 计数。
+
+### 修复（发布前复验回归）
+
+- `engineering-claim-safety-checks.md` 验证一致性门真正替换为与 `research-workflow.md` 同义的 V0—V3 四级表（上一提交只更新了声明文字，正文五级表未改到）。
+- `matrix-usage.md` 最低质量检查改为“Python / Node / 行分片三选一的确定性查询，并复核反向单元”，删除脚本唯一表述。
+- 根 README 四处修正实际落地：矩阵黄金示例（欲改善 #10 力（强度）、随之恶化 #12 形状，R10×C12 返回原理 #10/#35/#40/#34）、交付默认 standard 不按问题大小降档、Windows PowerShell 安装命令单列可直接执行、隐私表述不替平台承诺（上一提交同样只更新了声明文字）。
+- `validate_skill.py` 的 `check_readme_golden()` 子状态不再无条件 PASS：子状态取决于本子检查是否新增错误；新增 README 负向注入自检，用改错的示例文本验证子检查会拒绝，机制失效即判失败。
+- 新增 `.gitattributes`：文本统一 `eol=lf`，图片等二进制标为 `binary`，消除 autocrlf 换行噪声。
 
 ### 兼容性
 

@@ -409,20 +409,8 @@ def check_consistency(files: dict[str, str], errors: list[str]) -> None:
             fail(errors, f"{rel} does not state the tri-path (Python/Node/行分片) deterministic lookup")
 
 
-def check_readme_golden(data: dict | None, errors: list[str], warnings: list[str]) -> dict[str, object]:
-    """README 首页示例必须与实际矩阵数据一致（README 位于仓库根，即包外上一级）。"""
-    readme_path = ROOT.parent / "README.md"
-    result: dict[str, object] = {"path": str(readme_path), "status": "SKIPPED"}
-    if not readme_path.is_file():
-        warnings.append("Repo README.md not found next to package; README golden test skipped")
-        return result
-
-    try:
-        text = readme_path.read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError) as exc:
-        fail(errors, f"UTF-8 read failed: {readme_path.name}: {exc}")
-        return result
-
+def _check_readme_text(text: str, data: dict | None, errors: list[str]) -> None:
+    """对 README 文本执行黄金示例检查；所有问题写入 errors。"""
     # 示例参数名称必须正确：#10 力（强度）、#12 形状；查询方向 10×12
     for phrase in ["#10 力（强度）", "#12 形状", "10×12"]:
         if phrase not in text:
@@ -438,8 +426,53 @@ def check_readme_golden(data: dict | None, errors: list[str], warnings: list[str
             if principle_no not in text:
                 fail(errors, f"README quickstart example missing principle: {principle_no}")
 
-    result["status"] = "PASS"
+
+def check_readme_golden(data: dict | None, errors: list[str], warnings: list[str]) -> dict[str, object]:
+    """README 首页示例必须与实际矩阵数据一致（README 位于仓库根，即包外上一级）。"""
+    readme_path = ROOT.parent / "README.md"
+    result: dict[str, object] = {"path": str(readme_path), "status": "SKIPPED"}
+    if not readme_path.is_file():
+        warnings.append("Repo README.md not found next to package; README golden test skipped")
+        return result
+
+    try:
+        text = readme_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        fail(errors, f"UTF-8 read failed: {readme_path.name}: {exc}")
+        result["status"] = "FAIL"
+        return result
+
+    # 子状态取决于本子检查是否新增错误，不得无条件 PASS
+    errors_before = len(errors)
+    _check_readme_text(text, data, errors)
+    result["status"] = "PASS" if len(errors) == errors_before else "FAIL"
     return result
+
+
+def check_readme_golden_negative(data: dict | None, errors: list[str]) -> None:
+    """负向自检：把 README 示例改错后，黄金检查必须拒绝；否则说明该检查机制失效。"""
+    readme_path = ROOT.parent / "README.md"
+    if not readme_path.is_file() or data is None:
+        return
+    try:
+        text = readme_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return
+
+    # 正向未通过时，负向自检无意义（总状态已经 FAIL）
+    clean: list[str] = []
+    _check_readme_text(text, data, clean)
+    if clean:
+        return
+
+    corrupted = text.replace("#12 形状", "#11 形状", 1)
+    if corrupted == text:
+        fail(errors, "README golden negative self-check cannot run: marker phrase not found")
+        return
+    scratch: list[str] = []
+    _check_readme_text(corrupted, data, scratch)
+    if not scratch:
+        fail(errors, "README golden negative self-check broken: corrupted example was not rejected")
 
 
 def run_self_test(
@@ -650,6 +683,7 @@ def main(argv: list[str]) -> int:
     row_shards = check_row_shards(errors, warnings, strict)
     data = load_matrix(errors)
     readme_golden = check_readme_golden(data, errors, warnings)
+    check_readme_golden_negative(data, errors)
 
     inventory = []
     for path in sorted(ROOT.rglob("*")):

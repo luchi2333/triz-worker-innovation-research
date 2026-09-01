@@ -29,9 +29,9 @@
 
 3. **确认方向**（G1.5）。技能用大白话复述矛盾，并给出编号方向表让你选，例如“既要夹得稳，又不能夹变形”。你回复 A/B/C/D 或提出修正，沉默不会被视为同意。
 
-4. **矩阵查询**。技能将矛盾映射为工程参数（如 #10 应力 vs #11 形状），调用矩阵查出推荐原理（如原理 1 分割、原理 40 复合材料），并把每条原理翻译成现场可用的方案雏形——例如“钳口加开槽软衬块”。
+4. **矩阵查询**。技能将矛盾映射为工程参数（本例：欲改善 `#10 力（强度）`、随之恶化 `#12 形状`，即 `10×12`），用确定性查询查出推荐原理（#10 预先作用、#35 参数变化、#40 复合材料、#34 抛弃与再生），并把每条原理翻译成现场可用的方案雏形——例如“钳口加开槽软衬块”。
 
-5. **获得交付**。小问题给方向稿，完整课题给标准研究（含查新、候选路线决策表、验证设计和效益测算）。每条结论都带证据标记：`F` 现场报告 / `M` 受控实测 / `S` 可追溯来源 / `H` 工程假设。
+5. **获得交付**。默认交付标准研究（含查新、候选路线决策表、验证设计和效益测算）；只有你明确只要快速讨论时才给方向稿。每条结论都带证据标记：`F` 现场报告 / `M` 受控实测 / `S` 可追溯来源 / `H` 工程假设。
 
 整个过程你只需要回答问题和做决策，方法推导由技能按固定状态机推进。
 
@@ -61,7 +61,7 @@ triz-worker-innovation-research/          # 仓库根
 https://github.com/luchi2333/triz-worker-innovation-research/tree/main/triz-worker-innovation-research
 ```
 
-或运行 Codex 内置安装脚本：
+或运行 Codex 内置安装脚本（Bash）：
 
 ```bash
 python ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
@@ -69,7 +69,13 @@ python ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github
   --path triz-worker-innovation-research
 ```
 
-Windows PowerShell 可将 `~` 换成用户目录下的 `.codex` 路径。
+Windows PowerShell：
+
+```powershell
+python "$env:USERPROFILE\.codex\skills\.system\skill-installer\scripts\install-skill-from-github.py" `
+  --repo luchi2333/triz-worker-innovation-research `
+  --path triz-worker-innovation-research
+```
 
 ### Claude / Claude Code
 
@@ -103,7 +109,7 @@ node triz-worker-innovation-research/scripts/lookup_matrix.mjs --self-test
 能。矩阵数据内置为 JSON，并预生成了 39 个行分片（`references/matrix-rows/`），智能体可直接读文件查表。脚本只是提供更快、可校验的查询方式。
 
 **Q：我的项目数据会被上传或内置到技能里吗？**
-不会。技能不含任何真实案例；所有项目信息只存在于你与智能体的会话中。请勿把真实项目照片、型号清单或内部规程提交到本仓库。
+技能本身不含任何真实案例，也不会主动把你的项目信息写入技能文件或本仓库。但对话数据的传输、保留和训练政策取决于你使用的平台及所在单位的规定，本技能无法替平台承诺；请勿把真实项目照片、型号清单或内部规程提交到本仓库。
 
 **Q：我不回复确认，技能会继续往下做吗？**
 不会。方向确认门（G1.5）要求显式回复；沉默不视为授权。这是顶层契约的一部分。

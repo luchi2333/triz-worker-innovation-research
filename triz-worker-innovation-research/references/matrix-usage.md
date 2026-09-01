@@ -112,7 +112,7 @@ node scripts/lookup_matrix.mjs --version
 - 现场量能否测量？
 - 行列是否正确？
 - #30/#31 是否混淆？
-- 查询是否由脚本执行？
-- 若无法运行脚本，是否只读取目标行分片并做行列反向复核？
+- 查询是否通过三选一的确定性路径完成（Python `lookup_matrix.py` / Node `lookup_matrix.mjs` / 只读目标行分片 `references/matrix-rows/Rxx.md`，任一即可）？
+- 若使用行分片，是否只读取目标行分片并做行列反向复核（用反向单元交叉验证）？
 - 原理是否落到作用机制、风险和试验？
 - 是否明确“矩阵不证明方案成立”？
