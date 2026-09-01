@@ -2,8 +2,8 @@
 name: triz-worker-innovation-research
 description: "Use for end-to-end TRIZ research on frontline employee innovation problems involving tools, equipment, maintenance or work processes. Converts field observations into an evidence-labelled problem model, deterministic Altshuller 39x39 matrix analysis, reproducible standards/product/patent/literature research, traceable alternative concepts, identity/applicability/safety/validation gates, benefit estimates, and a technical-solution-focused final report. Standalone: no separate deep-research skill or multi-agent framework is required. Do not use as a patentability/FTO legal opinion or to claim field performance without measured evidence."
 metadata:
-  version: "2.1.0"
-  last_updated: "2026-08-30"
+  version: "2.2.0"
+  last_updated: "2026-09-01"
   portability: "standalone-cross-platform"
 ---
 

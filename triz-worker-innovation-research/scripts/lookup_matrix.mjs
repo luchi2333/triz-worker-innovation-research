@@ -125,10 +125,21 @@ function renderParameters(data) {
 function selfTest(data) {
   const known = new Map([
     ['1,28', [28, 27, 35, 26]],
+    ['7,28', [25, 26, 28]],
+    ['15,25', [20, 10, 28, 18]],
     ['15,31', [21, 39, 16, 22]],
     ['18,35', [15, 1, 19]],
+    ['19,9', [8, 35]],
+    ['1,38', [26, 35, 18, 19]],
+    ['8,25', [35, 16, 32, 18]],
+    ['33,10', [28, 13, 35]],
+    ['34,1', [2, 27, 35, 11]],
     ['1,39', [35, 3, 24, 37]],
     ['39,1', [35, 26, 24, 37]],
+    ['39,30', [22, 35, 13, 24]],
+    ['39,31', [35, 22, 18, 39]],
+    ['25,27', [10, 30, 4]],
+    ['35,36', [15, 29, 37, 28]],
   ]);
   for (const [pair, expected] of known) {
     const [improve, worsen] = pair.split(',').map(Number);
@@ -140,10 +151,11 @@ function selfTest(data) {
   if (data.parameters[29].zh !== '作用于物体的有害因素') throw new Error('Parameter #30 translation drifted');
   if (data.parameters[30].zh !== '物体产生的有害因素') throw new Error('Parameter #31 translation drifted');
   if (lookup(data, 30, 30).status !== 'physical_contradiction') throw new Error('Diagonal lookup must route to physical contradiction');
+  if (lookup(data, 1, 2).status !== 'no_preferred_principle') throw new Error('Empty cell must report no_preferred_principle');
   const forward = lookup(data, 1, 39).principles.map((item) => item.id);
   const reverse = lookup(data, 39, 1).principles.map((item) => item.id);
   if (JSON.stringify(forward) === JSON.stringify(reverse)) throw new Error('Directional lookup regression');
-  return `SELF_TEST_PASS parameters=39 principles=40 rows=39 columns=39 populated=${data.audit.populated_cells} matrix_sha256=${data.audit.matrix_payload_sha256}`;
+  return `SELF_TEST_PASS parameters=39 principles=40 rows=39 columns=39 populated=${data.audit.populated_cells} golden_cells=${known.size} matrix_sha256=${data.audit.matrix_payload_sha256}`;
 }
 
 function parseArgs(argv) {

@@ -1,0 +1,36 @@
+name: Validate skill
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate skill package (strict)
+        run: python triz-worker-innovation-research/scripts/validate_skill.py --strict
+        shell: bash
+
+      - name: Node self-test
+        run: node triz-worker-innovation-research/scripts/lookup_matrix.mjs --self-test
+        shell: bash

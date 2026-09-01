@@ -1,14 +1,26 @@
 #!/usr/bin/env python3
-"""Self-contained structural and content validation for this Skill package."""
+"""Self-contained structural and content validation for this Skill package.
+
+用法：
+    python scripts/validate_skill.py            常规校验（输出 JSON 报告）
+    python scripts/validate_skill.py --strict   缺失运行时也判失败，用于发布门禁
+
+退出码：0 通过；2 失败。
+
+设计约束：
+- 版本号从 SKILL.md frontmatter 读取，不在本文件里硬编码，避免版本升级被校验器拦住。
+- 矩阵自检一律走子进程，不在包内 import，避免生成 `scripts/__pycache__`。
+- 包内文件必须全部列入发布清单，未列入的文件（尤其内部案例文件）直接判失败。
+- 内部案例词扫描让"具体项目内容回灌公开包"这类倒退被自动拦截。
+"""
 
 from __future__ import annotations
 
 import hashlib
-import importlib.util
-import contextlib
-import io
 import json
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -21,6 +33,7 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
 
+# 发布清单：必须存在
 REQUIRED = [
     "SKILL.md",
     "agents/openai.yaml",
@@ -42,6 +55,44 @@ REQUIRED = [
     "references/standalone-capability-map.md",
 ]
 
+# 发布清单：允许存在但不强制
+OPTIONAL = [
+    "CHANGELOG.md",
+]
+
+# 禁止出现在包内的目录（构建产物 / 版本控制元数据）
+FORBIDDEN_DIRS = {
+    "__pycache__",
+    ".git",
+    ".github",
+    ".venv",
+    "node_modules",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+}
+
+# 禁止出现在包内的文件后缀
+FORBIDDEN_SUFFIXES = {".pyc", ".pyo", ".zip", ".tar", ".gz", ".bak", ".orig", ".tmp"}
+
+TEXT_SUFFIXES = {".md", ".py", ".mjs", ".json", ".yaml"}
+
+# 内部案例词扫描：命中即判失败，防止具体项目内容回灌公开包
+CASE_SCAN_SKIP = {"scripts/validate_skill.py"}  # 本文件容纳词表，必须跳过
+CASE_LEAK_PATTERNS: list[tuple[str, str]] = [
+    (r"电缆", "具体项目对象（电缆）"),
+    (r"接地尾段", "具体项目结构（接地尾段）"),
+    (r"开剥", "具体项目工序（开剥）"),
+    (r"线芯|铜网|护套", "具体项目结构（线芯/铜网/护套）"),
+    (r"屏蔽形式|导电/屏蔽", "具体项目结构（屏蔽形式）"),
+    (r"每端|min/端", "具体项目口径（每端）"),
+    (r"case-example|案例格式示例", "内部案例文件引用"),
+]
+
+SEMVER = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
+
+SELF_TEST_TIMEOUT_SECONDS = 120
+
 
 def fail(errors: list[str], message: str) -> None:
     errors.append(message)
@@ -55,19 +106,75 @@ def read_utf8(path: Path, errors: list[str]) -> str:
         return ""
 
 
-def check_frontmatter(text: str, errors: list[str]) -> None:
+def check_manifest(errors: list[str], warnings: list[str]) -> list[str]:
+    """校验包内文件清单：缺文件、多余文件、构建产物一律拦下。"""
+    allowed = set(REQUIRED) | set(OPTIONAL)
+    unexpected: list[str] = []
+
+    for path in sorted(ROOT.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(ROOT).as_posix()
+        parts = set(path.relative_to(ROOT).parts[:-1])
+        if parts & FORBIDDEN_DIRS:
+            fail(errors, f"Build artifact or VCS metadata inside package: {rel}")
+            continue
+        if path.suffix.lower() in FORBIDDEN_SUFFIXES:
+            fail(errors, f"Forbidden file type inside package: {rel}")
+            continue
+        if rel not in allowed:
+            unexpected.append(rel)
+
+    for rel in unexpected:
+        fail(errors, f"File not in release manifest: {rel}")
+
+    for rel in REQUIRED:
+        if not (ROOT / rel).is_file():
+            fail(errors, f"Missing required file: {rel}")
+
+    for rel in OPTIONAL:
+        if not (ROOT / rel).is_file():
+            warnings.append(f"Optional file absent: {rel}")
+
+    return unexpected
+
+
+def check_frontmatter(text: str, errors: list[str]) -> str | None:
     match = re.match(r"\A---\s*\n(.*?)\n---\s*\n", text, flags=re.DOTALL)
     if not match:
         fail(errors, "SKILL.md lacks YAML frontmatter")
-        return
+        return None
     frontmatter = match.group(1)
     if not re.search(r"^name:\s*triz-worker-innovation-research\s*$", frontmatter, flags=re.MULTILINE):
         fail(errors, "SKILL.md name is missing or incorrect")
     description = re.search(r"^description:\s*(.+)$", frontmatter, flags=re.MULTILINE)
     if not description or len(description.group(1).strip(" \"'")) < 80:
         fail(errors, "SKILL.md description is missing or not discriminating")
-    if "version: \"2.1.0\"" not in frontmatter:
-        fail(errors, "Expected metadata version 2.1.0")
+
+    # 允许缩进：`version:` 位于 frontmatter 的 `metadata:` 之下
+    version_match = re.search(r'^[ \t]*version:[ \t]*"([^"]+)"', frontmatter, flags=re.MULTILINE)
+    if not version_match:
+        fail(errors, "SKILL.md metadata.version is missing or not quoted")
+        return None
+    version = version_match.group(1)
+    if not SEMVER.match(version):
+        fail(errors, f"SKILL.md metadata.version is not semver: {version}")
+        return None
+    if not re.search(r"^[ \t]*last_updated:[ \t]*\S", frontmatter, flags=re.MULTILINE):
+        fail(errors, "SKILL.md metadata.last_updated is missing")
+    return version
+
+
+def check_changelog(version: str | None, files: dict[str, str], errors: list[str]) -> None:
+    changelog = files.get("CHANGELOG.md")
+    if changelog is None or version is None:
+        return
+    head = re.search(r"^##\s*\[?v?(\d+\.\d+\.\d+[^\]\s]*)\]?", changelog, flags=re.MULTILINE)
+    if not head:
+        fail(errors, "CHANGELOG.md has no version heading")
+        return
+    if head.group(1) != version:
+        fail(errors, f"CHANGELOG.md top entry {head.group(1)} != SKILL.md version {version}")
 
 
 def check_links(path: Path, text: str, errors: list[str]) -> None:
@@ -89,6 +196,8 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
     skill = files.get("SKILL.md", "")
     for required_phrase in [
         "用户方向确认",
+        "G1.5",
+        "沉默",
         "lookup_matrix.mjs",
         "deep-research-protocol.md",
         "final-report-blueprint.md",
@@ -130,6 +239,7 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "常见失败与恢复",
         "五维质量",
         "类比迁移卡",
+        "G2 深度研究",
     ]:
         if required_phrase not in deep:
             fail(errors, f"Deep-research protocol missing: {required_phrase}")
@@ -164,6 +274,21 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         if required_phrase not in gates:
             fail(errors, f"Engineering gate reference missing: {required_phrase}")
 
+    workflow = files.get("references/research-workflow.md", "")
+    for required_phrase in [
+        "G1.5",
+        "唯一编号体系",
+        "验证成熟度",
+    ]:
+        if required_phrase not in workflow:
+            fail(errors, f"Research workflow missing: {required_phrase}")
+    if re.search(r"\|\s*G[678]\s*\|", workflow):
+        fail(errors, "Research workflow still uses retired G6/G7/G8 gates")
+
+    audit = files.get("references/matrix-audit.md", "")
+    if "golden_cells" not in audit:
+        fail(errors, "Matrix audit missing golden_cells regression description")
+
 
 def check_placeholders(files: dict[str, str], errors: list[str]) -> None:
     patterns = [r"\bTODO\b", r"\bTBD\b", r"\[PLACEHOLDER\]"]
@@ -173,46 +298,135 @@ def check_placeholders(files: dict[str, str], errors: list[str]) -> None:
                 fail(errors, f"Unfinished placeholder in {rel}: {pattern}")
 
 
-def load_python_lookup(errors: list[str]):
-    path = ROOT / "scripts" / "lookup_matrix.py"
-    spec = importlib.util.spec_from_file_location("triz_lookup", path)
-    if spec is None or spec.loader is None:
-        fail(errors, "Cannot import Python matrix lookup")
-        return None
-    module = importlib.util.module_from_spec(spec)
+def check_case_leaks(files: dict[str, str], errors: list[str]) -> int:
+    hits = 0
+    for rel, text in files.items():
+        if rel in CASE_SCAN_SKIP:
+            continue
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            for pattern, reason in CASE_LEAK_PATTERNS:
+                if re.search(pattern, line):
+                    fail(errors, f"Case-specific content leaked into public package: {rel}:{lineno} ({reason})")
+                    hits += 1
+    return hits
+
+
+def run_self_test(
+    command: list[str],
+    label: str,
+    errors: list[str],
+    warnings: list[str],
+    strict: bool,
+) -> dict[str, object]:
+    """以子进程运行自检；不使用 importlib，避免生成 `__pycache__`。"""
     try:
-        spec.loader.exec_module(module)
-        data = module.load_resource(ROOT / "references" / "contradiction-matrix.json")
-        with contextlib.redirect_stdout(io.StringIO()):
-            module.self_test(data)
-        result = module.lookup(data, 1, 28)
-    except Exception as exc:  # noqa: BLE001 - validator must report all failures
-        fail(errors, f"Python matrix validation failed: {exc}")
+        proc = subprocess.run(
+            command,
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=SELF_TEST_TIMEOUT_SECONDS,
+        )
+    except FileNotFoundError:
+        message = f"{label} runtime not found: {command[0]}"
+        if strict:
+            fail(errors, message)
+        else:
+            warnings.append(message + "（加 --strict 可使缺失运行时判失败）")
+        return {"runtime": command[0], "status": "SKIPPED"}
+    except subprocess.TimeoutExpired:
+        fail(errors, f"{label} self-test timed out after {SELF_TEST_TIMEOUT_SECONDS}s")
+        return {"runtime": command[0], "status": "TIMEOUT"}
+
+    stdout = proc.stdout.strip()
+    if proc.returncode != 0:
+        fail(errors, f"{label} self-test exit {proc.returncode}: {stdout or proc.stderr.strip()}")
+    elif "SELF_TEST_PASS" not in stdout:
+        fail(errors, f"{label} self-test did not print SELF_TEST_PASS: {stdout!r}")
+    return {
+        "runtime": command[0],
+        "status": "PASS" if proc.returncode == 0 else "FAIL",
+        "stdout": stdout,
+    }
+
+
+def check_dual_runtime(errors: list[str], warnings: list[str], strict: bool) -> dict[str, object]:
+    python_result = run_self_test(
+        [sys.executable, "scripts/lookup_matrix.py", "--self-test"],
+        "Python",
+        errors,
+        warnings,
+        strict,
+    )
+    node = shutil.which("node") or shutil.which("node.exe")
+    if node is None:
+        if strict:
+            fail(errors, "Node runtime not found (--strict)")
+        else:
+            warnings.append("Node runtime not found（加 --strict 可使缺失运行时判失败）")
+        node_result: dict[str, object] = {"runtime": "node", "status": "SKIPPED"}
+    else:
+        node_result = run_self_test(
+            [node, "scripts/lookup_matrix.mjs", "--self-test"],
+            "Node",
+            errors,
+            warnings,
+            strict,
+        )
+
+    identical = False
+    if python_result.get("status") == "PASS" and node_result.get("status") == "PASS":
+        identical = python_result.get("stdout") == node_result.get("stdout")
+        if not identical:
+            fail(
+                errors,
+                "Python/Node SELF_TEST_PASS output drift: "
+                f"python={python_result.get('stdout')!r} node={node_result.get('stdout')!r}",
+            )
+
+    return {
+        "python": python_result,
+        "node": node_result,
+        "outputs_identical": identical,
+    }
+
+
+def load_matrix(errors: list[str]) -> dict | None:
+    path = ROOT / "references" / "contradiction-matrix.json"
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        fail(errors, f"Cannot load contradiction-matrix.json: {exc}")
         return None
-    actual = [item["id"] for item in result["principles"]]
-    if actual != [28, 27, 35, 26]:
-        fail(errors, f"R1C28 regression: {actual}")
-    return data
 
 
-def main() -> int:
+def main(argv: list[str]) -> int:
+    strict = "--strict" in argv
+    if "--help" in argv or "-h" in argv:
+        print(__doc__.strip())
+        return 0
+
     errors: list[str] = []
-    for rel in REQUIRED:
-        if not (ROOT / rel).is_file():
-            fail(errors, f"Missing required file: {rel}")
+    warnings: list[str] = []
+
+    check_manifest(errors, warnings)
 
     files: dict[str, str] = {}
     for path in sorted(ROOT.rglob("*")):
-        if path.is_file() and path.suffix.lower() in {".md", ".py", ".mjs", ".yaml", ".json"}:
+        if path.is_file() and path.suffix.lower() in TEXT_SUFFIXES:
             rel = path.relative_to(ROOT).as_posix()
             files[rel] = read_utf8(path, errors)
             if path.suffix.lower() == ".md":
                 check_links(path, files[rel], errors)
 
-    check_frontmatter(files.get("SKILL.md", ""), errors)
+    version = check_frontmatter(files.get("SKILL.md", ""), errors)
+    check_changelog(version, files, errors)
     check_required_content(files, errors)
     check_placeholders(files, errors)
-    data = load_python_lookup(errors)
+    case_leak_hits = check_case_leaks(files, errors)
+    runtimes = check_dual_runtime(errors, warnings, strict)
+    data = load_matrix(errors)
 
     inventory = []
     for path in sorted(ROOT.rglob("*")):
@@ -228,8 +442,18 @@ def main() -> int:
 
     report = {
         "skill": ROOT.name,
-        "version": "2.1.0",
+        "version": version,
+        "strict": strict,
         "files": len(inventory),
+        "manifest": {
+            "required": len(REQUIRED),
+            "optional": len(OPTIONAL),
+            "unexpected": sorted(
+                set(path.relative_to(ROOT).as_posix() for path in ROOT.rglob("*") if path.is_file())
+                - set(REQUIRED)
+                - set(OPTIONAL)
+            ),
+        },
         "matrix": {
             "parameters": len(data["parameters"]) if data else None,
             "principles": len(data["principles"]) if data else None,
@@ -237,6 +461,9 @@ def main() -> int:
             "populated_cells": data.get("audit", {}).get("populated_cells") if data else None,
             "sha256": data.get("audit", {}).get("matrix_payload_sha256") if data else None,
         },
+        "runtimes": runtimes,
+        "case_leak_hits": case_leak_hits,
+        "warnings": warnings,
         "errors": errors,
         "status": "PASS" if not errors else "FAIL",
     }
@@ -245,4 +472,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1:]))
