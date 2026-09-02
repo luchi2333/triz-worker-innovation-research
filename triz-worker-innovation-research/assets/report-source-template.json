@@ -1,0 +1,44 @@
+{
+  "title": "职工创新技术方案报告",
+  "subtitle": "TRIZ 与证据驱动研究",
+  "status": "V0 概念研究｜当前允许：代表性短样验证",
+  "metadata": {
+    "单位": "填写单位名称",
+    "课题负责人": "填写负责人",
+    "日期": "填写日期"
+  },
+  "sections": [
+    {
+      "title": "1. 决策摘要",
+      "level": 1,
+      "blocks": [
+        {"type": "paragraph", "text": "用现场语言说明推荐什么、采用什么方法、解决什么难点，以及当前证据边界。"},
+        {
+          "type": "table",
+          "headers": ["路线", "采用的方法及解决的难点", "证据与角色"],
+          "rows": [["R0", "填写完整方法—难点动作链", "成熟基准"]]
+        }
+      ]
+    },
+    {
+      "title": "2. 作用机理",
+      "level": 1,
+      "blocks": [
+        {
+          "type": "figure",
+          "path": "assets/figure-template.svg",
+          "caption": "图2-1 通用概念原理图",
+          "alt": "对象经过受控工具界面后形成目标输出，安全边界位于工具与被保护对象之间。"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "SRC-01",
+      "title": "填写来源完整标题",
+      "url": "https://example.com/source",
+      "claim": "填写该来源直接支持的命题及适用边界"
+    }
+  ]
+}

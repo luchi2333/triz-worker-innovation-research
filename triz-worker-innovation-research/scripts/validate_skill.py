@@ -17,6 +17,7 @@
   类措辞，检查清单文件必须显式给出 Python/Node/行分片三选一路径。
 - 双运行时表驱动回归：成功与失败路径的 stdout、stderr、退出码必须逐字一致。
 - README 首页示例（仓库根）必须与矩阵本体复算结果一致。
+- G5 成果校验器与纯标准库 DOCX 生成器必须各自通过正向/负向自检。
 """
 
 from __future__ import annotations
@@ -44,7 +45,12 @@ REQUIRED = [
     "agents/openai.yaml",
     "scripts/lookup_matrix.py",
     "scripts/lookup_matrix.mjs",
+    "scripts/build_report.py",
+    "scripts/validate_deliverables.py",
     "scripts/validate_skill.py",
+    "assets/deliverables-manifest-template.json",
+    "assets/report-source-template.json",
+    "assets/figure-template.svg",
     "references/contradiction-matrix.json",
     "references/parameter-guidance.json",
     "references/matrix-usage.md",
@@ -58,6 +64,7 @@ REQUIRED = [
     "references/engineering-claim-safety-checks.md",
     "references/output-templates.md",
     "references/final-report-blueprint.md",
+    "references/delivery-contract.md",
     "references/weak-model-playbook.md",
     "references/standalone-capability-map.md",
 ]
@@ -82,7 +89,7 @@ FORBIDDEN_DIRS = {
 # 禁止出现在包内的文件后缀
 FORBIDDEN_SUFFIXES = {".pyc", ".pyo", ".zip", ".tar", ".gz", ".bak", ".orig", ".tmp"}
 
-TEXT_SUFFIXES = {".md", ".py", ".mjs", ".json", ".yaml"}
+TEXT_SUFFIXES = {".md", ".py", ".mjs", ".json", ".yaml", ".svg"}
 
 # 通用内容合规扫描（不含任何具体项目案例词）。
 # 具体项目的案例特征词扫描属于项目工作区的私有发布前 QA，不进入公开包。
@@ -245,6 +252,9 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "交付层级",
         "intake-guide.md",
         "沉默不算确认",
+        "交付必须落地",
+        "validate_deliverables.py",
+        "build_report.py",
     ]:
         if required_phrase not in skill:
             fail(errors, f"SKILL.md missing required contract: {required_phrase}")
@@ -260,6 +270,9 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "摘要中减少的内容",
         "检索日志未闭合",
         "验证一致性",
+        "必要图示硬门槛",
+        "deliverables-manifest.json",
+        "替代文本",
     ]:
         if required_phrase not in report:
             fail(errors, f"Final-report blueprint missing: {required_phrase}")
@@ -294,6 +307,8 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "阶段播报",
         "暂停与恢复",
         "现场否决回灌",
+        "能力探测",
+        "成果校验器",
     ]:
         if required_phrase not in weak:
             fail(errors, f"Weak-model playbook missing: {required_phrase}")
@@ -311,6 +326,8 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "上游失败向下游传播",
         "普通模型终稿七问",
         "跨模型回归微测试",
+        "物理属性与检测方法匹配",
+        "实际证据成熟度",
     ]:
         if required_phrase not in gates:
             fail(errors, f"Engineering gate reference missing: {required_phrase}")
@@ -327,6 +344,20 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
             fail(errors, f"Research workflow missing: {required_phrase}")
     if re.search(r"\|\s*G[678]\s*\|", workflow):
         fail(errors, "Research workflow still uses retired G6/G7/G8 gates")
+
+    delivery = files.get("references/delivery-contract.md", "")
+    for required_phrase in [
+        "先探测能力",
+        "标准交付的强制成果",
+        "必要图示硬门槛",
+        "deliverables-manifest.json",
+        "validate_deliverables.py",
+        "build_report.py",
+        "G5 交付回执",
+        "不得把插图和 Word 留作",
+    ]:
+        if required_phrase not in delivery:
+            fail(errors, f"Delivery contract missing: {required_phrase}")
 
     audit = files.get("references/matrix-audit.md", "")
     if "golden_cells" not in audit:
@@ -681,6 +712,22 @@ def main(argv: list[str]) -> int:
     leak_hits = check_generic_leaks(files, errors)
     runtimes = check_dual_runtime(errors, warnings, strict)
     row_shards = check_row_shards(errors, warnings, strict)
+    report_builder = run_self_test(
+        [sys.executable, "scripts/build_report.py", "--self-test"],
+        "ReportBuilder",
+        errors,
+        warnings,
+        strict,
+        marker="REPORT_SELF_TEST_PASS",
+    )
+    deliverable_validator = run_self_test(
+        [sys.executable, "scripts/validate_deliverables.py", "--self-test"],
+        "Deliverables",
+        errors,
+        warnings,
+        strict,
+        marker="DELIVERABLE_SELF_TEST_PASS",
+    )
     data = load_matrix(errors)
     readme_golden = check_readme_golden(data, errors, warnings)
     check_readme_golden_negative(data, errors)
@@ -723,6 +770,8 @@ def main(argv: list[str]) -> int:
         },
         "runtimes": runtimes,
         "row_shards": row_shards,
+        "report_builder": report_builder,
+        "deliverable_validator": deliverable_validator,
         "readme_golden": readme_golden,
         "generic_leak_hits": leak_hits,
         "warnings": warnings,

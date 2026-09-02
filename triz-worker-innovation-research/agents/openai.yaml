@@ -1,7 +1,7 @@
 interface:
   display_name: "TRIZ 职工创新研究"
   short_description: "独立完成矛盾矩阵检索、深度查新、工程硬闸门验证与技术报告编制"
-  default_prompt: "请使用 $triz-worker-innovation-research 技能研究这个一线职工创新问题，先读取 SKILL.md 并按七状态状态机推进。"
+  default_prompt: "请使用 $triz-worker-innovation-research 研究这个一线职工创新问题，按阶段推进，并在标准交付时主动生成图示、DOCX 和交付清单。"
 
 policy:
   allow_implicit_invocation: true

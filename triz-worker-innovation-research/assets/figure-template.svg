@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">通用工程作用机理图模板</title>
+  <desc id="desc">对象通过工具作用界面转化为目标输出，并以独立保护边界隔离被保护对象。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#147D92"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="675" rx="28" fill="#F5F7FA"/>
+  <text x="70" y="90" font-family="Microsoft YaHei, sans-serif" font-size="38" font-weight="700" fill="#102A43">概念原理图｜非制造图</text>
+  <rect x="90" y="225" width="240" height="150" rx="20" fill="#FFFFFF" stroke="#7B8794" stroke-width="3"/>
+  <text x="210" y="310" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="30" fill="#102A43">作用对象</text>
+  <rect x="480" y="195" width="240" height="210" rx="20" fill="#E6F6FA" stroke="#147D92" stroke-width="4"/>
+  <text x="600" y="285" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="30" fill="#102A43">工具与作用界面</text>
+  <text x="600" y="335" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="23" fill="#486581">标注力、场与运动方向</text>
+  <rect x="870" y="225" width="240" height="150" rx="20" fill="#FFFFFF" stroke="#7B8794" stroke-width="3"/>
+  <text x="990" y="310" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="30" fill="#102A43">目标输出</text>
+  <line x1="330" y1="300" x2="475" y2="300" stroke="#147D92" stroke-width="6" marker-end="url(#arrow)"/>
+  <line x1="720" y1="300" x2="865" y2="300" stroke="#147D92" stroke-width="6" marker-end="url(#arrow)"/>
+  <line x1="420" y1="460" x2="780" y2="460" stroke="#D69E2E" stroke-width="5" stroke-dasharray="14 10"/>
+  <text x="600" y="510" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="25" fill="#8A5A00">独立保护/停止边界</text>
+  <text x="600" y="610" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="21" fill="#627D98">使用时替换对象、动作、力/场、方向、危险区和废料/信息流，不填无证据定型尺寸</text>
+</svg>

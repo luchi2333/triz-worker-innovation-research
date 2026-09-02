@@ -34,3 +34,11 @@ jobs:
       - name: Node self-test
         run: node triz-worker-innovation-research/scripts/lookup_matrix.mjs --self-test
         shell: bash
+
+      - name: Portable DOCX builder self-test
+        run: python triz-worker-innovation-research/scripts/build_report.py --self-test
+        shell: bash
+
+      - name: Generated deliverables validator self-test
+        run: python triz-worker-innovation-research/scripts/validate_deliverables.py --self-test
+        shell: bash

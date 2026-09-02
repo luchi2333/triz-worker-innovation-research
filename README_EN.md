@@ -54,6 +54,7 @@ field facts → process and system boundary → TRIZ model → deterministic mat
 | Treats retrieved pages as conclusions | Records search strings and verifies identity, source quality and applicability |
 | Optimizes one proposed concept | Preserves a mature baseline, low-risk fallback, exploration route and supersystem alternative |
 | Stops after concept generation | Adds FMEA, acceptance/stop criteria, decisive experiments and claim limits |
+| Declares success after Markdown | Probes capabilities, generates required figures and DOCX, then validates a delivery manifest |
 
 The goal is not more prose. The goal is traceable Inventive Problem Solving and testable Engineering Design.
 
@@ -84,7 +85,7 @@ This demo illustrates the workflow. It does not claim field performance, patenta
 | Concept decision table | For every route: method, problem addressed, mechanism, source, novelty boundary, risk and test |
 | Validation and FMEA | Sample, metric, acceptance/stop criteria, decisive experiment and V0–V3 maturity |
 | Benefit model | Separates field reports, controlled measurements and scenario assumptions |
-| Technical report | Decision summary, main report, technical evidence appendix and source/figure ledger |
+| Technical report | Decision summary, main report, evidence appendix, source/figure ledger, required figures, DOCX and an inspectable manifest |
 
 ## Human-in-the-loop by Design
 
@@ -103,6 +104,8 @@ The Agent must pause after the first complete TRIZ direction draft. The user can
 - **Applicability and counter-evidence:** similar products are not treated as target fit, cross-industry analogies are not treated as proven feasibility, and “not found” is not expanded into “does not exist.”
 - **Hard gates before scoring:** failures in identity, evidence, applicability, transfer, safety, patent scope or validation reduce downstream maturity.
 - **Execution support for ordinary models:** a state machine, decision trees, fill-in templates and stage checks reduce omission and improvisation.
+- **Artifacts are not an afterthought:** G5 probes diagram, DOCX and rendering capabilities first. Available capabilities must be used; real blockers produce an explicit degraded delivery.
+- **Generated work is machine-checkable:** `validate_deliverables.py` checks files, figures, query logs, stable source identifiers, score maturity, DOCX media/links and page-review evidence.
 
 ## Installation and portability
 
@@ -127,9 +130,18 @@ This describes the intended adaptation path, not a blanket compatibility claim. 
 ```bash
 python triz-worker-innovation-research/scripts/validate_skill.py --strict
 node triz-worker-innovation-research/scripts/lookup_matrix.mjs --self-test
+python triz-worker-innovation-research/scripts/build_report.py --self-test
+python triz-worker-innovation-research/scripts/validate_deliverables.py --self-test
 ```
 
-Strict validation covers the release manifest, version, matrix hash, golden cells, 39 row shards, the README example and 18 Python/Node parity cases.
+Strict validation covers the release manifest, version, matrix hash, golden cells, 39 row shards, the README example, 18 Python/Node parity cases, the DOCX builder and the generated-deliverable validator. After a real research run, copy `assets/deliverables-manifest-template.json` into the output directory and run:
+
+```bash
+python triz-worker-innovation-research/scripts/validate_deliverables.py \
+  --root <research-output-directory> \
+  --manifest <research-output-directory>/deliverables-manifest.json \
+  --strict
+```
 
 ## What this Skill does not claim
 

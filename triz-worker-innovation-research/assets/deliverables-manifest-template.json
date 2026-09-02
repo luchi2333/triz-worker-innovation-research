@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "delivery_level": "standard",
+  "status": "blocked",
+  "maturity": "V0",
+  "validator_runtime": "available",
+  "capabilities": {
+    "file_write": {"status": "not-checked", "evidence": "尚未执行探测"},
+    "diagram": {"status": "not-checked", "evidence": "尚未执行探测"},
+    "docx": {"status": "not-checked", "evidence": "尚未执行探测"},
+    "render": {"status": "not-checked", "evidence": "尚未执行探测"}
+  },
+  "artifacts": [
+    {"role": "decision-summary", "path": "01-决策摘要.md", "required": true, "opened": false, "rendered": false},
+    {"role": "main-report", "path": "02-最终研究报告.md", "required": true, "opened": false, "rendered": false},
+    {"role": "evidence-appendix", "path": "03-技术证据附件.md", "required": true, "opened": false, "rendered": false},
+    {"role": "source-figure-ledger", "path": "04-来源与图示台账.md", "required": true, "opened": false, "rendered": false}
+  ],
+  "shortlisted_routes": ["R0", "R1"],
+  "figures": [],
+  "figure_exemptions": [],
+  "numeric_benefits": false,
+  "research_log": {"path": "03-技术证据附件.md", "claimed_queries": 0, "logged_queries": 0},
+  "sources": {"cards": 0, "with_stable_identifier": 0, "critical": 0, "with_url": 0},
+  "score_rows": [],
+  "checks": {
+    "cross_file_consistency": "not-checked",
+    "scoring_consistency": "not-checked",
+    "measurement_method_match": "not-checked",
+    "patent_citation_tracking": "not-checked",
+    "stage_boundary": "not-checked",
+    "claim_boundary": "not-checked"
+  },
+  "render_summary": {
+    "pages": 0,
+    "checked_pages": 0,
+    "blank_pages": [],
+    "unresolved_visual_issues": []
+  }
+}

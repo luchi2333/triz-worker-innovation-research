@@ -52,6 +52,7 @@ https://github.com/luchi2333/triz-worker-innovation-research/tree/main/triz-work
 | 搜到资料即作为结论 | 记录检索式，核验来源身份、适配性与反对证据 |
 | 输出单一方案 | 同时比较成熟基准、低风险后备、探索路线和超系统替代 |
 | 方案写完即结束 | 继续给出 FMEA、决定性试验、停止条件和证据边界 |
+| Markdown 写完就宣布完成 | 先探测能力，主动生成必要图示与 DOCX，再用交付清单和成果校验器验收 |
 
 目标不是生成更多文字，而是让 **Engineering Research / Engineering Innovation** 的过程可以被工程师检查、修正和复现。
 
@@ -102,7 +103,7 @@ Skill 会补齐对象、动作链、边界、测量方法和不能牺牲的约�
 | 候选方案决策表 | 写清“用什么方法解决什么难点”、来源、创新、风险和试验 |
 | 验证与 FMEA | 样本、指标、验收/停止条件、决定性试验和 V0—V3 成熟度 |
 | 效益模型 | 把现场报告、受控实测和情景假设分开，提供可复算公式 |
-| 正式报告 | 决策摘要、主报告、技术证据附件、来源与图示台账 |
+| 正式报告 | 决策摘要、主报告、技术证据附件、来源与图示台账、必要插图、DOCX 和可检查交付清单 |
 
 ## Human-in-the-loop by Design
 
@@ -126,6 +127,8 @@ G0 问题锚定 → G1 TRIZ 建模 → G1.5 用户确认 → G2 深度研究
 - **适配与反证**：相似产品不自动等于适用，跨行业机理不自动等于可行，“未检得”不扩写成市场空白。
 - **硬门槛先于评分**：对象身份、证据、适配、类比、安全、专利边界和验证任一关键项失败，成熟度必须降级。
 - **普通模型可执行**：状态机、判断树、填空模板和逐阶段检查卡帮助能力一般的模型稳定推进。
+- **交付不是后补项**：G5 会先探测绘图、DOCX 和渲染能力；能力可用时主动生成，能力缺失时留下错误证据并明确标记降级交付。
+- **成果也能机器检查**：`validate_deliverables.py` 核对文件、图示、检索日志、来源标识、评分成熟度、DOCX 媒体/链接和逐页检查记录。
 
 ## 安装与兼容
 
@@ -158,9 +161,18 @@ python "$env:USERPROFILE\.codex\skills\.system\skill-installer\scripts\install-s
 ```bash
 python triz-worker-innovation-research/scripts/validate_skill.py --strict
 node triz-worker-innovation-research/scripts/lookup_matrix.mjs --self-test
+python triz-worker-innovation-research/scripts/build_report.py --self-test
+python triz-worker-innovation-research/scripts/validate_deliverables.py --self-test
 ```
 
-严格校验覆盖文件清单、版本、矩阵哈希、黄金单元、39 个行分片、README 示例和 Python/Node 18 组行为一致性。
+严格校验覆盖文件清单、版本、矩阵哈希、黄金单元、39 个行分片、README 示例、Python/Node 18 组行为一致性，以及 DOCX 生成器和成果校验器的正负向自检。完成实际课题后，复制 `assets/deliverables-manifest-template.json` 到课题输出目录并运行：
+
+```bash
+python triz-worker-innovation-research/scripts/validate_deliverables.py \
+  --root <课题输出目录> \
+  --manifest <课题输出目录>/deliverables-manifest.json \
+  --strict
+```
 
 ## 本 Skill 不声称什么
 
@@ -186,8 +198,9 @@ node triz-worker-innovation-research/scripts/lookup_matrix.mjs --self-test
 └── triz-worker-innovation-research/
     ├── SKILL.md                    # Skill 入口与执行契约
     ├── agents/openai.yaml
-    ├── references/                # 工作流、矩阵、查新、模板和报告蓝图
-    └── scripts/                   # Python / Node 查询与严格校验
+    ├── assets/                    # 交付清单、报告源与 SVG 模板
+    ├── references/                # 工作流、矩阵、查新、模板、交付闸门和报告蓝图
+    └── scripts/                   # 矩阵查询、DOCX 生成、成果与技能校验
 ```
 
 ## Roadmap
