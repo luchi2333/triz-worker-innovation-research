@@ -1,4 +1,5 @@
 {
+  "schema_version": "1.1",
   "title": "职工创新技术方案报告",
   "subtitle": "TRIZ 与证据驱动研究",
   "status": "V0 概念研究｜当前允许：代表性短样验证",
@@ -26,9 +27,14 @@
       "blocks": [
         {
           "type": "figure",
+          "figure_id": "FIG-2-1",
+          "figure_type": "F5-motion-sequence",
+          "design_status": "V0",
           "path": "assets/figure-template.svg",
-          "caption": "图2-1 通用概念原理图",
-          "alt": "对象经过受控工具界面后形成目标输出，安全边界位于工具与被保护对象之间。"
+          "caption": "图2-1 通用分层对象受控处理的四阶段工作过程",
+          "alt": "工具依次接近目标层、建立受控界面、施加主作用并形成目标输出；被保护区域与禁止越界面单独标出。",
+          "main_message": "核心动作应拆成连续状态，读者无需依赖长段正文即可理解输入、作用和输出。",
+          "claim_limit": "V0 概念原理图；具体结构、尺寸、材料和安全能力待验证。"
         }
       ]
     }

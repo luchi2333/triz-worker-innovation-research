@@ -103,7 +103,7 @@ Skill 会补齐对象、动作链、边界、测量方法和不能牺牲的约�
 | 候选方案决策表 | 写清“用什么方法解决什么难点”、来源、创新、风险和试验 |
 | 验证与 FMEA | 样本、指标、验收/停止条件、决定性试验和 V0—V3 成熟度 |
 | 效益模型 | 把现场报告、受控实测和情景假设分开，提供可复算公式 |
-| 正式报告 | 决策摘要、主报告、技术证据附件、来源与图示台账、必要插图、DOCX 和可检查交付清单 |
+| 正式报告 | 先建立 Figure Plan，再生成结构/运动/作用/安全图；交付决策摘要、主报告、技术证据附件、台账、DOCX 和可检查清单 |
 
 ## Human-in-the-loop by Design
 
@@ -128,7 +128,8 @@ G0 问题锚定 → G1 TRIZ 建模 → G1.5 用户确认 → G2 深度研究
 - **硬门槛先于评分**：对象身份、证据、适配、类比、安全、专利边界和验证任一关键项失败，成熟度必须降级。
 - **普通模型可执行**：状态机、判断树、填空模板和逐阶段检查卡帮助能力一般的模型稳定推进。
 - **交付不是后补项**：G5 会先探测绘图、DOCX 和渲染能力；能力可用时主动生成，能力缺失时留下错误证据并明确标记降级交付。
-- **成果也能机器检查**：`validate_deliverables.py` 核对文件、图示、检索日志、来源标识、评分成熟度、DOCX 媒体/链接和逐页检查记录。
+- **原理图先规划再生成**：九类工程图回答不同问题；动态机理用 3～6 帧序列，安全风险单独画边界，系统架构图不能冒充机械原理图。
+- **成果也能机器检查**：`validate_deliverables.py` 核对核心图型、SVG/PNG、必需标签、图号、最小字体、图文一致性、检索日志、评分成熟度、DOCX 媒体/链接和逐页检查记录。
 
 ## 安装与兼容
 
@@ -165,7 +166,7 @@ python triz-worker-innovation-research/scripts/build_report.py --self-test
 python triz-worker-innovation-research/scripts/validate_deliverables.py --self-test
 ```
 
-严格校验覆盖文件清单、版本、矩阵哈希、黄金单元、39 个行分片、README 示例、Python/Node 18 组行为一致性，以及 DOCX 生成器和成果校验器的正负向自检。完成实际课题后，复制 `assets/deliverables-manifest-template.json` 到课题输出目录并运行：
+严格校验覆盖文件清单、版本、矩阵哈希、黄金单元、39 个行分片、README 示例、Python/Node 18 组行为一致性，以及 DOCX 生成器和成果校验器的正负向自检。成果清单 schema 1.1 还会验证 Figure Plan、F4/F5/F7/F8 核心图契约和逐页检查证据。完成实际课题后，复制 `assets/deliverables-manifest-template.json` 到课题输出目录并运行：
 
 ```bash
 python triz-worker-innovation-research/scripts/validate_deliverables.py \
@@ -210,6 +211,7 @@ python triz-worker-innovation-research/scripts/validate_deliverables.py \
 - [x] Deep Research、证据分层、验证与 FMEA
 - [x] Python / Node 跨平台回归与 GitHub Actions
 - [x] 中英文首页、公开演示和社区问题模板
+- [x] 工程图规划、动态机理序列、安全边界与图示契约校验
 - [ ] 增加更多公开、脱敏的工程示例
 - [ ] 建立更多 Agent 平台的实测兼容记录
 - [ ] 建立社区贡献的回归问题集

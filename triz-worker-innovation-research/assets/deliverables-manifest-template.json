@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "delivery_level": "standard",
   "status": "blocked",
   "maturity": "V0",
@@ -17,8 +17,25 @@
     {"role": "source-figure-ledger", "path": "04-来源与图示台账.md", "required": true, "opened": false, "rendered": false}
   ],
   "shortlisted_routes": ["R0", "R1"],
+  "primary_routes": ["R1"],
+  "concept_profile": {
+    "primary_engineering_concept": true,
+    "physical_structure": true,
+    "relative_motion": true,
+    "force_energy_transfer": true,
+    "material_deformation": false,
+    "safety_risk": true,
+    "multi_step_operation": true
+  },
+  "figure_plan_frozen": false,
   "figures": [],
   "figure_exemptions": [],
+  "figure_review": {
+    "engineer_view": {"status": "not-checked", "evidence": "尚未执行工程师视角检查"},
+    "first_time_reader_view": {"status": "not-checked", "evidence": "尚未执行遮挡正文的首次阅读者检查"},
+    "figure_text_consistency": {"status": "not-checked", "evidence": "尚未执行图文双向核对"},
+    "black_white_legibility": {"status": "not-checked", "evidence": "尚未执行低饱和或黑白可辨识检查"}
+  },
   "numeric_benefits": false,
   "research_log": {"path": "03-技术证据附件.md", "claimed_queries": 0, "logged_queries": 0},
   "sources": {"cards": 0, "with_stable_identifier": 0, "critical": 0, "with_url": 0},
@@ -29,11 +46,14 @@
     "measurement_method_match": "not-checked",
     "patent_citation_tracking": "not-checked",
     "stage_boundary": "not-checked",
-    "claim_boundary": "not-checked"
+    "claim_boundary": "not-checked",
+    "figure_contract": "not-checked",
+    "caption_numbering": "not-checked"
   },
   "render_summary": {
     "pages": 0,
     "checked_pages": 0,
+    "page_checks": [],
     "blank_pages": [],
     "unresolved_visual_issues": []
   }

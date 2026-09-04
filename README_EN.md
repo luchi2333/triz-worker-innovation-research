@@ -85,7 +85,7 @@ This demo illustrates the workflow. It does not claim field performance, patenta
 | Concept decision table | For every route: method, problem addressed, mechanism, source, novelty boundary, risk and test |
 | Validation and FMEA | Sample, metric, acceptance/stop criteria, decisive experiment and V0–V3 maturity |
 | Benefit model | Separates field reports, controlled measurements and scenario assumptions |
-| Technical report | Decision summary, main report, evidence appendix, source/figure ledger, required figures, DOCX and an inspectable manifest |
+| Technical report | Figure Plan first, then structure/motion/action/safety figures, decision summary, main report, evidence appendix, ledger, DOCX and an inspectable manifest |
 
 ## Human-in-the-loop by Design
 
@@ -105,7 +105,8 @@ The Agent must pause after the first complete TRIZ direction draft. The user can
 - **Hard gates before scoring:** failures in identity, evidence, applicability, transfer, safety, patent scope or validation reduce downstream maturity.
 - **Execution support for ordinary models:** a state machine, decision trees, fill-in templates and stage checks reduce omission and improvisation.
 - **Artifacts are not an afterthought:** G5 probes diagram, DOCX and rendering capabilities first. Available capabilities must be used; real blockers produce an explicit degraded delivery.
-- **Generated work is machine-checkable:** `validate_deliverables.py` checks files, figures, query logs, stable source identifiers, score maturity, DOCX media/links and page-review evidence.
+- **Engineering figures are planned before drawing:** nine figure types answer different questions; dynamic mechanisms use 3–6 frames, safety boundaries are separate, and architecture diagrams cannot stand in for mechanical mechanism figures.
+- **Generated work is machine-checkable:** `validate_deliverables.py` checks required figure types, SVG/PNG pairs, labels, numbering, minimum font size, figure-text consistency, query logs, score maturity, DOCX media/links and page-review evidence.
 
 ## Installation and portability
 
@@ -134,7 +135,7 @@ python triz-worker-innovation-research/scripts/build_report.py --self-test
 python triz-worker-innovation-research/scripts/validate_deliverables.py --self-test
 ```
 
-Strict validation covers the release manifest, version, matrix hash, golden cells, 39 row shards, the README example, 18 Python/Node parity cases, the DOCX builder and the generated-deliverable validator. After a real research run, copy `assets/deliverables-manifest-template.json` into the output directory and run:
+Strict validation covers the release manifest, version, matrix hash, golden cells, 39 row shards, the README example, 18 Python/Node parity cases, the DOCX builder and the generated-deliverable validator. Deliverable schema 1.1 also validates the Figure Plan, F4/F5/F7/F8 core-figure contract and page-level review evidence. After a real research run, copy `assets/deliverables-manifest-template.json` into the output directory and run:
 
 ```bash
 python triz-worker-innovation-research/scripts/validate_deliverables.py \
@@ -162,6 +163,7 @@ This is an **AI-assisted engineering research workflow**, not an automatic inven
 - [x] Deep Research, evidence labels, validation and FMEA
 - [x] Python/Node parity regression and GitHub Actions
 - [x] Bilingual project pages, a public fictional demo and community templates
+- [x] Engineering Figure Planning, motion sequences, safety boundaries and deterministic figure-contract validation
 - [ ] More public, de-identified engineering examples
 - [ ] Tested compatibility records for more Agent platforms
 - [ ] A community-contributed regression problem set

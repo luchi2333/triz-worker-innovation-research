@@ -64,6 +64,7 @@ REQUIRED = [
     "references/engineering-claim-safety-checks.md",
     "references/output-templates.md",
     "references/final-report-blueprint.md",
+    "references/engineering-figure-planning.md",
     "references/delivery-contract.md",
     "references/weak-model-playbook.md",
     "references/standalone-capability-map.md",
@@ -255,6 +256,11 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "交付必须落地",
         "validate_deliverables.py",
         "build_report.py",
+        "engineering-figure-planning.md",
+        "Figure Plan",
+        "核心原理图",
+        "运动序列图",
+        "安全边界图",
     ]:
         if required_phrase not in skill:
             fail(errors, f"SKILL.md missing required contract: {required_phrase}")
@@ -273,6 +279,9 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "必要图示硬门槛",
         "deliverables-manifest.json",
         "替代文本",
+        "Figure Plan",
+        "F4 机理剖面",
+        "F5 运动序列",
     ]:
         if required_phrase not in report:
             fail(errors, f"Final-report blueprint missing: {required_phrase}")
@@ -309,6 +318,8 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "现场否决回灌",
         "能力探测",
         "成果校验器",
+        "十种常见绘图失败",
+        "首次阅读者",
     ]:
         if required_phrase not in weak:
             fail(errors, f"Weak-model playbook missing: {required_phrase}")
@@ -355,6 +366,8 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "build_report.py",
         "G5 交付回执",
         "不得把插图和 Word 留作",
+        "Figure Plan",
+        "架构图",
     ]:
         if required_phrase not in delivery:
             fail(errors, f"Delivery contract missing: {required_phrase}")
@@ -391,9 +404,64 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "一页纸成果速览",
         "会话检查点",
         "暂停点",
+        "Figure Plan 表",
+        "核心原理图描述卡",
     ]:
         if required_phrase not in templates:
             fail(errors, f"Output templates missing: {required_phrase}")
+
+    figure_planning = files.get("references/engineering-figure-planning.md", "")
+    for required_phrase in [
+        "九类工程图",
+        "F1-object-structure",
+        "F4-mechanism-section",
+        "F5-motion-sequence",
+        "F7-safety-boundary",
+        "decision_question",
+        "main_message",
+        "SVG",
+        "PNG",
+        "Figure Review",
+        "3～6 帧",
+        "架构图不能代替",
+    ]:
+        if required_phrase not in figure_planning:
+            fail(errors, f"Engineering figure planning missing: {required_phrase}")
+
+    try:
+        manifest_template = json.loads(files.get("assets/deliverables-manifest-template.json", "{}"))
+    except json.JSONDecodeError as exc:
+        fail(errors, f"Deliverables manifest template is invalid JSON: {exc}")
+        manifest_template = {}
+    if manifest_template.get("schema_version") != "1.1":
+        fail(errors, "Deliverables manifest template must use schema_version 1.1")
+    for key in ["primary_routes", "concept_profile", "figure_plan_frozen", "figure_review"]:
+        if key not in manifest_template:
+            fail(errors, f"Deliverables manifest template missing: {key}")
+    manifest_checks = manifest_template.get("checks", {})
+    for key in ["figure_contract", "caption_numbering"]:
+        if key not in manifest_checks:
+            fail(errors, f"Deliverables manifest template checks missing: {key}")
+
+    try:
+        report_template = json.loads(files.get("assets/report-source-template.json", "{}"))
+    except json.JSONDecodeError as exc:
+        fail(errors, f"Report source template is invalid JSON: {exc}")
+        report_template = {}
+    if report_template.get("schema_version") != "1.1":
+        fail(errors, "Report source template must use schema_version 1.1")
+    figure_blocks = [
+        block
+        for section in report_template.get("sections", [])
+        for block in section.get("blocks", [])
+        if isinstance(block, dict) and block.get("type") == "figure"
+    ]
+    if not figure_blocks:
+        fail(errors, "Report source template must include an engineering figure block")
+    else:
+        for key in ["figure_id", "figure_type", "design_status", "main_message", "claim_limit"]:
+            if key not in figure_blocks[0]:
+                fail(errors, f"Report source template figure missing: {key}")
 
     intake = files.get("references/intake-guide.md", "")
     for required_phrase in [

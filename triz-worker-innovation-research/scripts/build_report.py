@@ -6,8 +6,9 @@ Usage:
     python scripts/build_report.py --self-test
 
 The generator is a deterministic fallback for platforms without a native document
-tool. It supports headings, paragraphs, bullets, tables, PNG/JPEG/SVG figures,
-figure alt text and external source links. A generated file still requires visual
+tool. It supports headings, answer-first key-message paragraphs, bullets, tables,
+PNG/JPEG/SVG figures, engineering-figure metadata, figure takeaways, claim limits,
+alt text and external source links. A generated file still requires visual
 rendering or opening before G5 can be marked complete.
 """
 
@@ -28,6 +29,19 @@ from xml.sax.saxutils import escape, quoteattr
 ROOT = Path(__file__).resolve().parent.parent
 EMU_PER_INCH = 914400
 PAGE_WIDTH_IN = 6.25
+REPORT_SCHEMA_VERSION = "1.1"
+MATURITY_LEVELS = {"V0", "V1", "V2", "V3"}
+FIGURE_TYPES = {
+    "F1-object-structure",
+    "F2-problem-failure",
+    "F3-system-architecture",
+    "F4-mechanism-section",
+    "F5-motion-sequence",
+    "F6-force-energy-material-path",
+    "F7-safety-boundary",
+    "F8-process-operation",
+    "F9-validation-decision",
+}
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", newline="\n")
@@ -109,6 +123,11 @@ def _table(headers: list[object], rows: list[list[object]]) -> str:
     return "".join(xml)
 
 
+def _callout(text: str) -> str:
+    """Render one answer-first message as a normal paragraph, not a decorative box."""
+    return _paragraph(text, bold=True, size=23, before=80, after=180)
+
+
 def _image_dimensions(path: Path) -> tuple[float, float]:
     suffix = path.suffix.lower()
     if suffix == ".png":
@@ -174,10 +193,10 @@ def _styles_xml() -> str:
   <w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Aptos" w:eastAsia="Microsoft YaHei" w:hAnsi="Aptos"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="zh-CN" w:eastAsia="zh-CN"/></w:rPr></w:rPrDefault>
   <w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="330" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
   <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
-  <w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:jc w:val="center"/><w:spacing w:before="900" w:after="240"/></w:pPr><w:rPr><w:b/><w:color w:val="102A43"/><w:sz w:val="48"/><w:szCs w:val="48"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="Subtitle"><w:name w:val="Subtitle"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:jc w:val="center"/><w:spacing w:after="300"/></w:pPr><w:rPr><w:color w:val="147D92"/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="300" w:after="120"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:color w:val="102A43"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="220" w:after="100"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:color w:val="147D92"/><w:sz w:val="26"/><w:szCs w:val="26"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:jc w:val="center"/><w:spacing w:before="900" w:after="240"/></w:pPr><w:rPr><w:b/><w:color w:val="000000"/><w:sz w:val="48"/><w:szCs w:val="48"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Subtitle"><w:name w:val="Subtitle"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:jc w:val="center"/><w:spacing w:after="300"/></w:pPr><w:rPr><w:color w:val="000000"/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="300" w:after="120"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="220" w:after="100"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:color w:val="000000"/><w:sz w:val="26"/><w:szCs w:val="26"/></w:rPr></w:style>
   <w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:rPr><w:color w:val="0563C1"/><w:u w:val="single"/></w:rPr></w:style>
   <w:style w:type="paragraph" w:styleId="Caption"><w:name w:val="Caption"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:jc w:val="center"/><w:spacing w:after="160"/></w:pPr><w:rPr><w:color w:val="486581"/><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>
 </w:styles>"""
@@ -185,6 +204,8 @@ def _styles_xml() -> str:
 
 def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
     data = json.loads(source_path.read_text(encoding="utf-8"))
+    if data.get("schema_version") != REPORT_SCHEMA_VERSION:
+        raise ValueError(f"schema_version must be {REPORT_SCHEMA_VERSION}")
     title = str(data.get("title", "技术方案报告")).strip()
     if not title:
         raise ValueError("title cannot be empty")
@@ -223,6 +244,13 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
             kind = block.get("type")
             if kind == "paragraph":
                 body.append(_paragraph(str(block.get("text", ""))))
+            elif kind == "key_message":
+                message = str(block.get("text", "")).strip()
+                if not message:
+                    raise ValueError("key_message text cannot be empty")
+                body.append(_callout(message))
+            elif kind == "page_break":
+                body.append(_page_break())
             elif kind == "bullets":
                 for item in block.get("items", []):
                     body.append(_paragraph(f"• {item}", after=70))
@@ -240,8 +268,19 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
                     raise ValueError(f"unsupported figure type: {path.suffix}")
                 alt = str(block.get("alt", "")).strip()
                 caption = str(block.get("caption", "")).strip()
-                if not alt or not caption:
-                    raise ValueError(f"figure requires caption and alt text: {path}")
+                figure_id = str(block.get("figure_id", "")).strip()
+                figure_type = str(block.get("figure_type", "")).strip()
+                design_status = str(block.get("design_status", "")).strip()
+                main_message = str(block.get("main_message", "")).strip()
+                claim_limit = str(block.get("claim_limit", "")).strip()
+                if not alt or not caption or not figure_id:
+                    raise ValueError(f"figure requires figure_id, caption and alt text: {path}")
+                if figure_type not in FIGURE_TYPES:
+                    raise ValueError(f"unsupported figure_type for {figure_id}: {figure_type}")
+                if design_status not in MATURITY_LEVELS:
+                    raise ValueError(f"design_status must be V0-V3 for {figure_id}")
+                if len(main_message) < 8 or len(claim_limit) < 8:
+                    raise ValueError(f"figure requires main_message and claim_limit: {figure_id}")
                 rel_id = f"rId{rel_counter}"
                 rel_counter += 1
                 target_name = f"image{len(media) + 1}.{suffix}"
@@ -253,7 +292,10 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
                 body.append(_figure_xml(rel_id, doc_pr_id, path, alt))
                 doc_pr_id += 1
                 figure_count += 1
-                body.append(_paragraph(caption, style="Caption", size=19, align="center"))
+                caption_text = caption if design_status in caption else f"{caption}（{design_status} 概念原理图）"
+                body.append(_paragraph(caption_text, style="Caption", size=19, align="center", after=70))
+                body.append(_paragraph(f"图示要点：{main_message}", bold=True, color="102A43", size=19, after=55))
+                body.append(_paragraph(f"证据边界：{claim_limit}", color="627D98", size=18, after=150))
 
     sources = data.get("sources", [])
     source_count = 0
@@ -338,6 +380,7 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
         "output": str(output_path),
         "bytes": output_path.stat().st_size,
         "figures": figure_count,
+        "figure_metadata_complete": True,
         "sources": source_count,
         "visual_verification_required": True,
     }
@@ -355,6 +398,7 @@ def self_test() -> None:
         source.write_text(
             json.dumps(
                 {
+                    "schema_version": "1.1",
                     "title": "自检技术报告",
                     "status": "V0 概念研究",
                     "sections": [
@@ -364,7 +408,17 @@ def self_test() -> None:
                             "blocks": [
                                 {"type": "paragraph", "text": "自检段落"},
                                 {"type": "table", "headers": ["方法", "难点"], "rows": [["受控作用", "降低失效"]]},
-                                {"type": "figure", "path": "figure.svg", "caption": "图1 自检图", "alt": "自检作用机理图"},
+                                {
+                                    "type": "figure",
+                                    "figure_id": "FIG-1-1",
+                                    "figure_type": "F4-mechanism-section",
+                                    "design_status": "V0",
+                                    "path": "figure.svg",
+                                    "caption": "图1-1 自检作用机理图",
+                                    "alt": "自检对象、工具界面、作用方向和被保护区域。",
+                                    "main_message": "受控工具界面把输入作用传递给目标对象。",
+                                    "claim_limit": "V0 概念机理，结构与效果尚未验证。"
+                                },
                             ],
                         }
                     ],
@@ -383,9 +437,10 @@ def self_test() -> None:
             assert "word/media/image1.svg" in names
             document = package.read("word/document.xml").decode("utf-8")
             rels = package.read("word/_rels/document.xml.rels").decode("utf-8")
-            assert 'descr="自检作用机理图"' in document
+            assert "自检对象、工具界面、作用方向和被保护区域" in document
+            assert "图示要点" in document and "证据边界" in document
             assert 'TargetMode="External"' in rels
-        assert result["figures"] == 1 and result["sources"] == 1
+        assert result["figures"] == 1 and result["sources"] == 1 and result["figure_metadata_complete"] is True
     print("REPORT_SELF_TEST_PASS")
 
 

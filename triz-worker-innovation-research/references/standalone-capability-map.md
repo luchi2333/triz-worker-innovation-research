@@ -33,7 +33,7 @@
 | 现场资料伦理与授权 | `deep-research-protocol.md` 的方法适配与现场数据伦理 | 授权、脱敏和试验许可边界 | 未授权访谈/录像/现场试验不写成已完成实证 |
 | 社会与经济效益 | `final-report-blueprint.md`、`output-templates.md` | 参数表、公式、区间和敏感性分析 | 实测、现场报告、假设分别标记，不伪造基线 |
 | 报告综合与编辑 | `final-report-blueprint.md` | 决策摘要、主报告、证据附件、来源/图表台账 | 摘要技术导向；正文完整；证据可追溯 |
-| 视觉与文档质量 | `delivery-contract.md`、`final-report-blueprint.md` | 原理图、流程图、装配关系图、DOCX 及交付清单 | 能力已实测；必要图示和正式文件已生成；文档逐页检查；成果校验通过 |
+| 视觉与文档质量 | `delivery-contract.md`、`engineering-figure-planning.md`、`final-report-blueprint.md` | Figure Plan、结构/运动/作用/安全图、SVG/PNG、DOCX 及交付清单 | 核心方案不是只有架构图；图号/标签/字体/图文一致性通过；文档逐页检查；成果校验通过 |
 | 普通模型稳定执行 | `weak-model-playbook.md` | 进度卡、逐门检查、两轮最终复核 | 不跳阶段、不凭记忆查矩阵、不自动越过用户确认门 |
 
 ## 二、与通用深度研究流程的等效角色
@@ -56,7 +56,7 @@
 | PDF/网页读取 | 原文解析或浏览器 | 下载后文本提取；无法读取时只记录题录并标“未核全文” | 根据标题猜测结论 |
 | 矩阵查询 | Python 或 Node 脚本 | 只读取 `references/matrix-rows/R{改善}.md` 行分片定位目标列，并交叉复核反向单元 | 凭记忆或二手网页返回原理 |
 | 数据计算 | 表格或脚本 | 写出公式后手工复算关键数字 | 只给收益结论而无参数和公式 |
-| 原理图 | CAD/绘图/图像生成工具 | 流程/因果图可用 Mermaid；机理/几何图用 SVG、平台原生可编辑图形或带编号的文字结构图（选型规则见 `final-report-blueprint.md` §5.1） | 把概念图标为制造图、施工图；用 Mermaid 表达复杂机械空间结构 |
+| 原理图 | CAD/绘图/图像生成工具 | 先按 `engineering-figure-planning.md` 写 Figure Plan；流程/因果图可用 Mermaid，机理/几何图用 SVG 或原生可编辑图形；动态动作拆成 3～6 帧 | 把架构图当原理图；把概念图标为制造图；用 Mermaid 表达复杂机械空间结构 |
 | DOCX/PDF | 平台原生文档工具；或 `scripts/build_report.py` 标准库兜底 | 实测两种路径均不可用后，交付完整 Markdown 与独立图表文件并标 `degraded` | 未探测能力就省略 Word；因无文档工具删减内容或证据 |
 | 多智能体 | 并行角色 | 单模型按五角色串行执行 | 删除反对者或来源核验环节 |
 
@@ -69,7 +69,7 @@
 3. **G1.5 确认**：只保留方向稿与确认卡所需内容，等待用户回复。
 4. **G2/G3 深研与选型**：`deep-research-protocol.md` + `output-templates.md`，并执行 `engineering-claim-safety-checks.md` 全文闸门。
 5. **G4 验证**：`research-workflow.md` 的 G4 与 V0—V3 小节 + `engineering-claim-safety-checks.md` 的验证一致性门。
-6. **G5 报告**：先读 `delivery-contract.md` 做能力探测，再按 `final-report-blueprint.md` 组装成果；文档能力可用时无需用户追问，主动生成 DOCX 和必要图示。
+6. **G5 报告**：先读 `delivery-contract.md` 做能力探测，再读 `engineering-figure-planning.md` 冻结 Figure Plan，最后按 `final-report-blueprint.md` 组装成果；文档能力可用时无需用户追问，主动生成 SVG/PNG、DOCX 和必要图示。
 7. **交付前**：复制 `assets/deliverables-manifest-template.json` 填写实际结果，运行 `scripts/validate_deliverables.py --strict`；`validate_skill.py` 只验证技能包，不能替代成果校验。
 
 模型每完成一个阶段，只保留“进度卡 + 已确认事实 + 决策 + 证据台账索引”进入下一阶段，避免把大段搜索材料直接塞进最终写作上下文。
@@ -83,7 +83,7 @@
 - 原始标识冻结、适配/类比检查和 I/E/A/T/S/P/V 七道闸门；
 - 39×39 矩阵数据和确定性查询；
 - 七轨逐条检索日志、来源五维核验和命题级证据矩阵；
-- G5 能力探测、必要图示、DOCX、交付清单和成果校验；
+- G5 能力探测、Figure Plan、核心 F4/F5/F7/F8 图契约、SVG/PNG、DOCX、交付清单和成果校验；
 - 三次反对者检查与推翻条件；
 - 已有技术、场景集成、候选创新三者分栏；
 - 安全/质量硬门槛优先；

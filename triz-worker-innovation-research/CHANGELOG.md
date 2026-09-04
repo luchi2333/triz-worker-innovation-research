@@ -2,6 +2,27 @@
 
 本文件记录 TRIZ 职工创新研究 Skill 的公开发布版本。版本号遵循语义化版本（semver）。
 
+## [2.4.0] - 2026-09-04
+
+### 新增（Engineering Figure Planning）
+
+- 新增 `references/engineering-figure-planning.md`，用九类工程图、Figure Plan、统一视觉语义和双视角复核回答“应画什么、为什么画、怎样证明图有效”，而不是把插图当作报告美化。
+- 核心实体/动态方案强制拆分为 F4 机理剖面、F5 三至六帧运动序列；存在安全风险时增加 F7 安全边界，连续工序增加 F8 操作流程。F3 系统架构图不再允许代替机械原理图。
+- 通用 SVG 模板升级为四阶段动态机理示例，直接展示工具、目标层、主作用、被保护对象、禁止越界面与候选屏障状态，不含任何真实案例内容。
+
+### 改进（报告信息结构）
+
+- 决策摘要压缩为 2～3 页口径，第一页即呈现推荐方案总图或核心动作图；主报告把详细矩阵、检索日志和图示审计移入附件，正文优先问题、推荐、原理、结构、动作、安全和验证。
+- G5 内部明确为 Report Planning → Engineering Figure Planning → Report Assembly → Visual QA → Final Delivery，不新增第二套阶段编号。
+- 核心原理章节采用“图 + 100～250 字说明”，图后自动生成“图示要点”和一行证据边界，减少大段纯文字和跨章重复。
+
+### 加固（可确定性验收）
+
+- `deliverables-manifest.json` 升级到 schema 1.1，增加 `concept_profile`、`primary_routes`、完整 Figure Plan、Figure Review 和逐页 `page_checks`。
+- `validate_deliverables.py` 增加核心图契约、路线覆盖、F5 帧数、SVG/PNG 双格式、章节图号、主报告图题、必需标签、SVG 尺寸/title/desc、最小字体和纯框图警告；新增架构图冒充原理图、缺运动图、缺安全图、缺标签、图号倒序和超小字体负向自检。
+- `build_report.py` 的报告源升级为 schema 1.1，支持结论提示、工程图类型、V0—V3 图示状态、图示要点和证据边界。
+- 经典 39×39 矩阵、39 参数、40 原理、Python/Node/行分片三种查询路径和 G0—G5 主流程均未改变。
+
 ## [2.3.0] - 2026-09-03
 
 ### 新增（G5 主动交付闭环）

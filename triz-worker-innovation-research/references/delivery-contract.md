@@ -9,14 +9,15 @@
 | 能力 | 状态 | 最小探测动作 | 结果证据 |
 |---|---|---|---|
 | 文件写入 | available / unavailable | 在项目输出目录创建并重新读取一个 UTF-8 小文件 | 路径、读取结果或错误原文 |
-| 图示生成 | available / unavailable | 生成一个含中文、箭头和图题的 SVG 或平台原生图形 | 文件路径或工具结果 |
+| SVG 工程图生成 | available / unavailable | 生成一个含中文、箭头、图题、`title/desc` 的 SVG | SVG 路径、重新读取结果或错误原文 |
+| PNG 图示渲染 | available / unavailable | 把同一 SVG 渲染为 PNG 并打开 | PNG 路径、像素尺寸或错误原文 |
 | DOCX 生成 | available / unavailable | 优先探测平台文档工具；否则运行 `scripts/build_report.py --self-test` | 工具结果或自检输出 |
-| 打开/渲染 | available / unavailable | 打开或渲染一页测试文档 | 预览、页图路径或错误原文 |
+| 文档打开/渲染 | available / unavailable | 打开或渲染一页测试文档 | 预览、页图路径或错误原文 |
 
 规则：
 
 1. `not-checked` 不等于 unavailable；未探测时不得走降级路径。
-2. 能力 available 时必须使用，不得因为 Markdown 已完成而省略图示或 DOCX。
+2. 能力 available 时必须使用，不得因为 Markdown 已完成而省略图示或 DOCX；SVG 与 PNG 必须来自同一版本。
 3. 能力 unavailable 时保留错误原文，交付完整 Markdown/CSV/SVG 或 PNG，并把状态写为 `degraded`，不得写 `complete`。
 4. 用户明确只要某一种格式时可合并文件，但四类内容角色仍须在交付清单中逐项映射。
 
@@ -32,7 +33,9 @@
 
 若文档能力 available，`main-report` 必须包含 DOCX；源 Markdown 同时保留，便于复核与后续修改。不得等用户再次提出“做成 Word”。
 
-## 3. 必要图示硬门槛
+## 3. Figure Plan 与必要图示硬门槛
+
+生成图片前完整读取 [engineering-figure-planning.md](engineering-figure-planning.md)，先在 manifest 中填写并冻结 Figure Plan。每张图必须说明“回答什么问题、唯一主信息、事实/来源/假设/未知、动作/作用、安全边界、证据、V0—V3 状态、SVG 源和 PNG 渲染”。架构图不得代替实体机械方案的机理剖面或运动序列图。
 
 除非某图确实不适用并在 manifest 的 `figure_exemptions` 中给出技术理由，至少生成：
 
@@ -46,16 +49,21 @@
 
 每张图必须有图号、题名、替代文本、文件路径、生成/来源说明、概念图边界和所覆盖的路线编号。缺任一入选路线机理图时，G5 不通过。
 
+若核心推荐方案包含实体结构、相对运动、作用传递或材料变形，还必须具备 F4 机理剖面与 3～6 帧 F5 运动序列；存在安全风险时增加 F7 安全边界；包含连续工序时增加 F8 操作流程。核心推荐路线只交付 F3 系统架构图时直接不通过。
+
 ## 4. 交付清单
 
 复制并填写 `assets/deliverables-manifest-template.json`。关键字段：
 
 - `delivery_level`：direction / standard / engineering；
 - `status`：complete / degraded / blocked；
-- `capabilities`：四项能力探测结果和证据；
+- `capabilities`：文件、图示、DOCX 和渲染能力探测结果与证据；图示证据须覆盖 SVG 生成和 PNG 渲染；
 - `artifacts`：角色、路径、是否必需、是否打开、是否渲染；
 - `shortlisted_routes`：进入最终比较的路线编号；
-- `figures`：类型、路线覆盖、替代文本和台账状态；
+- `concept_profile`：核心方案是否包含实体、运动、作用传递、材料变形、安全风险和多步骤操作；
+- `figure_plan_frozen`：进入排版前 Figure Plan 是否冻结；
+- `figures`：图号、交付角色、F1—F9 图型、决策问题、主信息、事实/假设、必需标签、路线覆盖、SVG/PNG、证据边界和台账状态；
+- `figure_review`：工程师视角、首次阅读者视角、图文一致性和黑白可读性；图示能力可用时四项必须为 `pass`，图示能力不可用且交付已降级时四项必须为 `not-applicable` 并写明原因；
 - `research_log`：宣称检索数与实际逐条日志数；
 - `sources`：来源卡数、稳定标识数和关键来源数；
 - `score_rows`：每个分数的锚点成熟度与实际证据成熟度；
@@ -79,6 +87,9 @@ python scripts/validate_deliverables.py --root <项目输出目录> --manifest <
 - 四类成果与文件路径是否存在；
 - 能力 available 时是否真的生成 DOCX/图示并打开或渲染；
 - 必要图示、路线覆盖、替代文本和图示台账；
+- 核心方案的 F4/F5/F7/F8 图示契约，以及 F5 的 3～6 帧要求；
+- SVG 的尺寸/viewBox、title/desc、必需标签、过小字体和“纯框图冒充机械原理图”警告；
+- SVG 单一来源与 PNG 渲染、章节图号递增、图题是否实际进入主报告；
 - 检索数量是否等于逐条日志数；
 - 关键来源是否具有 URL、DOI、标准号、专利号或其他稳定标识；
 - 评分证据成熟度是否达到该分值锚点，未知项是否被违规赋分；
@@ -98,7 +109,7 @@ python scripts/build_report.py \
   --output <最终技术方案报告.docx>
 ```
 
-输入结构见 `assets/report-source-template.json`。生成器支持标题、状态行、段落、列表、表格、PNG/JPEG/SVG 插图、替代文本和外部来源链接。它是跨平台兜底，不替代平台具备的高质量原生排版工具。
+输入结构见 `assets/report-source-template.json`。生成器支持标题、状态行、结论提示、段落、列表、表格、PNG/JPEG/SVG 插图、F1—F9 图型、V0—V3 状态、图示要点、证据边界、替代文本和外部来源链接。它是跨平台兜底，不替代平台具备的高质量原生排版工具。
 
 生成后仍必须打开或渲染；仅有一个可解压的 DOCX 不等于视觉验收通过。
 
@@ -126,13 +137,15 @@ G5 交付回执
 普通模型在 G5 不自行改序：
 
 1. 修正正文中的冲突和旧结论；
-2. 生成所有必要图示；
-3. 生成四类成果内容；
-4. 生成 DOCX 或记录真实能力阻断；
-5. 建立 `deliverables-manifest.json`；
-6. 打开/渲染并逐页检查；
-7. 修复后重新生成与复查；
-8. 运行成果校验器；
-9. 输出 G5 交付回执。
+2. 写 `concept_profile`，建立并冻结 Figure Plan；
+3. 分别生成核心结构/机理、运动序列、作用路径和适用的安全边界图；
+4. 由工程师视角和首次阅读者视角执行 Figure Review，修复图文冲突；
+5. 生成四类成果内容；
+6. 生成 DOCX 或记录真实能力阻断；
+7. 完成 `deliverables-manifest.json`；
+8. 打开/渲染并逐页填写 `page_checks`；
+9. 修复后重新生成与复查；
+10. 运行成果校验器；
+11. 输出 G5 交付回执。
 
 任何一步失败均回到对应步骤修复，不得把插图和 Word 留作“后续扩展”。

@@ -1,7 +1,7 @@
 interface:
   display_name: "TRIZ 职工创新研究"
   short_description: "独立完成矛盾矩阵检索、深度查新、工程硬闸门验证与技术报告编制"
-  default_prompt: "请使用 $triz-worker-innovation-research 研究这个一线职工创新问题，按阶段推进，并在标准交付时主动生成图示、DOCX 和交付清单。"
+  default_prompt: "请使用 $triz-worker-innovation-research 研究这个一线职工创新问题，按阶段推进；标准交付时先规划结构、运动和安全图，再生成 DOCX 并完成逐页验收。"
 
 policy:
   allow_implicit_invocation: true

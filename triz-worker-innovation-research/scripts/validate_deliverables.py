@@ -13,6 +13,7 @@ validate_skill.py validates the reusable Skill package itself.
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import re
 import subprocess
@@ -24,6 +25,7 @@ from xml.etree import ElementTree as ET
 
 
 CAPABILITY_STATES = {"available", "unavailable", "not-checked"}
+SCHEMA_VERSION = "1.1"
 DELIVERY_LEVELS = {"direction", "standard", "engineering"}
 DELIVERY_STATUS = {"complete", "degraded", "blocked"}
 MATURITY_RANK = {"V0": 0, "V1": 1, "V2": 2, "V3": 3}
@@ -44,6 +46,45 @@ CHECK_NAMES = {
     "patent_citation_tracking",
     "stage_boundary",
     "claim_boundary",
+    "figure_contract",
+    "caption_numbering",
+}
+FIGURE_REVIEW_NAMES = {
+    "engineer_view",
+    "first_time_reader_view",
+    "figure_text_consistency",
+    "black_white_legibility",
+}
+FIGURE_TYPES = {
+    "F1-object-structure",
+    "F2-problem-failure",
+    "F3-system-architecture",
+    "F4-mechanism-section",
+    "F5-motion-sequence",
+    "F6-force-energy-material-path",
+    "F7-safety-boundary",
+    "F8-process-operation",
+    "F9-validation-decision",
+}
+FIGURE_LIST_FIELDS = {
+    "confirmed_elements",
+    "hypothetical_elements",
+    "unknown_elements",
+    "motions",
+    "forces",
+    "energy_flows",
+    "protected_objects",
+    "hazards",
+    "safety_barriers",
+    "labels_required",
+    "evidence_ids",
+    "routes",
+    "embedded_in",
+}
+MECHANICAL_FIGURE_TYPES = {
+    "F4-mechanism-section",
+    "F5-motion-sequence",
+    "F7-safety-boundary",
 }
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 CLAIM_PATTERNS: list[tuple[re.Pattern[str], str]] = [
@@ -151,6 +192,88 @@ def _check_docx(path: Path, expected_figures: int, require_external_links: bool,
     return result
 
 
+def _svg_number(value: str) -> float | None:
+    match = re.match(r"\s*([0-9]+(?:\.[0-9]+)?)", value)
+    return float(match.group(1)) if match else None
+
+
+def _check_svg(path: Path, item: dict, errors: list[str], warnings: list[str]) -> dict[str, object]:
+    figure_id = str(item.get("id", ""))
+    result: dict[str, object] = {"id": figure_id, "path": path.name, "labels": 0, "min_font_size": None}
+    try:
+        root = ET.parse(path).getroot()
+    except (OSError, ET.ParseError) as exc:
+        _fail(errors, f"SVG parse failed for {figure_id}: {exc}")
+        return result
+
+    for attribute in ["width", "height", "viewBox"]:
+        if not str(root.attrib.get(attribute, "")).strip():
+            _fail(errors, f"SVG missing {attribute}: {figure_id}")
+
+    local_names = [node.tag.rsplit("}", 1)[-1] for node in root.iter()]
+    if "title" not in local_names or "desc" not in local_names:
+        _fail(errors, f"SVG requires title and desc: {figure_id}")
+    text_values = ["".join(node.itertext()).strip() for node in root.iter() if node.tag.rsplit("}", 1)[-1] == "text"]
+    combined_text = "\n".join(text_values)
+    result["labels"] = len([value for value in text_values if value])
+
+    for label in item.get("labels_required", []):
+        if str(label).strip() and str(label).strip() not in combined_text:
+            _fail(errors, f"required SVG label missing for {figure_id}: {label}")
+
+    font_sizes: list[float] = []
+    for node in root.iter():
+        direct = _svg_number(str(node.attrib.get("font-size", "")))
+        if direct is not None:
+            font_sizes.append(direct)
+        style = str(node.attrib.get("style", ""))
+        style_match = re.search(r"font-size\s*:\s*([0-9]+(?:\.[0-9]+)?)", style)
+        if style_match:
+            font_sizes.append(float(style_match.group(1)))
+    if font_sizes:
+        minimum = min(font_sizes)
+        result["min_font_size"] = minimum
+        if minimum < 6:
+            _fail(errors, f"SVG font-size below 6 for {figure_id}: {minimum}")
+        elif minimum < 8:
+            warnings.append(f"SVG font-size below 8 for {figure_id}: {minimum}")
+
+    if item.get("figure_type") in MECHANICAL_FIGURE_TYPES:
+        structural_shapes = {"path", "circle", "ellipse", "polygon", "polyline"}
+        if not structural_shapes.intersection(local_names):
+            warnings.append(f"mechanical figure may be a box-only diagram: {figure_id}")
+
+    if item.get("figure_type") == "F5-motion-sequence":
+        frame_count = item.get("frame_count")
+        if not isinstance(frame_count, int) or not 3 <= frame_count <= 6:
+            _fail(errors, f"motion sequence frame_count must be 3-6: {figure_id}")
+
+    return result
+
+
+def _check_figure_numbering(figures: list[dict], errors: list[str]) -> None:
+    previous_chapter = -1
+    previous_index = 0
+    seen: set[str] = set()
+    for position, item in enumerate(figures):
+        number = str(item.get("number", "")).strip()
+        chapter = item.get("chapter")
+        match = re.fullmatch(r"(\d+)-(\d+)", number)
+        if not match or not isinstance(chapter, int):
+            _fail(errors, f"figure[{position}] requires numeric chapter and number like 6-1")
+            continue
+        number_chapter, number_index = int(match.group(1)), int(match.group(2))
+        if number_chapter != chapter:
+            _fail(errors, f"figure number does not match chapter: {number} vs chapter {chapter}")
+        if number in seen:
+            _fail(errors, f"duplicated figure number: {number}")
+        seen.add(number)
+        if chapter < previous_chapter or (chapter == previous_chapter and number_index <= previous_index):
+            _fail(errors, f"figure numbers are not increasing at: {number}")
+        previous_index = number_index if chapter == previous_chapter else number_index
+        previous_chapter = chapter
+
+
 def validate(root: Path, manifest: dict, strict: bool = False) -> dict[str, object]:
     root = root.resolve()
     errors: list[str] = []
@@ -158,8 +281,8 @@ def validate(root: Path, manifest: dict, strict: bool = False) -> dict[str, obje
     checked_files: list[str] = []
     docx_results: list[dict[str, int | str]] = []
 
-    if manifest.get("schema_version") != "1.0":
-        _fail(errors, "schema_version must be 1.0")
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        _fail(errors, f"schema_version must be {SCHEMA_VERSION}")
     level = manifest.get("delivery_level")
     if level not in DELIVERY_LEVELS:
         _fail(errors, f"invalid delivery_level: {level}")
@@ -232,13 +355,34 @@ def validate(root: Path, manifest: dict, strict: bool = False) -> dict[str, obje
         if not main_docx:
             _fail(errors, "DOCX capability is available but main-report has no DOCX")
 
+    profile = manifest.get("concept_profile")
+    if not isinstance(profile, dict):
+        _fail(errors, "concept_profile must be an object")
+        profile = {}
+    for name in [
+        "primary_engineering_concept",
+        "physical_structure",
+        "relative_motion",
+        "force_energy_transfer",
+        "material_deformation",
+        "safety_risk",
+        "multi_step_operation",
+    ]:
+        if not isinstance(profile.get(name), bool):
+            _fail(errors, f"concept_profile.{name} must be boolean")
+    if manifest.get("figure_plan_frozen") is not True:
+        _fail(errors, "Figure Plan is not frozen")
+
     figures = manifest.get("figures")
     if not isinstance(figures, list):
         _fail(errors, "figures must be an array")
         figures = []
     figure_types: set[str] = set()
+    engineering_types: set[str] = set()
     figure_ids: set[str] = set()
     route_coverage: set[str] = set()
+    route_engineering_types: dict[str, set[str]] = {}
+    svg_results: list[dict[str, object]] = []
     for index, item in enumerate(figures):
         if not isinstance(item, dict):
             _fail(errors, f"figure[{index}] must be an object")
@@ -249,9 +393,37 @@ def validate(root: Path, manifest: dict, strict: bool = False) -> dict[str, obje
         figure_ids.add(figure_id)
         figure_type = str(item.get("type", "")).strip()
         figure_types.add(figure_type)
+        engineering_type = str(item.get("figure_type", "")).strip()
+        if engineering_type not in FIGURE_TYPES:
+            _fail(errors, f"figure[{index}] invalid figure_type: {engineering_type}")
+        engineering_types.add(engineering_type)
+        for field in ["title", "decision_question", "main_message", "subject", "claim_limit"]:
+            minimum = 4 if field == "title" else 8
+            if len(str(item.get(field, "")).strip()) < minimum:
+                _fail(errors, f"figure[{index}] missing meaningful {field}: {figure_id}")
+        design_status = item.get("design_status")
+        if design_status not in MATURITY_RANK:
+            _fail(errors, f"figure[{index}] design_status must be V0-V3: {figure_id}")
+        for field in sorted(FIGURE_LIST_FIELDS):
+            if not isinstance(item.get(field), list):
+                _fail(errors, f"figure[{index}] {field} must be an array: {figure_id}")
+        if item.get("required") is not True:
+            _fail(errors, f"manifest figures must explicitly declare required=true: {figure_id}")
         path = _safe_path(root, item.get("path"), errors, f"figure[{index}]")
         if path is not None:
             checked_files.append(str(path.relative_to(root)))
+        svg_path = _safe_path(root, item.get("source_svg"), errors, f"figure[{index}].source_svg")
+        png_path = _safe_path(root, item.get("render_png"), errors, f"figure[{index}].render_png")
+        if svg_path is not None:
+            checked_files.append(str(svg_path.relative_to(root)))
+            if svg_path.suffix.lower() != ".svg":
+                _fail(errors, f"figure source_svg is not SVG: {figure_id}")
+            else:
+                svg_results.append(_check_svg(svg_path, item, errors, warnings))
+        if png_path is not None:
+            checked_files.append(str(png_path.relative_to(root)))
+            if png_path.suffix.lower() != ".png":
+                _fail(errors, f"figure render_png is not PNG: {figure_id}")
         if len(str(item.get("alt", "")).strip()) < 8:
             _fail(errors, f"figure alt text missing: {figure_id}")
         if item.get("ledgered") is not True:
@@ -261,6 +433,10 @@ def validate(root: Path, manifest: dict, strict: bool = False) -> dict[str, obje
             _fail(errors, f"figure not embedded in main-report: {figure_id}")
         if figure_type == "solution-mechanism":
             route_coverage.update(str(route) for route in item.get("routes", []))
+        for route in item.get("routes", []):
+            route_engineering_types.setdefault(str(route), set()).add(engineering_type)
+
+    _check_figure_numbering([item for item in figures if isinstance(item, dict)], errors)
 
     exemptions = manifest.get("figure_exemptions", [])
     exemption_types: set[str] = set()
@@ -287,6 +463,44 @@ def validate(root: Path, manifest: dict, strict: bool = False) -> dict[str, obje
         for route in manifest.get("shortlisted_routes", []):
             if str(route) not in route_coverage:
                 _fail(errors, f"shortlisted route lacks mechanism figure: {route}")
+
+        primary_routes = manifest.get("primary_routes", [])
+        if not isinstance(primary_routes, list) or not primary_routes:
+            _fail(errors, "primary_routes must identify at least one recommended route")
+            primary_routes = []
+        if profile.get("primary_engineering_concept") is True and any(
+            profile.get(name) is True
+            for name in ["physical_structure", "relative_motion", "force_energy_transfer", "material_deformation"]
+        ):
+            for required_type in ["F4-mechanism-section", "F5-motion-sequence"]:
+                if required_type not in engineering_types:
+                    _fail(errors, f"primary engineering concept missing {required_type}")
+            for route in primary_routes:
+                present = route_engineering_types.get(str(route), set())
+                for required_type in ["F4-mechanism-section", "F5-motion-sequence"]:
+                    if required_type not in present:
+                        _fail(errors, f"primary route {route} missing {required_type}")
+        if profile.get("safety_risk") is True:
+            if "F7-safety-boundary" not in engineering_types:
+                _fail(errors, "safety risk declared but F7-safety-boundary is missing")
+            for route in primary_routes:
+                if "F7-safety-boundary" not in route_engineering_types.get(str(route), set()):
+                    _fail(errors, f"primary route {route} missing F7-safety-boundary")
+        if profile.get("multi_step_operation") is True and "F8-process-operation" not in engineering_types:
+            _fail(errors, "multi-step operation declared but F8-process-operation is missing")
+
+    review = manifest.get("figure_review")
+    if not isinstance(review, dict):
+        _fail(errors, "figure_review must be an object")
+        review = {}
+    expected_review_status = "pass" if capability_values.get("diagram") == "available" else "not-applicable"
+    for name in sorted(FIGURE_REVIEW_NAMES):
+        item = review.get(name)
+        if not isinstance(item, dict) or item.get("status") != expected_review_status:
+            _fail(errors, f"figure review status must be {expected_review_status}: {name}")
+            continue
+        if len(str(item.get("evidence", "")).strip()) < 8:
+            _fail(errors, f"figure review evidence missing: {name}")
 
     research_log = manifest.get("research_log")
     if not isinstance(research_log, dict):
@@ -360,6 +574,23 @@ def validate(root: Path, manifest: dict, strict: bool = False) -> dict[str, obje
             _fail(errors, "render_summary.pages must be positive")
         if checked_pages != pages:
             _fail(errors, f"not all pages visually checked: {checked_pages}/{pages}")
+        page_checks = render.get("page_checks")
+        if not isinstance(page_checks, list) or len(page_checks) != pages:
+            _fail(errors, f"page_checks must contain one row per rendered page: {len(page_checks) if isinstance(page_checks, list) else 0}/{pages}")
+        else:
+            seen_pages: set[int] = set()
+            for item in page_checks:
+                if not isinstance(item, dict):
+                    _fail(errors, "page_checks entries must be objects")
+                    continue
+                page = item.get("page")
+                if not isinstance(page, int) or page < 1 or page > pages or page in seen_pages:
+                    _fail(errors, f"invalid or duplicate page check: {page}")
+                seen_pages.add(page)
+                if item.get("status") != "pass":
+                    _fail(errors, f"rendered page not passed: {page}")
+                if len(str(item.get("evidence", "")).strip()) < 4:
+                    _fail(errors, f"page check evidence missing: {page}")
         if render.get("blank_pages"):
             _fail(errors, f"blank pages remain: {render.get('blank_pages')}")
         if render.get("unresolved_visual_issues"):
@@ -368,6 +599,21 @@ def validate(root: Path, manifest: dict, strict: bool = False) -> dict[str, obje
     claim_hits = 0
     for path in dict.fromkeys(public_paths):
         claim_hits += _check_claims(path, errors)
+
+    report_text = "\n".join(
+        line
+        for _, path in roles.get("main-report", [])
+        for line in _extract_text(path)
+    )
+    for item in figures:
+        if not isinstance(item, dict) or "main-report" not in item.get("embedded_in", []):
+            continue
+        number = str(item.get("number", "")).strip()
+        title = str(item.get("title", "")).strip()
+        if f"图{number}" not in report_text and f"图 {number}" not in report_text:
+            _fail(errors, f"main report lacks caption number for {item.get('id')}: {number}")
+        if title and title not in report_text:
+            _fail(errors, f"main report lacks figure title for {item.get('id')}: {title}")
 
     expected_docx_figures = len(figures) if capability_values.get("docx") == "available" else 0
     require_links = isinstance(with_url, int) and with_url > 0
@@ -384,6 +630,8 @@ def validate(root: Path, manifest: dict, strict: bool = False) -> dict[str, obje
         "declared_status": status,
         "checked_files": sorted(set(checked_files)),
         "figures": len(figures),
+        "engineering_figure_types": sorted(engineering_types),
+        "svg": svg_results,
         "claim_scan_hits": claim_hits,
         "docx": docx_results,
         "warnings": warnings,
@@ -397,27 +645,74 @@ def self_test() -> None:
         root = Path(tmp)
         for name in ["01-summary.md", "02-report.md", "03-evidence.md", "04-ledger.md"]:
             (root / name).write_text(f"# {name}\n可复核内容。\n", encoding="utf-8")
-        figure_types = sorted(BASE_FIGURE_TYPES)
+        figure_specs = [
+            ("object-structure", "F1-object-structure", ["R0", "R1"]),
+            ("problem-process", "F2-problem-failure", ["R0", "R1"]),
+            ("triz-trace", "F6-force-energy-material-path", ["R1"]),
+            ("solution-mechanism", "F4-mechanism-section", ["R0", "R1"]),
+            ("solution-mechanism", "F5-motion-sequence", ["R1"]),
+            ("solution-mechanism", "F7-safety-boundary", ["R1"]),
+            ("system-architecture", "F3-system-architecture", ["R1"]),
+            ("validation-gates", "F9-validation-decision", ["R1"]),
+            ("problem-process", "F8-process-operation", ["R1"]),
+        ]
         figures = []
-        for index, figure_type in enumerate(figure_types, start=1):
-            path = root / f"figure-{index}.svg"
-            path.write_text(
-                f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450"><title>{figure_type}</title><rect width="800" height="450" fill="#eef6f8"/></svg>',
+        png_payload = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+        )
+        for index, (role, engineering_type, routes) in enumerate(figure_specs, start=1):
+            svg_path = root / f"figure-{index}.svg"
+            png_path = root / f"figure-{index}.png"
+            svg_path.write_text(
+                (
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">'
+                    f'<title>图6-{index} 技术说明</title><desc>工具对目标层施加受控作用并保护下层对象。</desc>'
+                    '<rect width="800" height="450" fill="#eef6f8"/>'
+                    '<path d="M80 230 C210 90 430 90 590 230" fill="none" stroke="#176B87" stroke-width="8"/>'
+                    '<polygon points="590,215 630,230 590,245" fill="#176B87"/>'
+                    '<text x="100" y="320" font-size="18">工具</text><text x="300" y="320" font-size="18">目标层</text>'
+                    '<text x="500" y="320" font-size="18">被保护区域</text></svg>'
+                ),
                 encoding="utf-8",
             )
+            png_path.write_bytes(png_payload)
             figures.append(
                 {
                     "id": f"FIG-{index:02d}",
-                    "type": figure_type,
-                    "path": path.name,
-                    "alt": f"{figure_type} 的技术关系示意图",
+                    "number": f"6-{index}",
+                    "chapter": 6,
+                    "type": role,
+                    "figure_type": engineering_type,
+                    "title": f"图型{index}技术说明",
+                    "decision_question": "工具如何对目标层施加作用并保护下层对象？",
+                    "main_message": "受控工具界面把输入作用传给目标层并隔离被保护对象。",
+                    "subject": "通用分层对象处理方案",
+                    "confirmed_elements": ["目标层"],
+                    "hypothetical_elements": ["工具界面"],
+                    "unknown_elements": ["具体尺寸"],
+                    "motions": ["受控接近", "作用", "退出"],
+                    "forces": ["输入作用力"],
+                    "energy_flows": [],
+                    "protected_objects": ["被保护区域"],
+                    "hazards": ["工具越界"],
+                    "safety_barriers": ["候选机械止挡"],
+                    "labels_required": ["工具", "目标层", "被保护区域"],
+                    "evidence_ids": ["H-01"],
+                    "claim_limit": "V0 概念机理，具体尺寸和安全能力尚未验证。",
+                    "design_status": "V0",
+                    "source_svg": svg_path.name,
+                    "render_png": png_path.name,
+                    "path": png_path.name,
+                    "alt": f"图型{index}显示工具、目标层、运动方向和被保护区域。",
                     "ledgered": True,
                     "embedded_in": [],
-                    "routes": ["R0", "R1"] if figure_type == "solution-mechanism" else [],
+                    "routes": routes,
+                    "required": True,
+                    "frame_count": 4 if engineering_type == "F5-motion-sequence" else None,
                 }
             )
         degraded_manifest = {
-            "schema_version": "1.0",
+            "schema_version": "1.1",
             "delivery_level": "standard",
             "status": "degraded",
             "maturity": "V0",
@@ -435,8 +730,23 @@ def self_test() -> None:
                 {"role": "source-figure-ledger", "path": "04-ledger.md", "required": True, "opened": True, "rendered": False},
             ],
             "shortlisted_routes": ["R0", "R1"],
+            "primary_routes": ["R1"],
+            "concept_profile": {
+                "primary_engineering_concept": True,
+                "physical_structure": True,
+                "relative_motion": True,
+                "force_energy_transfer": True,
+                "material_deformation": True,
+                "safety_risk": True,
+                "multi_step_operation": True,
+            },
+            "figure_plan_frozen": True,
             "figures": figures,
             "figure_exemptions": [],
+            "figure_review": {
+                name: {"status": "pass", "evidence": f"{name} 已用自检图组完成复核"}
+                for name in FIGURE_REVIEW_NAMES
+            },
             "numeric_benefits": False,
             "research_log": {"path": "03-evidence.md", "claimed_queries": 1, "logged_queries": 1},
             "sources": {"cards": 1, "with_stable_identifier": 1, "critical": 1, "with_url": 0},
@@ -445,15 +755,35 @@ def self_test() -> None:
                 {"route": "R1", "dimension": "效率", "score": None, "unknown": True, "evidence_id": "", "evidence_maturity": "V0", "anchor_maturity": "V2"},
             ],
             "checks": {name: "pass" for name in CHECK_NAMES},
-            "render_summary": {"pages": 0, "checked_pages": 0, "blank_pages": [], "unresolved_visual_issues": []},
+            "render_summary": {
+                "pages": 0,
+                "checked_pages": 0,
+                "page_checks": [],
+                "blank_pages": [],
+                "unresolved_visual_issues": [],
+            },
         }
         degraded = validate(root, degraded_manifest, strict=True)
         assert degraded["status"] == "PASS", degraded["errors"]
+
+        no_diagram_manifest = json.loads(json.dumps(degraded_manifest))
+        no_diagram_manifest["capabilities"]["diagram"] = {
+            "status": "unavailable",
+            "evidence": "当前平台没有可调用的图示生成与渲染能力",
+        }
+        no_diagram_manifest["figures"] = []
+        no_diagram_manifest["figure_review"] = {
+            name: {"status": "not-applicable", "evidence": "未生成图示，已在交付说明中标记降级原因"}
+            for name in FIGURE_REVIEW_NAMES
+        }
+        no_diagram = validate(root, no_diagram_manifest, strict=True)
+        assert no_diagram["status"] == "PASS", no_diagram["errors"]
 
         report_source = root / "report-source.json"
         report_source.write_text(
             json.dumps(
                 {
+                    "schema_version": "1.1",
                     "title": "成果校验自检报告",
                     "status": "V0 概念研究",
                     "sections": [
@@ -465,8 +795,13 @@ def self_test() -> None:
                                     {
                                         "type": "figure",
                                         "path": item["path"],
-                                        "caption": f"{item['id']} {item['type']}",
+                                        "figure_id": item["id"],
+                                        "figure_type": item["figure_type"],
+                                        "design_status": item["design_status"],
+                                        "caption": f"图{item['number']} {item['title']}",
                                         "alt": item["alt"],
+                                        "main_message": item["main_message"],
+                                        "claim_limit": item["claim_limit"],
                                     }
                                     for item in figures
                                 ]
@@ -511,11 +846,59 @@ def self_test() -> None:
         complete_manifest["render_summary"] = {
             "pages": 2,
             "checked_pages": 2,
+            "page_checks": [
+                {"page": 1, "status": "pass", "evidence": "封面与首个技术图已检查"},
+                {"page": 2, "status": "pass", "evidence": "其余图题与来源已检查"},
+            ],
             "blank_pages": [],
             "unresolved_visual_issues": [],
         }
         complete = validate(root, complete_manifest, strict=True)
         assert complete["status"] == "PASS", complete["errors"]
+
+        architecture_only = json.loads(json.dumps(complete_manifest))
+        architecture_only["figures"] = [
+            item for item in architecture_only["figures"] if item["figure_type"] == "F3-system-architecture"
+        ]
+        negative_architecture = validate(root, architecture_only, strict=True)
+        assert negative_architecture["status"] == "FAIL"
+        assert any("missing F4-mechanism-section" in item for item in negative_architecture["errors"])
+
+        motion_broken = json.loads(json.dumps(complete_manifest))
+        motion_broken["figures"] = [
+            item for item in motion_broken["figures"] if item["figure_type"] != "F5-motion-sequence"
+        ]
+        negative_motion = validate(root, motion_broken, strict=True)
+        assert negative_motion["status"] == "FAIL"
+        assert any("missing F5-motion-sequence" in item for item in negative_motion["errors"])
+
+        safety_broken = json.loads(json.dumps(complete_manifest))
+        safety_broken["figures"] = [
+            item for item in safety_broken["figures"] if item["figure_type"] != "F7-safety-boundary"
+        ]
+        negative_safety = validate(root, safety_broken, strict=True)
+        assert negative_safety["status"] == "FAIL"
+        assert any("F7-safety-boundary" in item for item in negative_safety["errors"])
+
+        label_broken = json.loads(json.dumps(complete_manifest))
+        label_broken["figures"][0]["labels_required"].append("不存在的必需标签")
+        negative_label = validate(root, label_broken, strict=True)
+        assert negative_label["status"] == "FAIL"
+        assert any("required SVG label missing" in item for item in negative_label["errors"])
+
+        number_broken = json.loads(json.dumps(complete_manifest))
+        number_broken["figures"][1]["number"] = "6-0"
+        negative_number = validate(root, number_broken, strict=True)
+        assert negative_number["status"] == "FAIL"
+        assert any("not increasing" in item for item in negative_number["errors"])
+
+        tiny_svg = root / complete_manifest["figures"][0]["source_svg"]
+        clean_svg = tiny_svg.read_text(encoding="utf-8")
+        tiny_svg.write_text(clean_svg.replace('font-size="18"', 'font-size="5"', 1), encoding="utf-8")
+        negative_font = validate(root, complete_manifest, strict=True)
+        assert negative_font["status"] == "FAIL"
+        assert any("font-size below 6" in item for item in negative_font["errors"])
+        tiny_svg.write_text(clean_svg, encoding="utf-8")
 
         capability_broken = json.loads(json.dumps(complete_manifest))
         capability_broken["capabilities"]["docx"]["status"] = "unavailable"
