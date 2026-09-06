@@ -129,7 +129,10 @@ G0 问题锚定 → G1 TRIZ 建模 → G1.5 用户确认 → G2 深度研究
 - **普通模型可执行**：状态机、判断树、填空模板和逐阶段检查卡帮助能力一般的模型稳定推进。
 - **交付不是后补项**：G5 会先探测绘图、DOCX 和渲染能力；能力可用时主动生成，能力缺失时留下错误证据并明确标记降级交付。
 - **原理图先规划再生成**：九类工程图回答不同问题；动态机理用 3～6 帧序列，安全风险单独画边界，系统架构图不能冒充机械原理图。
-- **成果也能机器检查**：`validate_deliverables.py` 核对核心图型、SVG/PNG、必需标签、图号、最小字体、图文一致性、检索日志、评分成熟度、DOCX 媒体/链接和逐页检查记录。
+- **关键事实只维护一次**：`research-record.json` 集中记录变量、查询、来源、命题、路线、评分、试验和效益，摘要、正文和附件从同一事实源取值。
+- **先检查工程关系再选方案**：矩阵前核对变量方向和真实因果；推荐前核对端到端步骤、能力范围、主动模块互扰、失效回退与测量可辨识性。
+- **工程图按领域表达**：机械、电气/测量、控制/软件、热/流体和工艺/作业使用不同最低图组；没有运动不伪造动作图，电气图不以算法框图代替回路。
+- **成果也能机器检查**：schema 1.2 校验器从结构化记录复算检索/来源/评分/效益，核对证据 ID、系统范围、有效字号、DOCX 实际图序、文件散列和 15 项负向回归；结构、计算一致性与工程复核分开报告。
 
 ## 安装与兼容
 
@@ -166,7 +169,7 @@ python triz-worker-innovation-research/scripts/build_report.py --self-test
 python triz-worker-innovation-research/scripts/validate_deliverables.py --self-test
 ```
 
-严格校验覆盖文件清单、版本、矩阵哈希、黄金单元、39 个行分片、README 示例、Python/Node 18 组行为一致性，以及 DOCX 生成器和成果校验器的正负向自检。成果清单 schema 1.1 还会验证 Figure Plan、F4/F5/F7/F8 核心图契约和逐页检查证据。完成实际课题后，复制 `assets/deliverables-manifest-template.json` 到课题输出目录并运行：
+严格校验覆盖文件清单、版本、矩阵哈希、黄金单元、39 个行分片、README 示例、Python/Node 18 组行为一致性，以及 DOCX 生成器和成果校验器的正负向自检。成果清单 schema 1.2 会读取 `research-record.json`，验证 Figure Plan、领域图组、有效字号、真实计数/引用/评分/范围/效益、DOCX 实际图序、散列和逐页检查证据。完成实际课题后，先复制并填写 `assets/research-record-template.json`，再复制交付清单模板并运行：
 
 ```bash
 python triz-worker-innovation-research/scripts/validate_deliverables.py \

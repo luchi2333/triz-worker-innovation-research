@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "delivery_level": "standard",
   "status": "blocked",
   "maturity": "V0",
@@ -14,12 +14,23 @@
     {"role": "decision-summary", "path": "01-决策摘要.md", "required": true, "opened": false, "rendered": false},
     {"role": "main-report", "path": "02-最终研究报告.md", "required": true, "opened": false, "rendered": false},
     {"role": "evidence-appendix", "path": "03-技术证据附件.md", "required": true, "opened": false, "rendered": false},
-    {"role": "source-figure-ledger", "path": "04-来源与图示台账.md", "required": true, "opened": false, "rendered": false}
+    {"role": "source-figure-ledger", "path": "04-来源与图示台账.md", "required": true, "opened": false, "rendered": false},
+    {"role": "research-record", "path": "research-record.json", "required": true, "opened": true, "rendered": false}
   ],
+  "research_record": {"path": "research-record.json", "schema_version": "1.0"},
+  "expected_counts": {
+    "query_records": 0,
+    "source_records": 0,
+    "critical_sources": 0,
+    "score_rows": 0,
+    "benefit_scenarios": 0
+  },
   "shortlisted_routes": ["R0", "R1"],
   "primary_routes": ["R1"],
   "concept_profile": {
     "primary_engineering_concept": true,
+    "domain": "mechanical",
+    "mechanism_kind": "mechanical",
     "physical_structure": true,
     "relative_motion": true,
     "force_energy_transfer": true,
@@ -31,15 +42,12 @@
   "figures": [],
   "figure_exemptions": [],
   "figure_review": {
-    "engineer_view": {"status": "not-checked", "evidence": "尚未执行工程师视角检查"},
-    "first_time_reader_view": {"status": "not-checked", "evidence": "尚未执行遮挡正文的首次阅读者检查"},
-    "figure_text_consistency": {"status": "not-checked", "evidence": "尚未执行图文双向核对"},
-    "black_white_legibility": {"status": "not-checked", "evidence": "尚未执行低饱和或黑白可辨识检查"}
+    "engineer_view": {"status": "not-checked", "checked_files": [], "findings": [], "dangerous_misreading_checked": ""},
+    "first_time_reader_view": {"status": "not-checked", "checked_files": [], "findings": [], "mechanism_restatement": ""},
+    "figure_text_consistency": {"status": "not-checked", "checked_files": [], "findings": []},
+    "black_white_legibility": {"status": "not-checked", "checked_files": [], "findings": []}
   },
   "numeric_benefits": false,
-  "research_log": {"path": "03-技术证据附件.md", "claimed_queries": 0, "logged_queries": 0},
-  "sources": {"cards": 0, "with_stable_identifier": 0, "critical": 0, "with_url": 0},
-  "score_rows": [],
   "checks": {
     "cross_file_consistency": "not-checked",
     "scoring_consistency": "not-checked",
@@ -50,11 +58,19 @@
     "figure_contract": "not-checked",
     "caption_numbering": "not-checked"
   },
+  "report_figure_order": {"body_start_marker": "1.", "ordered_numbers": [], "summary_preview_numbers": []},
   "render_summary": {
+    "document_path": "最终技术方案报告.docx",
+    "document_sha256": "",
     "pages": 0,
     "checked_pages": 0,
     "page_checks": [],
     "blank_pages": [],
     "unresolved_visual_issues": []
+  },
+  "quality_status": {
+    "structural": "not-checked",
+    "computational_consistency": "not-checked",
+    "engineering_review": "pending"
   }
 }

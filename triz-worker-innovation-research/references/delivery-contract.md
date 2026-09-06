@@ -30,6 +30,7 @@
 3. `evidence-appendix`：逐条检索日志、来源卡、证据矩阵、评分、FMEA 和验证协议；
 4. `source-figure-ledger`：来源与图示台账；
 5. `deliverables-manifest.json`：机器可检查的交付清单。
+6. `research-record.json`：关键变量、查询、来源、命题、路线、评分、试验和效益的结构化单一事实源。
 
 若文档能力 available，`main-report` 必须包含 DOCX；源 Markdown 同时保留，便于复核与后续修改。不得等用户再次提出“做成 Word”。
 
@@ -53,7 +54,7 @@
 
 ## 4. 交付清单
 
-复制并填写 `assets/deliverables-manifest-template.json`。关键字段：
+先复制并随 G0—G4 持续填写 `assets/research-record-template.json`；G5 再复制 `assets/deliverables-manifest-template.json`。manifest 只做文件索引、能力和生成统计，不再手工重复研究事实。关键字段：
 
 - `delivery_level`：direction / standard / engineering；
 - `status`：complete / degraded / blocked；
@@ -64,11 +65,12 @@
 - `figure_plan_frozen`：进入排版前 Figure Plan 是否冻结；
 - `figures`：图号、交付角色、F1—F9 图型、决策问题、主信息、事实/假设、必需标签、路线覆盖、SVG/PNG、证据边界和台账状态；
 - `figure_review`：工程师视角、首次阅读者视角、图文一致性和黑白可读性；图示能力可用时四项必须为 `pass`，图示能力不可用且交付已降级时四项必须为 `not-applicable` 并写明原因；
-- `research_log`：宣称检索数与实际逐条日志数；
-- `sources`：来源卡数、稳定标识数和关键来源数；
-- `score_rows`：每个分数的锚点成熟度与实际证据成熟度；
+- `research_record`：结构化研究记录路径和版本；
+- `expected_counts`：由生成流程写入的预期统计，校验器须与记录中的实际数组复算比较；
 - `checks`：跨文件一致性、评分、检测方法、专利引用追踪、阶段边界和声称边界；
-- `render_summary`：页数、已检查页数、空白页和未解决版式问题。
+- `report_figure_order`：从 DOCX 正文实际出现顺序核对的图号；摘要预览单独列出；
+- `render_summary`：被检查文件路径和散列、页数、已检查页数、空白页和未解决版式问题；
+- `quality_status`：结构、可计算一致性、工程内容复核三种状态，禁止合并成一个“工程验证通过”。
 
 不得手工把失败项写成 pass。manifest 是对实际文件的索引，不是计划表。
 
@@ -88,16 +90,17 @@ python scripts/validate_deliverables.py --root <项目输出目录> --manifest <
 - 能力 available 时是否真的生成 DOCX/图示并打开或渲染；
 - 必要图示、路线覆盖、替代文本和图示台账；
 - 核心方案的 F4/F5/F7/F8 图示契约，以及 F5 的 3～6 帧要求；
-- SVG 的尺寸/viewBox、title/desc、必需标签、过小字体和“纯框图冒充机械原理图”警告；
-- SVG 单一来源与 PNG 渲染、章节图号递增、图题是否实际进入主报告；
-- 检索数量是否等于逐条日志数；
-- 关键来源是否具有 URL、DOI、标准号、专利号或其他稳定标识；
-- 评分证据成熟度是否达到该分值锚点，未知项是否被违规赋分；
+- SVG 的尺寸/viewBox、title/desc、必需标签、按 `display_width_pt` 换算的有效字号和“纯框图冒充机械原理图”警告；
+- SVG 单一来源与 PNG 渲染、DOCX 正文实际图题顺序、合法摘要预览和正文引用；
+- 来源、查询和评分数量是否由 `research-record.json` 实际条目复算；合并式“多次/×3/……”不计作可复现查询；
+- 关键来源是否具有稳定标识、原文定位、直接支持事实和适用对象；所有引用 ID 是否真实解析；
+- 报告使用评分时，路线×指标是否完整；统一冻结的分值锚点是否满足，未知项是否被违规赋分；
+- 变量方向、主矛盾资格、端到端步骤衔接、主动模块互扰、测量可辨识性、效益公式和跨文件数值是否可计算一致；
 - 主报告和摘要是否出现无证据的绝对适配、市场空白或法律结论；
 - DOCX 包完整性、内嵌媒体、替代文本与外部超链接；
 - 页数、逐页检查、空白页和未解决视觉问题。
 
-`validate_skill.py` 只证明 Skill 包结构正确；`validate_deliverables.py` 才检查一次研究任务的产物。两者不可互相替代。
+`validate_skill.py` 只证明 Skill 包结构正确；`validate_deliverables.py` 检查文件结构和可计算一致性；专业人员或明确记录的工程复核检查物理关系与安全。三者不可互相替代。schema 1.1 旧清单可以读取，但会标记 `LEGACY_UNCHECKED`，不能作为 v2.5 完整通过。
 
 ## 6. Word 生成路径
 
@@ -122,10 +125,12 @@ G5 交付回执
 - 状态：complete / degraded / blocked
 - 决策摘要：路径；已打开/渲染：是/否
 - 主报告：路径与格式；页数；已检查页数
-- 证据附件：路径；逐条日志数/宣称检索数
-- 来源与图示台账：路径；稳定来源数/关键来源数
+- 研究记录：路径；结构化查询/来源/命题/路线/评分/试验条目数
+- 证据附件：路径；逐条日志数（由研究记录复算）
+- 来源与图示台账：路径；稳定来源数/关键来源数（由研究记录复算）
 - 图示：实际张数；必要类型；入选路线覆盖
 - DOCX：生成方式；内嵌图数；外部来源链接数
+- 质量状态：结构；可计算一致性；工程内容复核
 - 未解决问题：无 / 列表
 - 能力阻断：无 / 错误原文和替代交付
 ```
@@ -136,16 +141,16 @@ G5 交付回执
 
 普通模型在 G5 不自行改序：
 
-1. 修正正文中的冲突和旧结论；
-2. 写 `concept_profile`，建立并冻结 Figure Plan；
+1. 修正 `research-record.json` 中的变量方向、来源适配、模块衔接、数字与旧结论；
+2. 从研究记录生成正文，写 `concept_profile`，建立并冻结领域正确的 Figure Plan；
 3. 分别生成核心结构/机理、运动序列、作用路径和适用的安全边界图；
 4. 由工程师视角和首次阅读者视角执行 Figure Review，修复图文冲突；
 5. 生成四类成果内容；
 6. 生成 DOCX 或记录真实能力阻断；
 7. 完成 `deliverables-manifest.json`；
-8. 打开/渲染并逐页填写 `page_checks`；
+8. 打开/渲染并逐页填写 `page_checks`，记录被检查文件散列；
 9. 修复后重新生成与复查；
-10. 运行成果校验器；
+10. 运行成果校验器，分别报告结构、计算一致性和工程复核状态；
 11. 输出 G5 交付回执。
 
 任何一步失败均回到对应步骤修复，不得把插图和 Word 留作“后续扩展”。

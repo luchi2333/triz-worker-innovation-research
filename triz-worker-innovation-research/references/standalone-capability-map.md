@@ -15,6 +15,7 @@
 | 对象标识与接口冻结 | `engineering-claim-safety-checks.md` 的身份门 | 原始标识、候选解释、直接证据和阻断项 | 不静默纠错；身份未冻结不外推结构/适配 |
 | 研究问题与方法架构 | `deep-research-protocol.md` 第 1—2 节 | 研究问题树、命题清单、检索计划 | 每个关键结论在检索前已形成待证命题 |
 | TRIZ 问题建模 | `triz-analysis-output.md`、`matrix-usage.md`、`triz-extended-tools.md` | 工艺瓶颈、技术矛盾、物理矛盾、物—场模型 | 参数映射含因果句与备选参数；矩阵结果可复算 |
+| 工程关系一致性 | `engineering-consistency-review.md`、`research-record-template.json` | 变量方向卡、端到端步骤链、模块互扰、测量可辨识性 | 不制造伪矛盾；成熟部件不冒充成熟系统；范围断档显式 |
 | 确定性矛盾矩阵检索 | `contradiction-matrix.json`、Python/Node 查询器、`matrix-rows/` 行分片 | 改善参数、恶化参数、矩阵单元格、推荐原理 | Python、Node 或行分片三选一，结果一致且反向单元交叉复核 |
 | 发明原理工程化 | `inventive-principles.md`、`weak-model-playbook.md` | 原理到结构、动作、控制和验证的映射 | 不把原理名称直接当方案 |
 | 物理矛盾、物—场、标准解、裁剪和演化 | `triz-extended-tools.md` | 分离条件、Su-Field 模型、标准解族、演化方向 | 标准解编号仅在内置表或经核验时使用 |
@@ -33,7 +34,7 @@
 | 现场资料伦理与授权 | `deep-research-protocol.md` 的方法适配与现场数据伦理 | 授权、脱敏和试验许可边界 | 未授权访谈/录像/现场试验不写成已完成实证 |
 | 社会与经济效益 | `final-report-blueprint.md`、`output-templates.md` | 参数表、公式、区间和敏感性分析 | 实测、现场报告、假设分别标记，不伪造基线 |
 | 报告综合与编辑 | `final-report-blueprint.md` | 决策摘要、主报告、证据附件、来源/图表台账 | 摘要技术导向；正文完整；证据可追溯 |
-| 视觉与文档质量 | `delivery-contract.md`、`engineering-figure-planning.md`、`final-report-blueprint.md` | Figure Plan、结构/运动/作用/安全图、SVG/PNG、DOCX 及交付清单 | 核心方案不是只有架构图；图号/标签/字体/图文一致性通过；文档逐页检查；成果校验通过 |
+| 视觉与文档质量 | `delivery-contract.md`、`engineering-figure-planning.md`、`final-report-blueprint.md` | 领域 Figure Plan、机理/过程/安全图、SVG/PNG、DOCX、研究记录及交付清单 | 图型符合机械/电气/控制/热流/工艺语义；有效字号、实际图序、散列和具体发现通过 |
 | 普通模型稳定执行 | `weak-model-playbook.md` | 进度卡、逐门检查、两轮最终复核 | 不跳阶段、不凭记忆查矩阵、不自动越过用户确认门 |
 
 ## 二、与通用深度研究流程的等效角色
@@ -65,12 +66,12 @@
 不要一次加载全部参考文件。按当前阶段只读取最少集合；长文件允许只读当前 G 阶段对应小节，进入新阶段再读下一段：
 
 1. **G0 立项**：`SKILL.md` + `research-workflow.md` 的 G0 小节 + `intake-guide.md`；需要冻结对象身份时加读 `engineering-claim-safety-checks.md` 的身份门一节。
-2. **G1 建模**：`triz-analysis-output.md` + `matrix-usage.md` + `inventive-principles.md`（需要扩展工具时加 `triz-extended-tools.md`）；收尾对照 `weak-model-playbook.md` 的 G1 检查清单。
+2. **G1 建模**：`triz-analysis-output.md` + `matrix-usage.md` + `engineering-consistency-review.md` 的变量方向卡 + `inventive-principles.md`（需要扩展工具时加 `triz-extended-tools.md`）；收尾对照 `weak-model-playbook.md` 的 G1 检查清单。
 3. **G1.5 确认**：只保留方向稿与确认卡所需内容，等待用户回复。
-4. **G2/G3 深研与选型**：`deep-research-protocol.md` + `output-templates.md`，并执行 `engineering-claim-safety-checks.md` 全文闸门。
+4. **G2/G3 深研与选型**：`deep-research-protocol.md` + `output-templates.md`，执行 `engineering-claim-safety-checks.md` 全文闸门和 `engineering-consistency-review.md` 的步骤衔接/可辨识性卡。
 5. **G4 验证**：`research-workflow.md` 的 G4 与 V0—V3 小节 + `engineering-claim-safety-checks.md` 的验证一致性门。
-6. **G5 报告**：先读 `delivery-contract.md` 做能力探测，再读 `engineering-figure-planning.md` 冻结 Figure Plan，最后按 `final-report-blueprint.md` 组装成果；文档能力可用时无需用户追问，主动生成 SVG/PNG、DOCX 和必要图示。
-7. **交付前**：复制 `assets/deliverables-manifest-template.json` 填写实际结果，运行 `scripts/validate_deliverables.py --strict`；`validate_skill.py` 只验证技能包，不能替代成果校验。
+6. **G5 报告**：先更新 `research-record.json`，再读 `delivery-contract.md` 做能力探测，按技术领域冻结 Figure Plan，最后按 `final-report-blueprint.md` 组装成果；文档能力可用时无需用户追问，主动生成 SVG/PNG、DOCX 和必要图示。
+7. **交付前**：复制 `assets/deliverables-manifest-template.json` 填写实际结果，运行 `scripts/validate_deliverables.py --strict`；分别报告结构、可计算一致性和工程复核状态。
 
 模型每完成一个阶段，只保留“进度卡 + 已确认事实 + 决策 + 证据台账索引”进入下一阶段，避免把大段搜索材料直接塞进最终写作上下文。
 
@@ -83,7 +84,7 @@
 - 原始标识冻结、适配/类比检查和 I/E/A/T/S/P/V 七道闸门；
 - 39×39 矩阵数据和确定性查询；
 - 七轨逐条检索日志、来源五维核验和命题级证据矩阵；
-- G5 能力探测、Figure Plan、核心 F4/F5/F7/F8 图契约、SVG/PNG、DOCX、交付清单和成果校验；
+- G5 能力探测、结构化研究记录、领域 Figure Plan、SVG/PNG、DOCX、交付清单和结构/计算/工程三类状态；
 - 三次反对者检查与推翻条件；
 - 已有技术、场景集成、候选创新三者分栏；
 - 安全/质量硬门槛优先；

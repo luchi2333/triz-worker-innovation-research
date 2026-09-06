@@ -135,7 +135,7 @@ python triz-worker-innovation-research/scripts/build_report.py --self-test
 python triz-worker-innovation-research/scripts/validate_deliverables.py --self-test
 ```
 
-Strict validation covers the release manifest, version, matrix hash, golden cells, 39 row shards, the README example, 18 Python/Node parity cases, the DOCX builder and the generated-deliverable validator. Deliverable schema 1.1 also validates the Figure Plan, F4/F5/F7/F8 core-figure contract and page-level review evidence. After a real research run, copy `assets/deliverables-manifest-template.json` into the output directory and run:
+Strict validation covers the release manifest, version, matrix hash, golden cells, 39 row shards, the README example, 18 Python/Node parity cases, the DOCX builder and the generated-deliverable validator. Deliverable schema 1.2 reads `research-record.json` and verifies actual query/source/score counts, resolvable evidence IDs, end-to-end route coverage, domain-appropriate figures, effective font size, actual DOCX caption order, hashes and page-level review evidence. After a real research run, copy and fill `assets/research-record-template.json`, then copy the deliverables manifest template and run:
 
 ```bash
 python triz-worker-innovation-research/scripts/validate_deliverables.py \

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import re
 import subprocess
@@ -26,6 +27,8 @@ from xml.etree import ElementTree as ET
 
 CAPABILITY_STATES = {"available", "unavailable", "not-checked"}
 SCHEMA_VERSION = "1.1"
+CURRENT_SCHEMA_VERSION = "1.2"
+RESEARCH_RECORD_SCHEMA = "1.0"
 DELIVERY_LEVELS = {"direction", "standard", "engineering"}
 DELIVERY_STATUS = {"complete", "degraded", "blocked"}
 MATURITY_RANK = {"V0": 0, "V1": 1, "V2": 2, "V3": 3}
@@ -95,6 +98,9 @@ CLAIM_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"已失效.{0,20}(?:可)?自由(?:参考|使用|实施)"), "失效等于自由使用"),
     (re.compile(r"全部型号适配|适配所有型号|直径范围已覆盖目标"), "未限定适配结论"),
     (re.compile(r"绝对安全|零损伤|零风险"), "绝对安全或性能结论"),
+    (re.compile(r"(?:可)?立即落地|直接落地"), "未限定的立即实施结论"),
+    (re.compile(r"实现.{0,12}(?:不误报|不漏报)"), "无条件识别性能结论"),
+    (re.compile(r"(?:风险|故障|事故|误报|漏报).{0,8}归零"), "无条件归零结论"),
 ]
 NEGATION_MARKERS = ("不得", "不能", "不等于", "不支持", "禁止", "不构成", "不可声称", "未证实")
 
@@ -199,7 +205,13 @@ def _svg_number(value: str) -> float | None:
 
 def _check_svg(path: Path, item: dict, errors: list[str], warnings: list[str]) -> dict[str, object]:
     figure_id = str(item.get("id", ""))
-    result: dict[str, object] = {"id": figure_id, "path": path.name, "labels": 0, "min_font_size": None}
+    result: dict[str, object] = {
+        "id": figure_id,
+        "path": path.name,
+        "labels": 0,
+        "min_font_size": None,
+        "effective_min_font_pt": None,
+    }
     try:
         root = ET.parse(path).getroot()
     except (OSError, ET.ParseError) as exc:
@@ -233,10 +245,23 @@ def _check_svg(path: Path, item: dict, errors: list[str], warnings: list[str]) -
     if font_sizes:
         minimum = min(font_sizes)
         result["min_font_size"] = minimum
-        if minimum < 6:
-            _fail(errors, f"SVG font-size below 6 for {figure_id}: {minimum}")
-        elif minimum < 8:
-            warnings.append(f"SVG font-size below 8 for {figure_id}: {minimum}")
+        effective = minimum
+        view_box = str(root.attrib.get("viewBox", "")).split()
+        display_width = item.get("display_width_pt")
+        if len(view_box) == 4 and isinstance(display_width, (int, float)) and display_width > 0:
+            try:
+                view_width = float(view_box[2])
+                if view_width > 0:
+                    effective = minimum * float(display_width) / view_width
+            except ValueError:
+                pass
+        elif item.get("display_width_pt") is not None:
+            _fail(errors, f"invalid display_width_pt/viewBox for {figure_id}")
+        result["effective_min_font_pt"] = round(effective, 3)
+        if effective < 6:
+            _fail(errors, f"effective SVG font-size below 6pt for {figure_id}: {effective:.2f}pt")
+        elif effective < 8:
+            warnings.append(f"effective SVG font-size below 8pt for {figure_id}: {effective:.2f}pt")
 
     if item.get("figure_type") in MECHANICAL_FIGURE_TYPES:
         structural_shapes = {"path", "circle", "ellipse", "polygon", "polyline"}
@@ -274,7 +299,7 @@ def _check_figure_numbering(figures: list[dict], errors: list[str]) -> None:
         previous_chapter = chapter
 
 
-def validate(root: Path, manifest: dict, strict: bool = False) -> dict[str, object]:
+def _validate_v11(root: Path, manifest: dict, strict: bool = False) -> dict[str, object]:
     root = root.resolve()
     errors: list[str] = []
     warnings: list[str] = []
@@ -640,7 +665,961 @@ def validate(root: Path, manifest: dict, strict: bool = False) -> dict[str, obje
     }
 
 
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _unique_ids(items: object, section: str, errors: list[str]) -> tuple[list[dict], set[str]]:
+    if not isinstance(items, list):
+        _fail(errors, f"research_record.{section} must be an array")
+        return [], set()
+    rows: list[dict] = []
+    seen: set[str] = set()
+    for index, item in enumerate(items):
+        if not isinstance(item, dict):
+            _fail(errors, f"research_record.{section}[{index}] must be an object")
+            continue
+        item_id = str(item.get("id", "")).strip()
+        if not item_id or item_id in seen:
+            _fail(errors, f"research_record.{section}[{index}] id missing or duplicated: {item_id}")
+        seen.add(item_id)
+        rows.append(item)
+    return rows, seen
+
+
+def _check_reference_ids(
+    values: object,
+    allowed: set[str],
+    label: str,
+    errors: list[str],
+    allow_empty: bool = True,
+) -> None:
+    if not isinstance(values, list):
+        _fail(errors, f"{label} must be an array")
+        return
+    if not values and not allow_empty:
+        _fail(errors, f"{label} must contain at least one resolvable ID")
+    for value in values:
+        ref = str(value).strip()
+        if not ref or ref not in allowed:
+            _fail(errors, f"{label} contains unresolved ID: {ref}")
+
+
+def _validate_record(
+    record: dict,
+    manifest: dict,
+    public_text: str,
+    errors: list[str],
+    warnings: list[str],
+) -> tuple[dict[str, int], list[dict], str]:
+    if record.get("schema_version") != RESEARCH_RECORD_SCHEMA:
+        _fail(errors, f"research_record schema_version must be {RESEARCH_RECORD_SCHEMA}")
+
+    variables, variable_ids = _unique_ids(record.get("variables"), "variables", errors)
+    for index, variable in enumerate(variables):
+        for field in ["object", "quantity", "unit", "preferred_direction", "evidence_status"]:
+            if not str(variable.get(field, "")).strip():
+                _fail(errors, f"variables[{index}] missing {field}")
+        if variable.get("preferred_direction") not in {"increase", "decrease", "range"}:
+            _fail(errors, f"variables[{index}] preferred_direction must be increase/decrease/range")
+        rule = variable.get("decision_rule")
+        if isinstance(rule, dict) and rule.get("enabled") is True:
+            comparison = rule.get("comparison")
+            change = rule.get("earlier_warning_change")
+            expected = "increase" if comparison == "below" else "decrease" if comparison == "above" else None
+            if expected is None:
+                _fail(errors, f"variables[{index}] decision_rule.comparison must be below/above")
+            elif change != expected:
+                _fail(errors, f"variables[{index}] threshold polarity conflict: {comparison} requires {expected}")
+
+    contradictions, _ = _unique_ids(record.get("contradictions", []), "contradictions", errors)
+    for index, item in enumerate(contradictions):
+        if str(item.get("control_variable_id", "")) not in variable_ids:
+            _fail(errors, f"contradictions[{index}] control_variable_id is unresolved")
+        eligibility = item.get("eligibility")
+        if eligibility not in {
+            "matrix_eligible",
+            "separation_eligible",
+            "assumption_only",
+            "reframe_required",
+            "no_triz_contradiction",
+        }:
+            _fail(errors, f"contradictions[{index}] invalid eligibility: {eligibility}")
+        for field in ["change_direction", "useful_result", "worsened_result", "causality_basis", "ec2_reverse_case"]:
+            if len(str(item.get(field, "")).strip()) < 4:
+                _fail(errors, f"contradictions[{index}] missing meaningful {field}")
+        mapping = item.get("matrix_mapping", {})
+        if eligibility == "matrix_eligible":
+            if not isinstance(mapping, dict):
+                _fail(errors, f"contradictions[{index}] matrix_mapping must be an object")
+                continue
+            improve = mapping.get("improving_parameter")
+            worsen = mapping.get("worsening_parameter")
+            if not isinstance(improve, int) or not 1 <= improve <= 39:
+                _fail(errors, f"contradictions[{index}] invalid improving_parameter")
+            if not isinstance(worsen, int) or not 1 <= worsen <= 39:
+                _fail(errors, f"contradictions[{index}] invalid worsening_parameter")
+            expected_cell = f"R{improve:02d}xC{worsen:02d}" if isinstance(improve, int) and isinstance(worsen, int) else ""
+            if str(mapping.get("matrix_cell", "")).replace("×", "x") != expected_cell:
+                _fail(errors, f"contradictions[{index}] matrix_cell does not match parameter direction")
+            if not isinstance(mapping.get("principles"), list):
+                _fail(errors, f"contradictions[{index}] principles must be an array")
+            elif isinstance(improve, int) and isinstance(worsen, int) and 1 <= improve <= 39 and 1 <= worsen <= 39:
+                try:
+                    matrix_payload = json.loads((SKILL_ROOT / "references" / "contradiction-matrix.json").read_text(encoding="utf-8"))
+                    expected_principles = matrix_payload["matrix"][improve - 1][worsen - 1]
+                    if mapping.get("principles") != expected_principles:
+                        _fail(errors, f"contradictions[{index}] principles differ from deterministic matrix cell")
+                except (OSError, KeyError, IndexError, json.JSONDecodeError) as exc:
+                    _fail(errors, f"cannot verify contradictions[{index}] matrix cell: {exc}")
+
+    queries, _ = _unique_ids(record.get("queries"), "queries", errors)
+    aggregate_query = re.compile(r"(?:×|\bx\s*)\d+|多次|若干次|……|\.\.\.", re.IGNORECASE)
+    valid_queries = 0
+    failed_queries = 0
+    for index, item in enumerate(queries):
+        query = str(item.get("query", "")).strip()
+        if len(query) < 3:
+            _fail(errors, f"queries[{index}] lacks a reproducible query string")
+        elif aggregate_query.search(query):
+            _fail(errors, f"queries[{index}] merges multiple attempts instead of recording one query")
+        else:
+            valid_queries += 1
+        if not str(item.get("date", "")).strip() or not str(item.get("entry", "")).strip():
+            _fail(errors, f"queries[{index}] requires date and entry")
+        if item.get("status") not in {"completed", "failed", "no-result"}:
+            _fail(errors, f"queries[{index}] invalid status")
+        if item.get("status") in {"failed", "no-result"}:
+            failed_queries += 1
+
+    sources, source_ids = _unique_ids(record.get("sources"), "sources", errors)
+    stable_sources = 0
+    critical_sources = 0
+    target_kinds = {"field_baseline", "proxy_benchmark", "source_component", "proposed_system"}
+    for index, item in enumerate(sources):
+        if len(str(item.get("title", "")).strip()) < 3:
+            _fail(errors, f"sources[{index}] missing title")
+        if item.get("target_kind") not in target_kinds:
+            _fail(errors, f"sources[{index}] invalid target_kind")
+        for field in ["creator", "date_or_version", "authority", "directness", "independence", "currency", "scope_match"]:
+            if not str(item.get(field, "")).strip():
+                _fail(errors, f"sources[{index}] missing five-dimensional evidence field: {field}")
+        stable = bool(str(item.get("stable_identifier", "")).strip() or str(item.get("url", "")).strip())
+        if stable:
+            stable_sources += 1
+        if item.get("critical") is True:
+            critical_sources += 1
+            for field in ["locator", "supporting_excerpt_or_fact", "limitations"]:
+                if len(str(item.get(field, "")).strip()) < 4:
+                    _fail(errors, f"critical sources[{index}] missing {field}")
+            if not stable:
+                _fail(errors, f"critical sources[{index}] lacks stable identifier or URL")
+
+    claims, claim_ids = _unique_ids(record.get("claims"), "claims", errors)
+    for index, item in enumerate(claims):
+        if item.get("target_kind") not in target_kinds:
+            _fail(errors, f"claims[{index}] invalid target_kind")
+        _check_reference_ids(item.get("supporting_source_ids", []), source_ids, f"claims[{index}].supporting_source_ids", errors)
+        _check_reference_ids(item.get("opposing_source_ids", []), source_ids, f"claims[{index}].opposing_source_ids", errors)
+        if item.get("evidence_status") in {"unknown", "H", None}:
+            if len(str(item.get("allowed_wording", "")).strip()) < 6:
+                _fail(errors, f"claims[{index}] unknown/H claim lacks allowed_wording")
+            if len(str(item.get("next_validation", "")).strip()) < 4:
+                _fail(errors, f"claims[{index}] unknown/H claim lacks next_validation")
+
+    allowed_evidence_ids = source_ids | claim_ids
+    for index, variable in enumerate(variables):
+        _check_reference_ids(variable.get("evidence_ids", []), allowed_evidence_ids, f"variables[{index}].evidence_ids", errors)
+    for index, item in enumerate(contradictions):
+        _check_reference_ids(item.get("evidence_ids", []), allowed_evidence_ids, f"contradictions[{index}].evidence_ids", errors)
+    for index, item in enumerate(queries):
+        _check_reference_ids(item.get("included_source_ids", []), source_ids, f"queries[{index}].included_source_ids", errors)
+    routes, route_ids = _unique_ids(record.get("routes"), "routes", errors)
+    primary_routes = {str(value) for value in manifest.get("primary_routes", [])}
+    shortlisted_routes = {str(value) for value in manifest.get("shortlisted_routes", [])}
+    for route in routes:
+        route_id = str(route.get("id", ""))
+        if route.get("maturity") not in MATURITY_RANK:
+            _fail(errors, f"route {route_id} maturity must be V0-V3")
+        components = route.get("components")
+        if not isinstance(components, list) or not components:
+            _fail(errors, f"route {route_id} requires components")
+            components = []
+        for index, component in enumerate(components):
+            if not isinstance(component, dict):
+                _fail(errors, f"route {route_id} component[{index}] must be an object")
+                continue
+            if component.get("target_kind") not in target_kinds:
+                _fail(errors, f"route {route_id} component[{index}] invalid target_kind")
+            _check_reference_ids(component.get("evidence_ids", []), allowed_evidence_ids, f"route {route_id} component[{index}].evidence_ids", errors)
+        steps = route.get("steps")
+        if not isinstance(steps, list) or not steps:
+            _fail(errors, f"route {route_id} requires an end-to-end step chain")
+            steps = []
+        for index, step in enumerate(steps):
+            if not isinstance(step, dict):
+                _fail(errors, f"route {route_id} step[{index}] must be an object")
+                continue
+            for field in ["action", "input_range", "output_range", "handoff_status"]:
+                if len(str(step.get(field, "")).strip()) < 3:
+                    _fail(errors, f"route {route_id} step[{index}] missing {field}")
+            if step.get("handoff_status") not in {"compatible", "conditional", "gap"}:
+                _fail(errors, f"route {route_id} step[{index}] invalid handoff_status")
+            if route_id in primary_routes and step.get("handoff_status") == "gap":
+                _fail(errors, f"primary route {route_id} has end-to-end capability gap at step[{index}]")
+            if step.get("handoff_status") == "conditional":
+                warnings.append(f"route {route_id} has conditional handoff at step[{index}]")
+            _check_reference_ids(step.get("evidence_ids", []), allowed_evidence_ids, f"route {route_id} step[{index}].evidence_ids", errors)
+        for index in range(len(steps) - 1):
+            upstream = steps[index] if isinstance(steps[index], dict) else {}
+            downstream = steps[index + 1] if isinstance(steps[index + 1], dict) else {}
+            output_range = upstream.get("output_numeric_range")
+            input_range = downstream.get("input_numeric_range")
+            if isinstance(output_range, dict) and isinstance(input_range, dict):
+                try:
+                    if output_range.get("unit") != input_range.get("unit"):
+                        _fail(errors, f"route {route_id} numeric handoff unit mismatch at steps {index}/{index + 1}")
+                    elif float(output_range["min"]) < float(input_range["min"]) or float(output_range["max"]) > float(input_range["max"]):
+                        _fail(errors, f"route {route_id} numeric handoff gap at steps {index}/{index + 1}")
+                except (KeyError, TypeError, ValueError):
+                    _fail(errors, f"route {route_id} invalid numeric handoff range at steps {index}/{index + 1}")
+        effects = [item for item in route.get("active_effects", []) if isinstance(item, dict)]
+        active_ids = {str(item.get("id", "")) for item in effects if item.get("type") not in {"read", "passive", "information_read"}}
+        interactions = route.get("interactions", [])
+        if len(active_ids) > 1:
+            covered: set[str] = set()
+            if isinstance(interactions, list):
+                for interaction in interactions:
+                    if not isinstance(interaction, dict) or interaction.get("status") not in {"compatible", "conditional", "conflict", "unknown"}:
+                        continue
+                    covered.update(str(value) for value in interaction.get("effect_ids", []))
+            if not active_ids.issubset(covered):
+                _fail(errors, f"route {route_id} has multiple active effects without coexistence/interference review")
+        if len(str(route.get("failure_fallback", "")).strip()) < 4:
+            _fail(errors, f"route {route_id} lacks failure fallback")
+        _check_reference_ids(route.get("claim_ids", []), claim_ids, f"route {route_id}.claim_ids", errors, allow_empty=False)
+        mechanism = route.get("mechanism_kind")
+        if mechanism in {"electrical_measurement", "measurement", "diagnosis"}:
+            card = route.get("identifiability")
+            required_fields = ["excitation", "observations", "unknowns", "reference", "relationship", "confounders", "decision_uncertainty"]
+            if not isinstance(card, dict):
+                _fail(errors, f"measurement route {route_id} requires identifiability card")
+            else:
+                for field in required_fields:
+                    value = card.get(field)
+                    if value is None or value == "" or value == []:
+                        _fail(errors, f"measurement route {route_id} identifiability.{field} is missing")
+        if MATURITY_RANK.get(str(route.get("maturity")), 0) > 0:
+            supporting_system_claim = any(
+                claim.get("target_kind") == "proposed_system"
+                and str(claim.get("target_id", "")) == route_id
+                and claim.get("evidence_status") in {"M", "measured", "verified"}
+                for claim in claims
+            )
+            if not supporting_system_claim:
+                _fail(errors, f"route {route_id} maturity cannot exceed V0 using component/proxy evidence only")
+
+    for route_id in primary_routes | shortlisted_routes:
+        if route_id not in route_ids:
+            _fail(errors, f"manifest route is missing from research_record.routes: {route_id}")
+
+    assessments = record.get("assessments")
+    if not isinstance(assessments, dict):
+        _fail(errors, "research_record.assessments must be an object")
+        assessments = {}
+    gates = assessments.get("gates", [])
+    if not isinstance(gates, list):
+        _fail(errors, "assessments.gates must be an array")
+    else:
+        for index, gate in enumerate(gates):
+            if not isinstance(gate, dict):
+                _fail(errors, f"assessments.gates[{index}] must be an object")
+                continue
+            _check_reference_ids(gate.get("evidence_ids", []), allowed_evidence_ids, f"assessments.gates[{index}].evidence_ids", errors)
+            if gate.get("status") == "pass" and not gate.get("evidence_ids"):
+                _fail(errors, f"assessments.gates[{index}] cannot pass without evidence")
+    scorecard = assessments.get("scorecard", {})
+    legacy_score_rows: list[dict] = []
+    score_rows_count = 0
+    if not isinstance(scorecard, dict):
+        _fail(errors, "assessments.scorecard must be an object")
+    else:
+        dimensions, dimension_ids = _unique_ids(scorecard.get("dimensions", []), "assessments.scorecard.dimensions", errors)
+        dimension_map = {str(item.get("id")): item for item in dimensions}
+        rows = scorecard.get("rows", [])
+        if not isinstance(rows, list):
+            _fail(errors, "assessments.scorecard.rows must be an array")
+            rows = []
+        score_rows_count = len(rows)
+        if scorecard.get("used") is True:
+            expected_pairs = {(route_id, dimension_id) for route_id in shortlisted_routes for dimension_id in dimension_ids}
+            actual_pairs: set[tuple[str, str]] = set()
+            for index, row in enumerate(rows):
+                if not isinstance(row, dict):
+                    _fail(errors, f"scorecard.rows[{index}] must be an object")
+                    continue
+                route_id = str(row.get("route_id", ""))
+                dimension_id = str(row.get("dimension_id", ""))
+                pair = (route_id, dimension_id)
+                if pair in actual_pairs:
+                    _fail(errors, f"duplicated score row: {route_id}/{dimension_id}")
+                actual_pairs.add(pair)
+                dimension = dimension_map.get(dimension_id, {})
+                anchors = dimension.get("anchors", {}) if isinstance(dimension, dict) else {}
+                unknown = row.get("unknown") is True
+                not_applicable = row.get("not_applicable") is True
+                score = row.get("score")
+                evidence_ids = row.get("evidence_ids", [])
+                if unknown or not_applicable:
+                    if score is not None:
+                        _fail(errors, f"unknown/N/A score must be null: scorecard.rows[{index}]")
+                    legacy_score_rows.append({"score": None, "unknown": unknown, "not_applicable": not_applicable})
+                    continue
+                if score not in SCORE_VALUES:
+                    _fail(errors, f"score must be 0/1/3/5: scorecard.rows[{index}]")
+                    continue
+                anchor = anchors.get(str(score)) if isinstance(anchors, dict) else None
+                if not isinstance(anchor, dict):
+                    _fail(errors, f"scorecard dimension {dimension_id} lacks frozen anchor {score}")
+                    anchor = {}
+                anchor_maturity = anchor.get("required_maturity")
+                evidence_maturity = row.get("evidence_maturity")
+                _check_reference_ids(evidence_ids, allowed_evidence_ids, f"scorecard.rows[{index}].evidence_ids", errors, allow_empty=False)
+                if row.get("target_kind") != "proposed_system":
+                    _fail(errors, f"scorecard.rows[{index}] must evaluate proposed_system, not a source component")
+                if anchor_maturity not in MATURITY_RANK or evidence_maturity not in MATURITY_RANK:
+                    _fail(errors, f"scorecard.rows[{index}] maturity must be V0-V3")
+                elif MATURITY_RANK[evidence_maturity] < MATURITY_RANK[anchor_maturity]:
+                    _fail(errors, f"score exceeds frozen evidence maturity anchor: scorecard.rows[{index}]")
+                legacy_score_rows.append(
+                    {
+                        "route": route_id,
+                        "dimension": dimension_id,
+                        "score": score,
+                        "unknown": False,
+                        "not_applicable": False,
+                        "evidence_id": str(evidence_ids[0]) if evidence_ids else "",
+                        "evidence_maturity": evidence_maturity,
+                        "anchor_maturity": anchor_maturity,
+                    }
+                )
+            if actual_pairs != expected_pairs:
+                missing = sorted(expected_pairs - actual_pairs)
+                extra = sorted(actual_pairs - expected_pairs)
+                _fail(errors, f"scorecard route×dimension coverage mismatch; missing={missing}, extra={extra}")
+        elif rows:
+            _fail(errors, "scorecard.used=false but score rows are present")
+        elif re.search(r"加权评分|可行性\s*/?\s*价值分", public_text):
+            _fail(errors, "report contains a scoring table but structured scorecard is unused/empty")
+
+    models = record.get("models_and_tests")
+    if not isinstance(models, dict):
+        _fail(errors, "research_record.models_and_tests must be an object")
+        models = {}
+    benefit_scenarios = models.get("benefit_scenarios", [])
+    if not isinstance(benefit_scenarios, list):
+        _fail(errors, "models_and_tests.benefit_scenarios must be an array")
+        benefit_scenarios = []
+    for index, model in enumerate(benefit_scenarios):
+        if not isinstance(model, dict):
+            _fail(errors, f"benefit_scenarios[{index}] must be an object")
+            continue
+        if model.get("formula_type") == "linear_difference_rate":
+            inputs = model.get("inputs", {})
+            try:
+                calculated = (
+                    (float(inputs["baseline"]) - float(inputs["candidate"]))
+                    * float(inputs.get("quantity", 1))
+                    * float(inputs.get("unit_rate", 1))
+                )
+                expected = float(model["expected_result"])
+                if abs(calculated - expected) > max(1e-9, abs(expected) * 1e-9):
+                    _fail(errors, f"benefit_scenarios[{index}] arithmetic mismatch: {calculated} != {expected}")
+            except (KeyError, TypeError, ValueError):
+                _fail(errors, f"benefit_scenarios[{index}] has invalid linear_difference_rate inputs")
+        outputs = model.get("outputs", [])
+        if isinstance(outputs, list) and outputs:
+            expected_value = model.get("expected_result")
+            expected_unit = model.get("unit")
+            for output in outputs:
+                if not isinstance(output, dict) or output.get("value") != expected_value or output.get("unit") != expected_unit:
+                    _fail(errors, f"benefit_scenarios[{index}] output value/unit differs across artifacts")
+
+    tests = models.get("tests", [])
+    if not isinstance(tests, list):
+        _fail(errors, "models_and_tests.tests must be an array")
+        tests = []
+    for index, test in enumerate(tests):
+        if not isinstance(test, dict) or test.get("claim_scope") != "full_range":
+            continue
+        target = test.get("target_range", {})
+        tested = test.get("tested_range", {})
+        try:
+            if float(tested["min"]) > float(target["min"]) or float(tested["max"]) < float(target["max"]):
+                _fail(errors, f"tests[{index}] does not cover the claimed full range")
+        except (KeyError, TypeError, ValueError):
+            _fail(errors, f"tests[{index}] full_range claim requires numeric target_range/tested_range")
+
+    absence = record.get("absence_assessments", [])
+    if not isinstance(absence, list):
+        _fail(errors, "research_record.absence_assessments must be an array")
+        absence = []
+    for index, item in enumerate(absence):
+        if not isinstance(item, dict):
+            _fail(errors, f"absence_assessments[{index}] must be an object")
+            continue
+        level = item.get("level")
+        required = []
+        if level in {"N2", "N3"}:
+            required = ["databases", "queries", "classifications", "exclusions", "uncovered_scope"]
+        if level == "N3":
+            required += ["citation_tracking", "saturation_evidence"]
+        for field in required:
+            value = item.get(field)
+            if value is None or value == "" or value is False or value == []:
+                _fail(errors, f"absence_assessments[{index}] {level} lacks {field}")
+
+    engineering_review = assessments.get("engineering_review", {})
+    engineering_status = str(engineering_review.get("status", "pending")) if isinstance(engineering_review, dict) else "pending"
+    if engineering_status not in {"pending", "issues-found", "reviewed"}:
+        _fail(errors, "assessments.engineering_review.status must be pending/issues-found/reviewed")
+    if engineering_status == "reviewed" and not str(engineering_review.get("reviewed_artifact_sha256", "")).strip():
+        _fail(errors, "reviewed engineering content requires reviewed_artifact_sha256")
+    if engineering_status == "issues-found" and manifest.get("status") == "complete":
+        _fail(errors, "complete delivery cannot retain unresolved engineering review issues")
+
+    stats = {
+        "query_records": valid_queries,
+        "failed_queries": failed_queries,
+        "source_records": len(sources),
+        "stable_sources": stable_sources,
+        "critical_sources": critical_sources,
+        "score_rows": score_rows_count,
+        "benefit_scenarios": len(benefit_scenarios),
+    }
+    expected = manifest.get("expected_counts")
+    if not isinstance(expected, dict):
+        _fail(errors, "expected_counts must be an object")
+    else:
+        for name in ["query_records", "source_records", "critical_sources", "score_rows", "benefit_scenarios"]:
+            if expected.get(name) != stats[name]:
+                _fail(errors, f"expected_counts.{name} differs from research record: {expected.get(name)} != {stats[name]}")
+    return stats, legacy_score_rows, engineering_status
+
+
+def _check_bound_review(root: Path, review: object, diagram_available: bool, errors: list[str]) -> set[str]:
+    bound_paths: set[str] = set()
+    if not isinstance(review, dict):
+        _fail(errors, "figure_review must be an object")
+        return bound_paths
+    expected_status = "pass" if diagram_available else "not-applicable"
+    for name in sorted(FIGURE_REVIEW_NAMES):
+        item = review.get(name)
+        if not isinstance(item, dict) or item.get("status") != expected_status:
+            _fail(errors, f"figure review status must be {expected_status}: {name}")
+            continue
+        if not diagram_available:
+            if not item.get("findings"):
+                _fail(errors, f"degraded figure review requires a concrete reason: {name}")
+            continue
+        findings = item.get("findings")
+        if not isinstance(findings, list) or not findings or any(len(str(value).strip()) < 4 for value in findings):
+            _fail(errors, f"figure review requires concrete findings: {name}")
+        checked = item.get("checked_files")
+        if not isinstance(checked, list) or not checked:
+            _fail(errors, f"figure review requires hash-bound checked_files: {name}")
+            continue
+        for index, binding in enumerate(checked):
+            if not isinstance(binding, dict):
+                _fail(errors, f"figure review {name}.checked_files[{index}] must be an object")
+                continue
+            path = _safe_path(root, binding.get("path"), errors, f"figure review {name}.checked_files[{index}]")
+            if path is not None and str(binding.get("sha256", "")).lower() != _sha256(path):
+                _fail(errors, f"figure review hash mismatch: {name}/{path.name}")
+            if path is not None:
+                bound_paths.add(str(path.relative_to(root)))
+        if name == "engineer_view" and len(str(item.get("dangerous_misreading_checked", "")).strip()) < 6:
+            _fail(errors, "engineer_view requires the most dangerous misreading and its disposition")
+        if name == "first_time_reader_view" and len(str(item.get("mechanism_restatement", "")).strip()) < 12:
+            _fail(errors, "first_time_reader_view requires a 2-3 sentence mechanism restatement")
+    return bound_paths
+
+
+def _check_actual_figure_order(root: Path, manifest: dict, errors: list[str]) -> None:
+    order = manifest.get("report_figure_order")
+    if not isinstance(order, dict):
+        _fail(errors, "report_figure_order must be an object")
+        return
+    expected = [str(value) for value in order.get("ordered_numbers", [])]
+    if not expected:
+        return
+    main_paths = []
+    for artifact in manifest.get("artifacts", []):
+        if isinstance(artifact, dict) and artifact.get("role") == "main-report":
+            candidate = _safe_path(root, artifact.get("path"), errors, "report_figure_order.main-report")
+            if candidate is not None and candidate.suffix.lower() == ".docx":
+                main_paths.append(candidate)
+    if not main_paths:
+        return
+    paragraphs = _extract_text(main_paths[0])
+    marker = str(order.get("body_start_marker", "")).strip()
+    start = 0
+    marker_found = not marker
+    if marker:
+        for index, paragraph in enumerate(paragraphs):
+            if marker in paragraph:
+                start = index
+                marker_found = True
+                break
+    if not marker_found:
+        _fail(errors, f"DOCX body_start_marker not found: {marker}")
+        return
+    preview_allowed = {str(value) for value in order.get("summary_preview_numbers", [])}
+    preview_found: set[str] = set()
+    for paragraph in paragraphs[:start]:
+        for number in re.findall(r"图\s*(\d+\s*[-－]\s*\d+)", paragraph):
+            preview_found.add(re.sub(r"\s", "", number).replace("－", "-"))
+    unexpected_preview = sorted(preview_found - preview_allowed)
+    if unexpected_preview:
+        _fail(errors, f"DOCX summary contains undeclared figure previews: {unexpected_preview}")
+    found: list[str] = []
+    for paragraph in paragraphs[start:]:
+        for number in re.findall(r"图\s*(\d+\s*[-－]\s*\d+)", paragraph):
+            normalized = re.sub(r"\s", "", number).replace("－", "-")
+            if normalized not in found:
+                found.append(normalized)
+    filtered = [number for number in found if number in set(expected)]
+    if filtered != expected:
+        _fail(errors, f"DOCX actual body figure order differs: {filtered} != {expected}")
+
+
+def _validate_v12(root: Path, manifest: dict, strict: bool = False) -> dict[str, object]:
+    root = root.resolve()
+    v12_errors: list[str] = []
+    v12_warnings: list[str] = []
+    record_info = manifest.get("research_record")
+    record: dict = {}
+    record_path: Path | None = None
+    if not isinstance(record_info, dict):
+        _fail(v12_errors, "research_record must be an object")
+    else:
+        record_path = _safe_path(root, record_info.get("path"), v12_errors, "research_record")
+        if record_info.get("schema_version") != RESEARCH_RECORD_SCHEMA:
+            _fail(v12_errors, f"manifest research_record.schema_version must be {RESEARCH_RECORD_SCHEMA}")
+        if record_path is not None:
+            try:
+                record = json.loads(record_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                _fail(v12_errors, f"research_record JSON invalid: {exc}")
+
+    public_text = "\n".join(
+        line
+        for artifact in manifest.get("artifacts", [])
+        if isinstance(artifact, dict) and artifact.get("role") in {"decision-summary", "main-report"}
+        for path in [_safe_path(root, artifact.get("path"), v12_errors, f"public artifact {artifact.get('role')}")]
+        if path is not None
+        for line in _extract_text(path)
+    )
+    stats, score_rows, engineering_status = _validate_record(
+        record, manifest, public_text, v12_errors, v12_warnings
+    ) if record else ({"query_records": 0, "source_records": 0, "critical_sources": 0, "score_rows": 0, "benefit_scenarios": 0}, [], "pending")
+
+    legacy = json.loads(json.dumps(manifest))
+    legacy["schema_version"] = SCHEMA_VERSION
+    legacy["research_log"] = {
+        "path": record_info.get("path") if isinstance(record_info, dict) else "",
+        "claimed_queries": stats.get("query_records", 0),
+        "logged_queries": stats.get("query_records", 0),
+    }
+    sources = record.get("sources", []) if isinstance(record, dict) else []
+    legacy["sources"] = {
+        "cards": stats.get("source_records", 0),
+        "with_stable_identifier": sum(
+            1 for item in sources if isinstance(item, dict) and (item.get("stable_identifier") or item.get("url"))
+        ),
+        "critical": stats.get("critical_sources", 0),
+        "with_url": sum(1 for item in sources if isinstance(item, dict) and item.get("url")),
+    }
+    legacy["score_rows"] = score_rows
+    new_review = manifest.get("figure_review", {})
+    legacy["figure_review"] = {
+        name: {
+            "status": (new_review.get(name, {}) if isinstance(new_review, dict) else {}).get("status"),
+            "evidence": "; ".join(
+                str(value) for value in (new_review.get(name, {}) if isinstance(new_review, dict) else {}).get("findings", [])
+            ),
+        }
+        for name in FIGURE_REVIEW_NAMES
+    }
+    domain = str(manifest.get("concept_profile", {}).get("domain", "mechanical"))
+    if domain not in {"mechanical", "electrical", "measurement", "control", "software", "thermal", "fluid", "process", "work"}:
+        _fail(v12_errors, f"invalid concept_profile.domain: {domain}")
+    if domain != "mechanical":
+        legacy_profile = legacy.get("concept_profile", {})
+        for name in ["physical_structure", "relative_motion", "force_energy_transfer", "material_deformation"]:
+            legacy_profile[name] = False
+
+    base = _validate_v11(root, legacy, strict=strict)
+    diagram_available = manifest.get("capabilities", {}).get("diagram", {}).get("status") == "available"
+    review_paths = _check_bound_review(root, manifest.get("figure_review"), diagram_available, v12_errors)
+    if diagram_available:
+        required_review_paths = {
+            str(item.get("source_svg", ""))
+            for item in manifest.get("figures", [])
+            if isinstance(item, dict) and item.get("required") is True
+        }
+        missing_review_bindings = sorted(required_review_paths - review_paths)
+        if missing_review_bindings:
+            _fail(v12_errors, f"required figures lack hash-bound review evidence: {missing_review_bindings}")
+    _check_actual_figure_order(root, manifest, v12_errors)
+
+    render = manifest.get("render_summary", {})
+    if manifest.get("capabilities", {}).get("render", {}).get("status") == "available" and isinstance(render, dict):
+        document_path = _safe_path(root, render.get("document_path"), v12_errors, "render_summary.document_path")
+        declared_hash = str(render.get("document_sha256", "")).lower()
+        if document_path is not None:
+            actual_hash = _sha256(document_path)
+            if declared_hash != actual_hash:
+                _fail(v12_errors, "render_summary.document_sha256 does not match the checked document")
+            for index, item in enumerate(render.get("page_checks", [])):
+                if isinstance(item, dict) and str(item.get("artifact_sha256", "")).lower() != actual_hash:
+                    _fail(v12_errors, f"page_checks[{index}] is not bound to the rendered document hash")
+
+    errors = list(base.get("errors", [])) + v12_errors
+    warnings = list(base.get("warnings", [])) + v12_warnings
+    base.update(
+        {
+            "schema_version": CURRENT_SCHEMA_VERSION,
+            "research_record_stats": stats,
+            "quality_status": {
+                "structural": "PASS" if not base.get("errors") else "FAIL",
+                "computational_consistency": "PASS" if not v12_errors else "FAIL",
+                "engineering_review": engineering_status,
+            },
+            "warnings": warnings,
+            "errors": errors,
+            "status": "PASS" if not errors else "FAIL",
+        }
+    )
+    return base
+
+
+def validate(root: Path, manifest: dict, strict: bool = False) -> dict[str, object]:
+    schema = manifest.get("schema_version")
+    if schema == CURRENT_SCHEMA_VERSION:
+        return _validate_v12(root, manifest, strict=strict)
+    result = _validate_v11(root, manifest, strict=strict)
+    result["quality_status"] = {
+        "structural": result.get("status"),
+        "computational_consistency": "LEGACY_UNCHECKED",
+        "engineering_review": "LEGACY_UNCHECKED",
+    }
+    warning = f"legacy schema {schema} read; v2.5 research-record checks were not executed"
+    result.setdefault("warnings", []).append(warning)
+    if strict:
+        result.setdefault("errors", []).append("legacy schema cannot pass v2.5 strict validation")
+        result["status"] = "FAIL"
+    return result
+
+
+def _self_test_v12() -> None:
+    with tempfile.TemporaryDirectory(prefix="triz-delivery-v12-") as tmp:
+        root = Path(tmp)
+        for name in ["01-summary.md", "02-report.md", "03-evidence.md", "04-ledger.md"]:
+            (root / name).write_text(f"# {name}\n可复核的通用技术内容。\n", encoding="utf-8")
+        specs = [
+            ("object-structure", "F1-object-structure", ["R0", "R1"]),
+            ("problem-process", "F2-problem-failure", ["R0", "R1"]),
+            ("triz-trace", "F6-force-energy-material-path", ["R1"]),
+            ("solution-mechanism", "F4-mechanism-section", ["R0", "R1"]),
+            ("solution-mechanism", "F5-motion-sequence", ["R1"]),
+            ("solution-mechanism", "F7-safety-boundary", ["R1"]),
+            ("system-architecture", "F3-system-architecture", ["R1"]),
+            ("validation-gates", "F9-validation-decision", ["R1"]),
+            ("problem-process", "F8-process-operation", ["R1"]),
+        ]
+        png_payload = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+        )
+        figures: list[dict] = []
+        for index, (role, figure_type, routes) in enumerate(specs, start=1):
+            svg = root / f"figure-{index}.svg"
+            png = root / f"figure-{index}.png"
+            svg.write_text(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">'
+                f'<title>图6-{index} 通用工程图</title><desc>输入通过候选界面作用于目标对象。</desc>'
+                '<rect width="800" height="450" fill="#eef6f8"/>'
+                '<path d="M80 230 C210 90 430 90 590 230" fill="none" stroke="#176B87" stroke-width="8"/>'
+                '<polygon points="590,215 630,230 590,245" fill="#176B87"/>'
+                '<text x="100" y="320" font-size="18">工具</text>'
+                '<text x="300" y="320" font-size="18">目标层</text>'
+                '<text x="500" y="320" font-size="18">被保护区域</text></svg>',
+                encoding="utf-8",
+            )
+            png.write_bytes(png_payload)
+            figures.append(
+                {
+                    "id": f"FIG-{index:02d}",
+                    "number": f"6-{index}",
+                    "chapter": 6,
+                    "type": role,
+                    "figure_type": figure_type,
+                    "title": f"通用工程图{index}",
+                    "decision_question": "输入怎样通过候选界面形成目标输出？",
+                    "main_message": "受控作用路径把输入传给目标对象并保留安全退出。",
+                    "subject": "通用工程对象与候选作用界面",
+                    "confirmed_elements": ["目标层"],
+                    "hypothetical_elements": ["工具"],
+                    "unknown_elements": ["尺寸"],
+                    "motions": ["输入", "作用", "退出"],
+                    "forces": ["受控作用"],
+                    "energy_flows": [],
+                    "protected_objects": ["被保护区域"],
+                    "hazards": ["越界"],
+                    "safety_barriers": ["候选止挡"],
+                    "labels_required": ["工具", "目标层", "被保护区域"],
+                    "evidence_ids": ["CLM-001"],
+                    "claim_limit": "V0 概念机理，具体尺寸和安全能力待验证。",
+                    "design_status": "V0",
+                    "source_svg": svg.name,
+                    "render_png": png.name,
+                    "path": png.name,
+                    "display_width_pt": 432,
+                    "alt": "图中显示工具、目标层、主作用方向和被保护区域。",
+                    "ledgered": True,
+                    "embedded_in": [],
+                    "routes": routes,
+                    "required": True,
+                    "frame_count": 4 if figure_type == "F5-motion-sequence" else None,
+                }
+            )
+
+        record = {
+            "schema_version": "1.0",
+            "project": {"title": "通用工程课题", "record_status": "working", "maturity": "V0", "last_updated": "2026-09-06"},
+            "variables": [
+                {
+                    "id": "VAR-01", "object": "目标对象", "quantity": "控制量", "unit": "1",
+                    "preferred_direction": "range", "evidence_status": "H", "evidence_ids": [],
+                    "decision_rule": {"enabled": False, "comparison": "below", "threshold_variable": False, "earlier_warning_change": "increase"},
+                }
+            ],
+            "contradictions": [
+                {
+                    "id": "CON-01", "control_variable_id": "VAR-01", "change_direction": "increase",
+                    "useful_result": "目标作用增强", "worsened_result": "副作用增加",
+                    "causality_basis": "当前仅为待验证假设", "ec2_reverse_case": "反向改变时目标作用下降且副作用减小",
+                    "eligibility": "assumption_only", "matrix_mapping": {"improving_parameter": None, "worsening_parameter": None, "matrix_cell": None, "principles": []},
+                }
+            ],
+            "queries": [
+                {"id": "Q-001", "date": "2026-09-06", "entry": "通用检索入口", "query": "generic engineering mechanism", "filters": "none", "status": "completed", "included_source_ids": ["SRC-001"], "excluded": []}
+            ],
+            "sources": [
+                {
+                    "id": "SRC-001", "title": "通用来源", "creator": "机构", "date_or_version": "2026",
+                    "stable_identifier": "DOC-001", "url": "https://example.com/source", "locator": "section 1",
+                    "supporting_excerpt_or_fact": "支持候选子功能存在", "target_kind": "source_component",
+                    "authority": "medium", "directness": "direct", "independence": "primary", "currency": "current",
+                    "scope_match": "partial", "critical": True, "limitations": "未验证目标系统适配",
+                }
+            ],
+            "claims": [
+                {
+                    "id": "CLM-001", "text": "候选系统机理待验证", "target_kind": "proposed_system", "target_id": "R1",
+                    "conditions": "仅限概念阶段", "evidence_status": "H", "supporting_source_ids": ["SRC-001"],
+                    "opposing_source_ids": [], "unknowns": ["目标适配"], "allowed_wording": "候选机理可进入短样否证",
+                    "next_validation": "代表性短样试验",
+                },
+                {
+                    "id": "CLM-000", "text": "成熟基准仅作对照", "target_kind": "proposed_system", "target_id": "R0",
+                    "conditions": "当前工况", "evidence_status": "H", "supporting_source_ids": ["SRC-001"],
+                    "opposing_source_ids": [], "unknowns": ["现场完整节拍"], "allowed_wording": "作为基准候选",
+                    "next_validation": "完整节拍对照",
+                },
+            ],
+            "routes": [],
+            "assessments": {
+                "scorecard": {"used": False, "dimensions": [], "rows": []},
+                "gates": [],
+                "engineering_review": {"status": "pending", "reviewer_role": "待指定", "reviewed_artifact_sha256": None, "findings": ["待专业复核"]},
+            },
+            "models_and_tests": {"models": [], "tests": [], "benefit_scenarios": []},
+            "absence_assessments": [],
+        }
+        for route_id, claim_id in [("R0", "CLM-000"), ("R1", "CLM-001")]:
+            record["routes"].append(
+                {
+                    "id": route_id, "role": "primary" if route_id == "R1" else "baseline", "maturity": "V0",
+                    "mechanism_kind": "mechanical", "evidence_status": "H",
+                    "components": [{"id": f"M-{route_id}", "name": "候选模块", "target_kind": "proposed_system", "maturity": "V0", "evidence_ids": [claim_id]}],
+                    "steps": [{"id": "STEP-01", "action": "完成目标作用", "input_range": "代表对象", "output_range": "目标状态", "handoff_to": None, "handoff_status": "compatible", "evidence_ids": [claim_id]}],
+                    "active_effects": [{"id": "ACT-01", "type": "mechanical", "source": f"M-{route_id}", "target": "目标对象"}],
+                    "interactions": [], "interfaces": [{"from": "操作者", "to": f"M-{route_id}", "kind": "control", "status": "defined"}],
+                    "capability_range": {"input": "代表对象", "output": "目标状态", "environment": "受控", "known_gaps": []},
+                    "failure_fallback": "停止并回到基准方法", "identifiability": None, "claim_ids": [claim_id],
+                }
+            )
+        record_path = root / "research-record.json"
+        record_path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+        review_bindings = [
+            {"path": item["source_svg"], "sha256": _sha256(root / item["source_svg"])}
+            for item in figures
+        ]
+        manifest = {
+            "schema_version": "1.2", "delivery_level": "standard", "status": "degraded", "maturity": "V0",
+            "validator_runtime": "available",
+            "capabilities": {
+                "file_write": {"status": "available", "evidence": "已写入并读回测试文件"},
+                "diagram": {"status": "available", "evidence": "已生成并读取 SVG 与 PNG"},
+                "docx": {"status": "unavailable", "evidence": "此正例刻意测试降级交付"},
+                "render": {"status": "unavailable", "evidence": "此正例刻意测试降级交付"},
+            },
+            "artifacts": [
+                {"role": "decision-summary", "path": "01-summary.md", "required": True, "opened": True, "rendered": False},
+                {"role": "main-report", "path": "02-report.md", "required": True, "opened": True, "rendered": False},
+                {"role": "evidence-appendix", "path": "03-evidence.md", "required": True, "opened": True, "rendered": False},
+                {"role": "source-figure-ledger", "path": "04-ledger.md", "required": True, "opened": True, "rendered": False},
+                {"role": "research-record", "path": "research-record.json", "required": True, "opened": True, "rendered": False},
+            ],
+            "research_record": {"path": "research-record.json", "schema_version": "1.0"},
+            "expected_counts": {"query_records": 1, "source_records": 1, "critical_sources": 1, "score_rows": 0, "benefit_scenarios": 0},
+            "shortlisted_routes": ["R0", "R1"], "primary_routes": ["R1"],
+            "concept_profile": {
+                "primary_engineering_concept": True, "domain": "mechanical", "mechanism_kind": "mechanical",
+                "physical_structure": True, "relative_motion": True, "force_energy_transfer": True,
+                "material_deformation": True, "safety_risk": True, "multi_step_operation": True,
+            },
+            "figure_plan_frozen": True, "figures": figures, "figure_exemptions": [],
+            "figure_review": {
+                "engineer_view": {"status": "pass", "checked_files": review_bindings, "findings": ["主作用箭头从工具指向目标层，候选边界已标出"], "dangerous_misreading_checked": "已排除候选止挡被误读为验证完成"},
+                "first_time_reader_view": {"status": "pass", "checked_files": review_bindings, "findings": ["首次读者仍需从图题确认具体对象"], "mechanism_restatement": "工具先接近目标层，再施加受控作用，异常时退出并保护下层对象。"},
+                "figure_text_consistency": {"status": "pass", "checked_files": review_bindings, "findings": ["图中对象、路线和 V0 边界与正文一致"]},
+                "black_white_legibility": {"status": "pass", "checked_files": review_bindings, "findings": ["线型与文字标签在低饱和条件下仍可区分"]},
+            },
+            "numeric_benefits": False, "checks": {name: "pass" for name in CHECK_NAMES},
+            "report_figure_order": {"body_start_marker": "1.", "ordered_numbers": [], "summary_preview_numbers": []},
+            "render_summary": {"document_path": "02-report.md", "document_sha256": "", "pages": 0, "checked_pages": 0, "page_checks": [], "blank_pages": [], "unresolved_visual_issues": []},
+            "quality_status": {"structural": "not-checked", "computational_consistency": "not-checked", "engineering_review": "pending"},
+        }
+
+        positive = validate(root, manifest, strict=True)
+        assert positive["status"] == "PASS", positive["errors"]
+
+        tests = 0
+        def expect_fail(mutator, needle: str) -> None:
+            nonlocal tests
+            tests += 1
+            mutated_manifest = json.loads(json.dumps(manifest))
+            mutated_record = json.loads(json.dumps(record))
+            mutator(mutated_manifest, mutated_record)
+            record_path.write_text(json.dumps(mutated_record, ensure_ascii=False), encoding="utf-8")
+            result = validate(root, mutated_manifest, strict=True)
+            assert result["status"] == "FAIL", f"negative test {tests} unexpectedly passed"
+            assert any(needle in message for message in result["errors"]), (needle, result["errors"])
+            record_path.write_text(json.dumps(record, ensure_ascii=False), encoding="utf-8")
+
+        expect_fail(lambda m, r: m["expected_counts"].update(query_records=999), "expected_counts.query_records")
+        expect_fail(lambda m, r: m["expected_counts"].update(source_records=999), "expected_counts.source_records")
+
+        clean_report = (root / "02-report.md").read_text(encoding="utf-8")
+        (root / "02-report.md").write_text(clean_report + "\n## 加权评分\n", encoding="utf-8")
+        result = validate(root, manifest, strict=True)
+        tests += 1
+        assert result["status"] == "FAIL" and any("scorecard" in message for message in result["errors"])
+        (root / "02-report.md").write_text(clean_report, encoding="utf-8")
+
+        def bad_score(m, r):
+            r["assessments"]["scorecard"] = {
+                "used": True,
+                "dimensions": [{"id": "D1", "name": "安全", "weight": 1, "anchors": {str(v): {"required_maturity": "V0"} for v in [0, 1, 3, 5]}}],
+                "rows": [
+                    {"route_id": route, "dimension_id": "D1", "score": 3, "unknown": False, "not_applicable": False, "evidence_ids": ["NO-SUCH-ID"], "evidence_maturity": "V0", "target_kind": "proposed_system"}
+                    for route in ["R0", "R1"]
+                ],
+            }
+            m["expected_counts"]["score_rows"] = 2
+        expect_fail(bad_score, "unresolved ID")
+        expect_fail(lambda m, r: r["routes"][1].update(maturity="V1"), "maturity cannot exceed V0")
+        expect_fail(lambda m, r: r["variables"][0].update(decision_rule={"enabled": True, "comparison": "below", "threshold_variable": True, "earlier_warning_change": "decrease"}), "threshold polarity conflict")
+
+        summary_path = root / "01-summary.md"
+        clean_summary = summary_path.read_text(encoding="utf-8")
+        summary_path.write_text(clean_summary + "\n该方案实现不误报。\n", encoding="utf-8")
+        result = validate(root, manifest, strict=True)
+        tests += 1
+        assert result["status"] == "FAIL" and any("unsupported claim" in message for message in result["errors"])
+        summary_path.write_text(clean_summary, encoding="utf-8")
+
+        def numeric_range_gap(m, r):
+            first = r["routes"][1]["steps"][0]
+            first["handoff_to"] = "STEP-02"
+            first["output_numeric_range"] = {"min": 1, "max": 10, "unit": "mm"}
+            r["routes"][1]["steps"].append(
+                {"id": "STEP-02", "action": "完成下游判断", "input_range": "受限对象", "output_range": "判断结果", "input_numeric_range": {"min": 1, "max": 3, "unit": "mm"}, "handoff_to": None, "handoff_status": "compatible", "evidence_ids": ["CLM-001"]}
+            )
+        expect_fail(numeric_range_gap, "numeric handoff gap")
+        def missing_interaction(m, r):
+            r["routes"][1]["active_effects"].append({"id": "ACT-02", "type": "electrical", "source": "M-R1", "target": "目标对象"})
+        expect_fail(missing_interaction, "multiple active effects")
+        def missing_identifiability(m, r):
+            r["routes"][1]["mechanism_kind"] = "electrical_measurement"
+            r["routes"][1]["identifiability"] = None
+        expect_fail(missing_identifiability, "identifiability card")
+        expect_fail(lambda m, r: m["figures"][0].update(display_width_pt=200), "effective SVG font-size below 6pt")
+
+        # T12: Word 内的实际图题顺序与清单相反，即使清单自身有序也必须失败。
+        report_source = root / "report-source-v12.json"
+        reversed_figures = list(reversed(figures))
+        report_source.write_text(
+            json.dumps(
+                {
+                    "schema_version": "1.2", "research_record_path": "research-record.json",
+                    "research_record_sha256": _sha256(record_path),
+                    "title": "实际图序负例", "status": "V0 概念研究",
+                    "sections": [{"title": "1. 技术内容", "level": 1, "blocks": [
+                        {"type": "figure", "path": item["path"], "figure_id": item["id"], "figure_type": item["figure_type"], "design_status": "V0", "caption": f"图{item['number']} {item['title']}", "alt": item["alt"], "main_message": item["main_message"], "claim_limit": item["claim_limit"]}
+                        for item in reversed_figures
+                    ]}],
+                    "sources": [{"id": "SRC-001", "title": "通用来源", "url": "https://example.com/source", "claim": "支持候选子功能"}],
+                }, ensure_ascii=False), encoding="utf-8")
+        report_docx = root / "02-report.docx"
+        build = subprocess.run(
+            [sys.executable, str(SKILL_ROOT / "scripts" / "build_report.py"), "--input", str(report_source), "--output", str(report_docx)],
+            capture_output=True, text=True, encoding="utf-8", timeout=60,
+        )
+        assert build.returncode == 0, build.stderr
+        order_manifest = json.loads(json.dumps(manifest))
+        order_manifest["capabilities"]["docx"] = {"status": "available", "evidence": "已生成并打开 DOCX"}
+        order_manifest["artifacts"][1] = {"role": "main-report", "path": "02-report.docx", "required": True, "opened": True, "rendered": False}
+        order_manifest["report_figure_order"]["ordered_numbers"] = [item["number"] for item in figures]
+        for item in order_manifest["figures"]:
+            item["embedded_in"] = ["main-report"]
+        result = validate(root, order_manifest, strict=True)
+        tests += 1
+        assert result["status"] == "FAIL" and any("actual body figure order" in message for message in result["errors"]), result["errors"]
+
+        def inconsistent_benefit(m, r):
+            r["models_and_tests"]["benefit_scenarios"] = [{"id": "BEN-01", "formula_type": "linear_difference_rate", "inputs": {"baseline": 10, "candidate": 5, "quantity": 2, "unit_rate": 3}, "expected_result": 30, "unit": "元", "outputs": [{"artifact": "summary", "value": 30, "unit": "元"}, {"artifact": "report", "value": 31, "unit": "元"}]}]
+            m["expected_counts"]["benefit_scenarios"] = 1
+        expect_fail(inconsistent_benefit, "output value/unit differs")
+        def insufficient_range(m, r):
+            r["models_and_tests"]["tests"] = [{"id": "T-01", "claim_scope": "full_range", "target_range": {"min": 1, "max": 60}, "tested_range": {"min": 1, "max": 10}}]
+        expect_fail(insufficient_range, "does not cover the claimed full range")
+        def false_absence_level(m, r):
+            r["absence_assessments"] = [{"id": "N-01", "level": "N2", "databases": ["db"], "queries": ["q"]}]
+        expect_fail(false_absence_level, "N2 lacks")
+        assert tests == 15, tests
+    print("DELIVERABLE_SELF_TEST_PASS tests=15")
+
+
 def self_test() -> None:
+    _self_test_v12()
+    return
     with tempfile.TemporaryDirectory(prefix="triz-delivery-") as tmp:
         root = Path(tmp)
         for name in ["01-summary.md", "02-report.md", "03-evidence.md", "04-ledger.md"]:

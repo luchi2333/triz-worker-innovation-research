@@ -11,7 +11,7 @@
 3. `03-技术证据附件`：检索日志、来源卡、证据矩阵、矩阵查询、FMEA、试验协议、假设和声称边界；
 4. `04-来源与图示台账`：链接、命题、版权/生成方式、图号、数据来源和版本。
 
-另须生成 `deliverables-manifest.json`。进入 G5 时先读取 [delivery-contract.md](delivery-contract.md)，探测文件、图示、DOCX 和渲染能力。能力存在时必须生成相应成果；确实缺失时才允许 Markdown/CSV/SVG/PNG 等效交付，并标记 `degraded`。
+另须生成 `research-record.json` 和 `deliverables-manifest.json`。前者是关键变量、查询、来源、命题、路线、评分、试验和效益的单一事实源，后者只索引实际文件、能力和生成统计。进入 G5 时先读取 [delivery-contract.md](delivery-contract.md)，探测文件、图示、DOCX 和渲染能力。能力存在时必须生成相应成果；确实缺失时才允许 Markdown/CSV/SVG/PNG 等效交付，并标记 `degraded`。
 
 如果用户只要求一种文件，主文件仍须覆盖完整研究内容；其余台账可作为附录。默认情况下，用户不必再次提出“做成 Word”或“补插图”。
 
@@ -23,8 +23,8 @@
 
 不新增 G6；G5 内部固定为：
 
-1. `G5.1 Report Planning`：先确定决策者、工程人员、审查者三类读者各自需要的信息和页序；
-2. `G5.2 Engineering Figure Planning`：填写 `concept_profile`，冻结 Figure Plan；
+1. `G5.1 Report Planning`：先核对研究记录，再确定决策者、工程人员、审查者三类读者各自需要的信息和页序；
+2. `G5.2 Engineering Figure Planning`：填写 `concept_profile.domain/mechanism_kind`，按领域冻结 Figure Plan；
 3. `G5.3 Report Assembly`：先完成核心图，再用精简正文补充机理、证据和边界；
 4. `G5.4 Visual QA`：工程师/首次阅读者双视角、图文一致性、逐页渲染；
 5. `G5.5 Final Delivery`：运行成果校验器并输出回执。
@@ -182,7 +182,7 @@ Figure Plan 未冻结，或核心推荐方案未达到 [engineering-figure-plann
 - 去掉最强支持证据后推荐是否仍成立；
 - 最强反对意见。
 
-所有分数必须公开指标、权重、0/1/3/5 锚点、评分者、计算式和证据 ID；未知项写 `?` 且不赋分。某分值锚点要求 V2 时，只有 V2/V3 证据可给该分；低级证据不能靠机理推断补足。缺少这些字段时使用定性比较，不输出看似精确的总分。技术检索不写 FTO 通过，只写潜在重叠与专业复核状态。
+所有分数必须公开指标、权重、统一冻结的 0/1/3/5 锚点、评分者、评价对象、计算式和可解析的证据 ID；路线×指标组合必须完整。未知项写 `?` 且不赋分。某分值锚点要求 V2 时，只有 V2/V3 证据可给该分；低级证据不能靠机理推断补足，也不能针对单行降低锚点。缺少这些字段时使用定性比较，不输出看似精确的总分。技术检索不写 FTO 通过，只写潜在重叠与专业复核状态。
 
 ### 第 8 章 安全、FMEA 与验证
 
@@ -255,7 +255,7 @@ Figure Plan 未冻结，或核心推荐方案未达到 [engineering-figure-plann
 
 ## 5. 图示与网络资料规则
 
-图型、Figure Plan 字段、视觉语义、动态序列、SVG/PNG 文件契约和 Figure Review 的权威规则见 [engineering-figure-planning.md](engineering-figure-planning.md)。本节只规定报告格式选择和网络资料使用，不另建第二套工程图标准。
+图型、领域选择、Figure Plan 字段、视觉语义、动态/信号/状态序列、SVG/PNG 文件契约和 Figure Review 的权威规则见 [engineering-figure-planning.md](engineering-figure-planning.md)。工程关系与端口/箭头语义按 [engineering-consistency-review.md](engineering-consistency-review.md) 复核。本节只规定报告格式选择和网络资料使用，不另建第二套工程图标准。
 
 ### 5.1 图示选型表
 
@@ -313,7 +313,7 @@ flowchart TD
 - 验证闸门（Mermaid `stateDiagram`）；
 - 效益敏感性图（有数值时，原生图表）。
 
-以上图示不是可选美化。每个入选路线必须至少有一张 `solution-mechanism` 原理图；核心推荐方案还必须满足 F4/F5 及适用的 F7/F8 契约。确实不适用的图须在交付清单中写技术理由。图示能力可用而缺图时，G5 不通过。
+以上图示不是可选美化。每个入选路线必须至少有一张 `solution-mechanism` 原理图；机械核心方案满足 F4/F5 及适用的 F7/F8，其他领域提供等价的主机理、真实状态/信号/工序过程和安全图组。确实不适用的图须在交付清单中写技术理由。图示能力可用而缺图时，G5 不通过。
 
 ### 5.4 网络图片
 
@@ -351,6 +351,6 @@ flowchart TD
 8. 检查上游闸门失败是否在摘要、方案角色和允许动作中一致降级；
 9. 修复后重新渲染检查，不以结构测试通过代替视觉验收。
 10. 填写 `deliverables-manifest.json`，运行 `scripts/validate_deliverables.py --strict`；校验失败即回到对应步骤修复。
-11. 最终回复给出 G5 交付回执；图示、DOCX 和逐页检查不得留作后续扩展。
+11. 最终回复分别给出结构校验、可计算一致性和工程内容复核状态，再给 G5 交付回执；图示、DOCX 和逐页检查不得留作后续扩展。
 12. 对核心图做“遮住正文”测试：首次阅读者在 3～10 秒能说出大致机理，在 30 秒能复述主要动作链和一个关键未验证项；结果与证据写入 `figure_review`。
 13. 检查章节图号顺序、F5 帧数、SVG 必需标签和最小字体；架构框图未被用来冒充结构/运动/安全图。

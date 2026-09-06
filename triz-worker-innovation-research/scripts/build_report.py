@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import re
 import struct
@@ -29,7 +30,7 @@ from xml.sax.saxutils import escape, quoteattr
 ROOT = Path(__file__).resolve().parent.parent
 EMU_PER_INCH = 914400
 PAGE_WIDTH_IN = 6.25
-REPORT_SCHEMA_VERSION = "1.1"
+REPORT_SCHEMA_VERSION = "1.2"
 MATURITY_LEVELS = {"V0", "V1", "V2", "V3"}
 FIGURE_TYPES = {
     "F1-object-structure",
@@ -206,6 +207,23 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
     data = json.loads(source_path.read_text(encoding="utf-8"))
     if data.get("schema_version") != REPORT_SCHEMA_VERSION:
         raise ValueError(f"schema_version must be {REPORT_SCHEMA_VERSION}")
+    record_value = data.get("research_record_path")
+    if not isinstance(record_value, str) or not record_value.strip():
+        raise ValueError("research_record_path is required")
+    record_path = (source_path.parent / record_value).resolve()
+    try:
+        record_path.relative_to(source_path.parent.resolve())
+    except ValueError as exc:
+        raise ValueError("research_record_path must stay inside the report source directory") from exc
+    if not record_path.is_file():
+        raise ValueError(f"research record not found: {record_value}")
+    record_payload = record_path.read_bytes()
+    record_hash = hashlib.sha256(record_payload).hexdigest()
+    if str(data.get("research_record_sha256", "")).lower() != record_hash:
+        raise ValueError("research_record_sha256 does not match research_record_path")
+    record_data = json.loads(record_payload.decode("utf-8"))
+    if record_data.get("schema_version") != "1.0":
+        raise ValueError("research record schema_version must be 1.0")
     title = str(data.get("title", "技术方案报告")).strip()
     if not title:
         raise ValueError("title cannot be empty")
@@ -382,6 +400,8 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
         "figures": figure_count,
         "figure_metadata_complete": True,
         "sources": source_count,
+        "research_record_sha256": record_hash,
+        "research_record_verified": True,
         "visual_verification_required": True,
     }
 
@@ -395,10 +415,18 @@ def self_test() -> None:
             encoding="utf-8",
         )
         source = root / "report.json"
+        record = root / "research-record.json"
+        record.write_text(
+            json.dumps({"schema_version": "1.0", "project": {"title": "自检"}}, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        record_hash = hashlib.sha256(record.read_bytes()).hexdigest()
         source.write_text(
             json.dumps(
                 {
-                    "schema_version": "1.1",
+                    "schema_version": "1.2",
+                    "research_record_path": "research-record.json",
+                    "research_record_sha256": record_hash,
                     "title": "自检技术报告",
                     "status": "V0 概念研究",
                     "sections": [
@@ -441,6 +469,7 @@ def self_test() -> None:
             assert "图示要点" in document and "证据边界" in document
             assert 'TargetMode="External"' in rels
         assert result["figures"] == 1 and result["sources"] == 1 and result["figure_metadata_complete"] is True
+        assert result["research_record_verified"] is True and result["research_record_sha256"] == record_hash
     print("REPORT_SELF_TEST_PASS")
 
 

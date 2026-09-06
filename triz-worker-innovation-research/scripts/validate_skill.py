@@ -49,6 +49,7 @@ REQUIRED = [
     "scripts/validate_deliverables.py",
     "scripts/validate_skill.py",
     "assets/deliverables-manifest-template.json",
+    "assets/research-record-template.json",
     "assets/report-source-template.json",
     "assets/figure-template.svg",
     "references/contradiction-matrix.json",
@@ -62,6 +63,7 @@ REQUIRED = [
     "references/triz-analysis-output.md",
     "references/deep-research-protocol.md",
     "references/engineering-claim-safety-checks.md",
+    "references/engineering-consistency-review.md",
     "references/output-templates.md",
     "references/final-report-blueprint.md",
     "references/engineering-figure-planning.md",
@@ -424,6 +426,8 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "Figure Review",
         "3～6 帧",
         "架构图不能代替",
+        "按技术领域选择最低图组",
+        "display_width_pt",
     ]:
         if required_phrase not in figure_planning:
             fail(errors, f"Engineering figure planning missing: {required_phrase}")
@@ -433,9 +437,9 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
     except json.JSONDecodeError as exc:
         fail(errors, f"Deliverables manifest template is invalid JSON: {exc}")
         manifest_template = {}
-    if manifest_template.get("schema_version") != "1.1":
-        fail(errors, "Deliverables manifest template must use schema_version 1.1")
-    for key in ["primary_routes", "concept_profile", "figure_plan_frozen", "figure_review"]:
+    if manifest_template.get("schema_version") != "1.2":
+        fail(errors, "Deliverables manifest template must use schema_version 1.2")
+    for key in ["research_record", "expected_counts", "primary_routes", "concept_profile", "figure_plan_frozen", "figure_review", "report_figure_order", "quality_status"]:
         if key not in manifest_template:
             fail(errors, f"Deliverables manifest template missing: {key}")
     manifest_checks = manifest_template.get("checks", {})
@@ -444,12 +448,31 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
             fail(errors, f"Deliverables manifest template checks missing: {key}")
 
     try:
+        research_template = json.loads(files.get("assets/research-record-template.json", "{}"))
+    except json.JSONDecodeError as exc:
+        fail(errors, f"Research record template is invalid JSON: {exc}")
+        research_template = {}
+    if research_template.get("schema_version") != "1.0":
+        fail(errors, "Research record template must use schema_version 1.0")
+    for key in ["variables", "contradictions", "queries", "sources", "claims", "routes", "assessments", "models_and_tests"]:
+        if key not in research_template:
+            fail(errors, f"Research record template missing: {key}")
+
+    consistency = files.get("references/engineering-consistency-review.md", "")
+    for required_phrase in ["变量方向与真实矛盾卡", "端到端能力与模块衔接卡", "最小可辨识性卡", "工程图语义卡", "三种状态必须分开"]:
+        if required_phrase not in consistency:
+            fail(errors, f"Engineering consistency review missing: {required_phrase}")
+
+    try:
         report_template = json.loads(files.get("assets/report-source-template.json", "{}"))
     except json.JSONDecodeError as exc:
         fail(errors, f"Report source template is invalid JSON: {exc}")
         report_template = {}
-    if report_template.get("schema_version") != "1.1":
-        fail(errors, "Report source template must use schema_version 1.1")
+    if report_template.get("schema_version") != "1.2":
+        fail(errors, "Report source template must use schema_version 1.2")
+    for key in ["research_record_path", "research_record_sha256"]:
+        if key not in report_template:
+            fail(errors, f"Report source template missing provenance field: {key}")
     figure_blocks = [
         block
         for section in report_template.get("sections", [])

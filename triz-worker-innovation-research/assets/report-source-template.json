@@ -1,5 +1,7 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
+  "research_record_path": "research-record.json",
+  "research_record_sha256": "填写 research-record.json 的 SHA-256",
   "title": "职工创新技术方案报告",
   "subtitle": "TRIZ 与证据驱动研究",
   "status": "V0 概念研究｜当前允许：代表性短样验证",
