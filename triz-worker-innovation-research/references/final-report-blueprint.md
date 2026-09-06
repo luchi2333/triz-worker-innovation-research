@@ -1,5 +1,8 @@
 # 最终研究报告蓝图
 
+新增字段、阶段检查、既有授权、机制卡和同源图文生成统一见 [research-record-contract.md](research-record-contract.md)。G0/G3/G5 对应使用，不另设第二套状态或成熟度。
+
+
 最终交付的首要目的，是让现场人员、技术负责人和决策者看懂“问题是什么、有哪些解法、每个解法如何工作、推荐什么、凭什么、怎样验证、能产生什么收益”。内部研究治理信息放在证据附件，不挤占技术摘要。所有核心图先按 [engineering-figure-planning.md](engineering-figure-planning.md) 建立 Figure Plan；本文件负责报告信息结构，不重复定义图型和视觉语义。
 
 ## 1. 交付包

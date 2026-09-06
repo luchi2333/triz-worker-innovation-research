@@ -1,0 +1,104 @@
+{
+  "schema_version": "1.3",
+  "research_record_path": "research-record.json",
+  "research_record_sha256": "填写生成时的记录散列",
+  "figure_manifest_path": "figures/figure-manifest.json",
+  "title": "可调定位机构图文研究教学样例",
+  "subtitle": "机制与参数驱动的报告表达",
+  "status": "V0 教学概念 所有尺寸为 H 参数",
+  "sections": [
+    {
+      "title": "方案总览",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "claim_ref": "/claims/CLM-001"
+        },
+        {
+          "type": "paragraph",
+          "text": "本报告展示可调定位机构的原理、动作和初步几何。读者可先理解部件如何配合，再查看参数与待验证问题。本样例没有真实现场测量或试验结果。"
+        },
+        {
+          "type": "paragraph",
+          "text_template": "定位中心为 {{/parameters/P-X/value}} {{/parameters/P-X/unit}}（{{/parameters/P-X/evidence_status}}）。夹紧原理见 [[figure:FIG-MECH]]，工作过程见 [[figure:FIG-MOTION]]。"
+        }
+      ]
+    },
+    {
+      "title": "核心作用机理",
+      "blocks": [
+        {
+          "type": "figure",
+          "figure_ref": "FIG-MECH",
+          "figure_id": "FIG-MECH",
+          "figure_type": "F4-mechanism-section",
+          "design_status": "V0",
+          "main_message": "螺钉与 T 螺母夹住槽肩，通过接触作用预期限制滑移。",
+          "claim_limit": "H 教学参数，结构与保持能力尚未验证。"
+        }
+      ]
+    },
+    {
+      "title": "工作过程",
+      "blocks": [
+        {
+          "type": "figure",
+          "figure_ref": "FIG-MOTION"
+        }
+      ],
+      "page_break_before": true
+    },
+    {
+      "title": "初步设计与参数",
+      "blocks": [
+        {
+          "type": "figure",
+          "figure_ref": "FIG-DESIGN"
+        }
+      ],
+      "page_break_before": true
+    },
+    {
+      "title": "参数与待定条件",
+      "page_break_before": true,
+      "blocks": [
+        {
+          "type": "table",
+          "table_ref": "/parameters",
+          "columns": [
+            {
+              "header": "参数",
+              "field": "name"
+            },
+            {
+              "header": "值",
+              "field": "value"
+            },
+            {
+              "header": "单位",
+              "field": "unit"
+            },
+            {
+              "header": "依据",
+              "field": "evidence_status"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "验证与下一步",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text_template": "当前验收需求：{{/requirements/REQ-01/criterion}}"
+        },
+        {
+          "type": "paragraph",
+          "text": "先确认现场对象、安装接口和载荷，再确定材料、公差及预设试验判据。测量指定推力下的滑移量和重复定位偏差；超过判据应修改或放弃当前夹紧设计。图纸表达完成不代表样机已验证。"
+        }
+      ]
+    }
+  ],
+  "sources": []
+}

@@ -1,178 +1,55 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "project": {
-    "title": "职工创新课题",
+    "title": "待命名课题",
     "record_status": "working",
     "maturity": "V0",
-    "last_updated": "YYYY-MM-DD"
+    "last_updated": null,
+    "maturity_note": "尚无候选方案时，V0 仅为兼容字段默认值，尚未评定机理可行性。"
   },
-  "variables": [
-    {
-      "id": "VAR-01",
-      "object": "目标对象",
-      "quantity": "可调控制量",
-      "unit": "填写单位；无量纲时写 1",
-      "value_or_range": null,
-      "preferred_direction": "range",
-      "acceptable_range": {"min": null, "max": null},
-      "evidence_status": "H",
-      "evidence_ids": [],
-      "decision_rule": {
-        "enabled": false,
-        "comparison": "below",
-        "threshold_variable": false,
-        "earlier_warning_change": "increase"
-      },
-      "next_action": "取得现场量测或确认真实比较式"
-    }
-  ],
-  "contradictions": [
-    {
-      "id": "CON-01",
-      "control_variable_id": "VAR-01",
-      "change_direction": "increase",
-      "useful_result": "说明改变控制量后直接得到的有用结果",
-      "worsened_result": "说明由同一次改变直接引发的恶化结果",
-      "causality_basis": "物理关系、现场观察或来源；未知时明确待验证",
-      "ec2_reverse_case": "当控制量反向变化时，有用结果与恶化结果怎样变化",
-      "direction_probe": {
-        "input_a": 1,
-        "input_b": 2,
-        "expected_effect": "填写两个简化输入下的方向性结果"
-      },
-      "eligibility": "assumption_only",
-      "matrix_mapping": {
-        "improving_parameter": null,
-        "worsening_parameter": null,
-        "matrix_cell": null,
-        "principles": []
-      },
-      "evidence_ids": [],
-      "next_action": "验证因果后再决定是否进入矛盾矩阵"
-    }
-  ],
-  "queries": [
-    {
-      "id": "Q-001",
-      "date": "YYYY-MM-DD",
-      "entry": "检索入口或数据库",
-      "query": "完整、可复制的原始查询式",
-      "filters": "时间、语言、分类号或其他过滤条件",
-      "status": "completed",
-      "included_source_ids": [],
-      "excluded": [{"item": "候选结果", "reason": "排除理由"}],
-      "notes": "失败尝试也单独保留，不用“多次/×3”合并"
-    }
-  ],
-  "sources": [
-    {
-      "id": "SRC-001",
-      "title": "来源原始题名",
-      "creator": "作者或机构",
-      "date_or_version": "发布日期或版本",
-      "stable_identifier": "DOI、标准号、专利号、产品型号或稳定页面标识",
-      "url": "https://example.com/source",
-      "locator": "页码、章节、权利要求、图号或网页段落",
-      "supporting_excerpt_or_fact": "该来源直接支持的事实，避免只记标题",
-      "target_kind": "source_component",
-      "authority": "medium",
-      "directness": "direct",
-      "independence": "primary",
-      "currency": "current",
-      "scope_match": "partial",
-      "critical": false,
-      "limitations": "与现场对象、工况或完整系统的差异"
-    }
-  ],
-  "claims": [
-    {
-      "id": "CLM-001",
-      "text": "需要进入摘要、正文或结论的关键命题",
-      "target_kind": "proposed_system",
-      "target_id": "R1",
-      "conditions": "成立条件和适用范围",
-      "evidence_status": "unknown",
-      "supporting_source_ids": [],
-      "opposing_source_ids": [],
-      "unknowns": ["尚未确认的关键点"],
-      "allowed_wording": "概念上可行，待代表性样件验证",
-      "next_validation": "最小可否证试验"
-    }
-  ],
-  "routes": [
-    {
-      "id": "R1",
-      "role": "primary",
-      "maturity": "V0",
-      "mechanism_kind": "mechanical",
-      "evidence_status": "H",
-      "components": [
-        {
-          "id": "M1",
-          "name": "候选模块",
-          "target_kind": "proposed_system",
-          "maturity": "V0",
-          "evidence_ids": []
-        }
-      ],
-      "steps": [
-        {
-          "id": "STEP-01",
-          "action": "输入对象进入候选模块并完成目标作用",
-          "input_range": "填写对象、尺寸、状态和环境范围",
-          "output_range": "填写输出状态及其范围",
-          "input_numeric_range": null,
-          "output_numeric_range": null,
-          "handoff_to": null,
-          "handoff_status": "compatible",
-          "evidence_ids": []
-        }
-      ],
-      "active_effects": [
-        {"id": "ACT-01", "type": "mechanical", "source": "M1", "target": "目标对象"}
-      ],
-      "interactions": [],
-      "interfaces": [
-        {"from": "操作者", "to": "M1", "kind": "control", "status": "defined"}
-      ],
-      "capability_range": {
-        "input": "填写",
-        "output": "填写",
-        "environment": "填写",
-        "known_gaps": []
-      },
-      "failure_fallback": "停止并回退到安全基准工艺",
-      "identifiability": null,
-      "claim_ids": ["CLM-001"]
-    }
-  ],
+  "workflow": {
+    "current_stage": "G0",
+    "completed_stage": null,
+    "next_actions": [],
+    "pending_questions": [],
+    "authorization": "needs-recording"
+  },
+  "inputs": [],
+  "problems": [],
+  "requirements": [],
+  "variables": [],
+  "contradictions": [],
+  "queries": [],
+  "sources": [],
+  "claims": [],
+  "routes": [],
+  "mechanisms": [],
+  "parameters": [],
+  "decisions": [],
+  "figure_specs": [],
+  "absence_assessments": [],
   "assessments": {
     "scorecard": {
       "used": false,
       "dimensions": [],
       "rows": []
     },
-    "gates": [
-      {
-        "id": "GATE-01",
-        "name": "工程内容复核",
-        "status": "pending",
-        "target_kind": "proposed_system",
-        "evidence_ids": [],
-        "findings": ["尚未由具备相应专业能力的人员复核"]
-      }
-    ],
+    "gates": [],
     "engineering_review": {
       "status": "pending",
-      "reviewer_role": "待指定",
-      "reviewed_artifact_sha256": null,
-      "findings": ["自动结构校验不等于工程认证"]
+      "findings": []
     }
   },
   "models_and_tests": {
     "models": [],
+    "protocols": [],
     "tests": [],
     "benefit_scenarios": []
   },
-  "absence_assessments": []
+  "context": {
+    "object_identity": null,
+    "operating_boundary": null,
+    "measurement_basis": null,
+    "proxy_scenarios": []
+  }
 }

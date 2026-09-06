@@ -5,19 +5,64 @@
   "maturity": "V0",
   "validator_runtime": "available",
   "capabilities": {
-    "file_write": {"status": "not-checked", "evidence": "尚未执行探测"},
-    "diagram": {"status": "not-checked", "evidence": "尚未执行探测"},
-    "docx": {"status": "not-checked", "evidence": "尚未执行探测"},
-    "render": {"status": "not-checked", "evidence": "尚未执行探测"}
+    "file_write": {
+      "status": "not-checked",
+      "evidence": "尚未执行探测"
+    },
+    "diagram": {
+      "status": "not-checked",
+      "evidence": "尚未执行探测"
+    },
+    "docx": {
+      "status": "not-checked",
+      "evidence": "尚未执行探测"
+    },
+    "render": {
+      "status": "not-checked",
+      "evidence": "尚未执行探测"
+    }
   },
   "artifacts": [
-    {"role": "decision-summary", "path": "01-决策摘要.md", "required": true, "opened": false, "rendered": false},
-    {"role": "main-report", "path": "02-最终研究报告.md", "required": true, "opened": false, "rendered": false},
-    {"role": "evidence-appendix", "path": "03-技术证据附件.md", "required": true, "opened": false, "rendered": false},
-    {"role": "source-figure-ledger", "path": "04-来源与图示台账.md", "required": true, "opened": false, "rendered": false},
-    {"role": "research-record", "path": "research-record.json", "required": true, "opened": true, "rendered": false}
+    {
+      "role": "decision-summary",
+      "path": "01-决策摘要.md",
+      "required": true,
+      "opened": false,
+      "rendered": false
+    },
+    {
+      "role": "main-report",
+      "path": "02-最终研究报告.md",
+      "required": true,
+      "opened": false,
+      "rendered": false
+    },
+    {
+      "role": "evidence-appendix",
+      "path": "03-技术证据附件.md",
+      "required": true,
+      "opened": false,
+      "rendered": false
+    },
+    {
+      "role": "source-figure-ledger",
+      "path": "04-来源与图示台账.md",
+      "required": true,
+      "opened": false,
+      "rendered": false
+    },
+    {
+      "role": "research-record",
+      "path": "research-record.json",
+      "required": true,
+      "opened": true,
+      "rendered": false
+    }
   ],
-  "research_record": {"path": "research-record.json", "schema_version": "1.0"},
+  "research_record": {
+    "path": "research-record.json",
+    "schema_version": "1.1"
+  },
   "expected_counts": {
     "query_records": 0,
     "source_records": 0,
@@ -25,8 +70,13 @@
     "score_rows": 0,
     "benefit_scenarios": 0
   },
-  "shortlisted_routes": ["R0", "R1"],
-  "primary_routes": ["R1"],
+  "shortlisted_routes": [
+    "R0",
+    "R1"
+  ],
+  "primary_routes": [
+    "R1"
+  ],
   "concept_profile": {
     "primary_engineering_concept": true,
     "domain": "mechanical",
@@ -42,10 +92,28 @@
   "figures": [],
   "figure_exemptions": [],
   "figure_review": {
-    "engineer_view": {"status": "not-checked", "checked_files": [], "findings": [], "dangerous_misreading_checked": ""},
-    "first_time_reader_view": {"status": "not-checked", "checked_files": [], "findings": [], "mechanism_restatement": ""},
-    "figure_text_consistency": {"status": "not-checked", "checked_files": [], "findings": []},
-    "black_white_legibility": {"status": "not-checked", "checked_files": [], "findings": []}
+    "engineer_view": {
+      "status": "not-checked",
+      "checked_files": [],
+      "findings": [],
+      "dangerous_misreading_checked": ""
+    },
+    "first_time_reader_view": {
+      "status": "not-checked",
+      "checked_files": [],
+      "findings": [],
+      "mechanism_restatement": ""
+    },
+    "figure_text_consistency": {
+      "status": "not-checked",
+      "checked_files": [],
+      "findings": []
+    },
+    "black_white_legibility": {
+      "status": "not-checked",
+      "checked_files": [],
+      "findings": []
+    }
   },
   "numeric_benefits": false,
   "checks": {
@@ -58,7 +126,11 @@
     "figure_contract": "not-checked",
     "caption_numbering": "not-checked"
   },
-  "report_figure_order": {"body_start_marker": "1.", "ordered_numbers": [], "summary_preview_numbers": []},
+  "report_figure_order": {
+    "body_start_marker": "1.",
+    "ordered_numbers": [],
+    "summary_preview_numbers": []
+  },
   "render_summary": {
     "document_path": "最终技术方案报告.docx",
     "document_sha256": "",
@@ -71,6 +143,10 @@
   "quality_status": {
     "structural": "not-checked",
     "computational_consistency": "not-checked",
-    "engineering_review": "pending"
+    "engineering_review": "pending",
+    "research_progress": "not-checked",
+    "route_eligibility": {},
+    "maturity_support": {},
+    "action_authorization": "not-inferred-from-report"
   }
 }

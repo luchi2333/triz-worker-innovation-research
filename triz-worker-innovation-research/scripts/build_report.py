@@ -26,11 +26,15 @@ import zipfile
 from pathlib import Path
 from xml.sax.saxutils import escape, quoteattr
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from report_bindings import compile_source, verify_docx_bindings
+
 
 ROOT = Path(__file__).resolve().parent.parent
 EMU_PER_INCH = 914400
 PAGE_WIDTH_IN = 6.25
-REPORT_SCHEMA_VERSION = "1.2"
+REPORT_SCHEMA_VERSION = "1.3"
 MATURITY_LEVELS = {"V0", "V1", "V2", "V3"}
 FIGURE_TYPES = {
     "F1-object-structure",
@@ -205,8 +209,9 @@ def _styles_xml() -> str:
 
 def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
     data = json.loads(source_path.read_text(encoding="utf-8"))
-    if data.get("schema_version") != REPORT_SCHEMA_VERSION:
-        raise ValueError(f"schema_version must be {REPORT_SCHEMA_VERSION}")
+    if data.get("schema_version") not in {"1.2", REPORT_SCHEMA_VERSION}:
+        raise ValueError("schema_version must be 1.2 or 1.3")
+    bound_source = data.get("schema_version") == "1.3"
     record_value = data.get("research_record_path")
     if not isinstance(record_value, str) or not record_value.strip():
         raise ValueError("research_record_path is required")
@@ -222,8 +227,10 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
     if str(data.get("research_record_sha256", "")).lower() != record_hash:
         raise ValueError("research_record_sha256 does not match research_record_path")
     record_data = json.loads(record_payload.decode("utf-8"))
-    if record_data.get("schema_version") != "1.0":
-        raise ValueError("research record schema_version must be 1.0")
+    if record_data.get("schema_version") not in {"1.0", "1.1"}:
+        raise ValueError("research record schema_version must be 1.0 or 1.1")
+    if bound_source:
+        data = compile_source(data, record_data, source_path.parent)
     title = str(data.get("title", "技术方案报告")).strip()
     if not title:
         raise ValueError("title cannot be empty")
@@ -252,6 +259,8 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
     for section in data.get("sections", []):
         if not isinstance(section, dict):
             continue
+        if section.get("page_break_before"):
+            body.append(_page_break())
         heading = str(section.get("title", "")).strip()
         level = int(section.get("level", 1))
         if heading:
@@ -259,6 +268,7 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
         for block in section.get("blocks", []):
             if not isinstance(block, dict):
                 continue
+            block_start = len(body)
             kind = block.get("type")
             if kind == "paragraph":
                 body.append(_paragraph(str(block.get("text", ""))))
@@ -315,6 +325,11 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
                 body.append(_paragraph(f"图示要点：{main_message}", bold=True, color="102A43", size=19, after=55))
                 body.append(_paragraph(f"证据边界：{claim_limit}", color="627D98", size=18, after=150))
 
+            if block.get("_binding_id"):
+                content = "".join(body[block_start:])
+                del body[block_start:]
+                body.append(f'<w:sdt><w:sdtPr><w:tag w:val="{block["_binding_id"]}"/></w:sdtPr><w:sdtContent>{content}</w:sdtContent></w:sdt>')
+
     sources = data.get("sources", [])
     source_count = 0
     if sources:
@@ -360,6 +375,8 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
     ]
     for ext, mime in sorted(content_types.items()):
         defaults.append(f'<Default Extension="{ext}" ContentType="{mime}"/>')
+    if bound_source:
+        defaults.append('<Default Extension="json" ContentType="application/json"/>')
     content_types_xml = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">{''.join(defaults)}
 <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
@@ -391,9 +408,19 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
         package.writestr("word/_rels/document.xml.rels", document_rels)
         package.writestr("docProps/core.xml", core_xml)
         package.writestr("docProps/app.xml", app_xml)
+        if bound_source:
+            package.writestr("customXml/triz-provenance.json", json.dumps({
+                "research_record_sha256": record_hash,
+                "report_source_sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
+                "bound_blocks": len(data["_bindings"]),
+                "unbound_narrative_blocks": data["_narrative_blocks"],
+            }))
         for name, payload in media:
             package.writestr(f"word/media/{name}", payload)
 
+    binding_check = verify_docx_bindings(output_path, source_path) if bound_source else {"status": "LEGACY_UNCHECKED"}
+    if binding_check.get("errors"):
+        raise ValueError("generated DOCX binding verification failed: " + "; ".join(binding_check["errors"]))
     return {
         "output": str(output_path),
         "bytes": output_path.stat().st_size,
@@ -402,6 +429,7 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
         "sources": source_count,
         "research_record_sha256": record_hash,
         "research_record_verified": True,
+        "record_bindings": binding_check,
         "visual_verification_required": True,
     }
 
@@ -478,6 +506,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--input", type=Path, help="JSON report source")
     parser.add_argument("--output", type=Path, help="output DOCX path")
     parser.add_argument("--self-test", action="store_true", help="run built-in self-test")
+    parser.add_argument("--verify-bindings", action="store_true", help="verify --output DOCX against current --input JSON and record")
     return parser.parse_args(argv)
 
 
@@ -490,12 +519,12 @@ def main(argv: list[str]) -> int:
         print("error: --input and --output are required", file=sys.stderr)
         return 2
     try:
-        result = build_report(args.input.resolve(), args.output.resolve())
+        result = verify_docx_bindings(args.output.resolve(), args.input.resolve()) if args.verify_bindings else build_report(args.input.resolve(), args.output.resolve())
     except (OSError, ValueError, KeyError, json.JSONDecodeError, zipfile.BadZipFile) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
+    return 2 if result.get("status") == "FAIL" else 0
 
 
 if __name__ == "__main__":

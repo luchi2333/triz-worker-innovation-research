@@ -16,6 +16,17 @@
 
 Built for tool improvement, equipment optimization, maintenance processes and frontline Engineering Innovation. OpenAI Codex has a documented installation path. The package also uses a portable `SKILL.md` structure that can be adapted by Agent platforms able to load Skill folders or persistent task context.
 
+## v2.6: linked field records and illustrated reports
+
+Stable IDs connect raw inputs, requirements, mechanisms, parameters and tests. Bound Word text, tables and SVG/PNG diagrams share one record; checks detect changed document content and stale figures after parameter edits. A fully hypothetical tutorial produces DOCX, editable SVG and a step-by-step HTML explainer using the standard library, with optional Chromium PNG rendering. See [upgrade and migration notes](docs/v2.6-upgrade.md).
+
+```bash
+cd triz-worker-innovation-research
+python scripts/run_tutorial.py --output tutorial-output
+```
+
+The preliminary design is a two-dimensional concept, not a manufacturing release or an automatic CAD/STEP export.
+
 ## Quick Start
 
 Copy this instruction to Codex:
@@ -68,7 +79,7 @@ This is a **fully fictional training example**. It contains no company, site, pr
 2. **TRIZ model.** The main contradiction is mapped as improving **#10 Force (intensity)** while worsening **#12 Shape**, queried in the fixed **10×12** direction.
 3. **Deterministic matrix result.** The bundled classical matrix returns principles **#10 Preliminary action, #35 Parameter changes, #40 Composite materials, #34 Discarding and recovering**.
 4. **Mechanisms, not principle names.** Candidate mechanisms include a pre-installed sacrificial liner, a contact-profile change, a rigid-support/soft-surface composite, and a replaceable wear insert.
-5. **Human confirmation.** The workflow stops at `G1.5`; the user can correct facts, parameter mapping and research directions before systematic Deep Research begins.
+5. **Human confirmation.** At `G1.5`, record the user's direction choice or existing explicit delegation. Wait when authorization is missing; do not request the same confirmation twice.
 6. **Research and synthesis.** Products, patents, standards, papers, manufacturer documents, cross-industry analogies and negative evidence are tied to explicit claims.
 7. **Decision package.** Concepts are compared with risks, FMEA, decisive experiments, benefit scenarios and a formal technical report.
 
@@ -95,7 +106,7 @@ G0 Problem Definition → G1 TRIZ Modeling → G1.5 USER CONFIRMATION
                       → G4 Validation/Safety/Benefits → G5 Report
 ```
 
-The Agent must pause after the first complete TRIZ direction draft. The user can correct the system boundary, modify parameter mappings, remove weak directions and decide what deserves research. Silence is not approval.
+After the first complete direction draft, the user can correct boundaries, mappings and research priorities. Record existing explicit delegation and continue within its scope; otherwise wait for the direction choice. Silence is not approval, and research delegation does not authorize field implementation.
 
 ## Reliability by construction
 

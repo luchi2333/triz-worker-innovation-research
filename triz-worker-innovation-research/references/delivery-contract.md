@@ -1,5 +1,8 @@
 # G5 成果生成与交付闸门
 
+新增字段、阶段检查、既有授权、机制卡和同源图文生成统一见 [research-record-contract.md](research-record-contract.md)。G0/G3/G5 对应使用，不另设第二套状态或成熟度。
+
+
 本文件用于阻止智能体在只完成 Markdown 草稿、未生成图示、未形成正式文档或未做视觉检查时宣布 G5 完成。它适用于 `standard` 和 `engineering` 交付；`direction` 仅在用户明确只要方向稿时例外。
 
 ## 1. 先探测能力，再决定交付路径
@@ -100,7 +103,7 @@ python scripts/validate_deliverables.py --root <项目输出目录> --manifest <
 - DOCX 包完整性、内嵌媒体、替代文本与外部超链接；
 - 页数、逐页检查、空白页和未解决视觉问题。
 
-`validate_skill.py` 只证明 Skill 包结构正确；`validate_deliverables.py` 检查文件结构和可计算一致性；专业人员或明确记录的工程复核检查物理关系与安全。三者不可互相替代。schema 1.1 旧清单可以读取，但会标记 `LEGACY_UNCHECKED`，不能作为 v2.5 完整通过。
+`validate_skill.py` 只证明 Skill 包结构正确；`validate_deliverables.py` 检查文件结构和可计算一致性；专业人员或明确记录的工程复核检查物理关系与安全。三者不可互相替代。schema 1.1 旧清单可以读取，但会标记 `LEGACY_UNCHECKED`，不能作为新版完整通过。
 
 ## 6. Word 生成路径
 

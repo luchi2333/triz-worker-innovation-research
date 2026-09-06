@@ -24,6 +24,11 @@ import zipfile
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from research_contract import RECORD_SCHEMAS, audit_record
+from report_bindings import verify_docx_bindings
+
 
 CAPABILITY_STATES = {"available", "unavailable", "not-checked"}
 SCHEMA_VERSION = "1.1"
@@ -277,6 +282,12 @@ def _check_svg(path: Path, item: dict, errors: list[str], warnings: list[str]) -
 
 
 def _check_figure_numbering(figures: list[dict], errors: list[str]) -> None:
+    # Schema 1.3 report bindings also support one sequential number per figure.
+    if figures and all(re.fullmatch(r"[1-9]\d*", str(item.get("number", ""))) for item in figures):
+        numbers = [int(item["number"]) for item in figures]
+        if numbers != list(range(1, len(figures) + 1)):
+            _fail(errors, "sequential figure numbers must be unique and start at 1")
+        return
     previous_chapter = -1
     previous_index = 0
     seen: set[str] = set()
@@ -716,8 +727,8 @@ def _validate_record(
     errors: list[str],
     warnings: list[str],
 ) -> tuple[dict[str, int], list[dict], str]:
-    if record.get("schema_version") != RESEARCH_RECORD_SCHEMA:
-        _fail(errors, f"research_record schema_version must be {RESEARCH_RECORD_SCHEMA}")
+    if record.get("schema_version") not in RECORD_SCHEMAS:
+        _fail(errors, "research_record schema_version must be 1.0 or 1.1")
 
     variables, variable_ids = _unique_ids(record.get("variables"), "variables", errors)
     for index, variable in enumerate(variables):
@@ -778,7 +789,7 @@ def _validate_record(
                     _fail(errors, f"cannot verify contradictions[{index}] matrix cell: {exc}")
 
     queries, _ = _unique_ids(record.get("queries"), "queries", errors)
-    aggregate_query = re.compile(r"(?:×|\bx\s*)\d+|多次|若干次|……|\.\.\.", re.IGNORECASE)
+    aggregate_query = re.compile(r"(?:检索|搜索|查询|尝试)\s*(?:多次|若干次|[×x]\s*\d+)(?:\s|$)", re.IGNORECASE)
     valid_queries = 0
     failed_queries = 0
     for index, item in enumerate(queries):
@@ -831,7 +842,9 @@ def _validate_record(
             if len(str(item.get("next_validation", "")).strip()) < 4:
                 _fail(errors, f"claims[{index}] unknown/H claim lacks next_validation")
 
-    allowed_evidence_ids = source_ids | claim_ids
+    allowed_evidence_ids = source_ids | claim_ids | {
+        str(item.get("id")) for item in record.get("inputs", []) if isinstance(item, dict)
+    }
     for index, variable in enumerate(variables):
         _check_reference_ids(variable.get("evidence_ids", []), allowed_evidence_ids, f"variables[{index}].evidence_ids", errors)
     for index, item in enumerate(contradictions):
@@ -1181,14 +1194,14 @@ def _check_actual_figure_order(root: Path, manifest: dict, errors: list[str]) ->
     preview_allowed = {str(value) for value in order.get("summary_preview_numbers", [])}
     preview_found: set[str] = set()
     for paragraph in paragraphs[:start]:
-        for number in re.findall(r"图\s*(\d+\s*[-－]\s*\d+)", paragraph):
+        for number in re.findall(r"图\s*(\d+(?:\s*[-－]\s*\d+)?)", paragraph):
             preview_found.add(re.sub(r"\s", "", number).replace("－", "-"))
     unexpected_preview = sorted(preview_found - preview_allowed)
     if unexpected_preview:
         _fail(errors, f"DOCX summary contains undeclared figure previews: {unexpected_preview}")
     found: list[str] = []
     for paragraph in paragraphs[start:]:
-        for number in re.findall(r"图\s*(\d+\s*[-－]\s*\d+)", paragraph):
+        for number in re.findall(r"图\s*(\d+(?:\s*[-－]\s*\d+)?)", paragraph):
             normalized = re.sub(r"\s", "", number).replace("－", "-")
             if normalized not in found:
                 found.append(normalized)
@@ -1208,14 +1221,16 @@ def _validate_v12(root: Path, manifest: dict, strict: bool = False) -> dict[str,
         _fail(v12_errors, "research_record must be an object")
     else:
         record_path = _safe_path(root, record_info.get("path"), v12_errors, "research_record")
-        if record_info.get("schema_version") != RESEARCH_RECORD_SCHEMA:
-            _fail(v12_errors, f"manifest research_record.schema_version must be {RESEARCH_RECORD_SCHEMA}")
+        if record_info.get("schema_version") not in RECORD_SCHEMAS:
+            _fail(v12_errors, "manifest research_record.schema_version must be 1.0 or 1.1")
         if record_path is not None:
             try:
                 record = json.loads(record_path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError) as exc:
                 _fail(v12_errors, f"research_record JSON invalid: {exc}")
 
+    if record and isinstance(record_info, dict) and record_info.get("schema_version") != record.get("schema_version"):
+        _fail(v12_errors, "manifest/research record schema version mismatch")
     public_text = "\n".join(
         line
         for artifact in manifest.get("artifacts", [])
@@ -1227,6 +1242,38 @@ def _validate_v12(root: Path, manifest: dict, strict: bool = False) -> dict[str,
     stats, score_rows, engineering_status = _validate_record(
         record, manifest, public_text, v12_errors, v12_warnings
     ) if record else ({"query_records": 0, "source_records": 0, "critical_sources": 0, "score_rows": 0, "benefit_scenarios": 0}, [], "pending")
+    public_documents: dict[str, str] = {}
+    for artifact in manifest.get("artifacts", []):
+        if isinstance(artifact, dict) and artifact.get("role") in {"decision-summary", "main-report"}:
+            path = _safe_path(root, artifact.get("path"), v12_errors, "public artifact")
+            if path is not None:
+                role = str(artifact["role"])
+                public_documents[role] = public_documents.get(role, "") + "\n" + "\n".join(_extract_text(path))
+    contract = audit_record(record, manifest, root, public_documents)
+    v12_errors.extend(contract["errors"])
+    v12_warnings.extend(contract["warnings"])
+    binding_results = []
+    for artifact in manifest.get("artifacts", []):
+        if not isinstance(artifact, dict) or not str(artifact.get("path", "")).lower().endswith(".docx"):
+            continue
+        if artifact.get("report_source_path"):
+            source = _safe_path(root, artifact["report_source_path"], v12_errors, "report source")
+            document = _safe_path(root, artifact["path"], v12_errors, "bound report")
+            if source is not None and document is not None:
+                try:
+                    binding = verify_docx_bindings(document, source)
+                    binding_results.append(binding)
+                    v12_errors.extend(binding.get("errors", []))
+                    if binding.get("status") != "PASS" or not binding.get("bound_blocks"):
+                        contract["unchecked"].append("DOCX has no verified current-schema bound blocks")
+                        if record.get("schema_version") == "1.1" and manifest.get("status") == "complete":
+                            _fail(v12_errors, "complete current-record DOCX requires verified bindings")
+                except (OSError, ValueError, KeyError, TypeError, zipfile.BadZipFile, ET.ParseError) as exc:
+                    _fail(v12_errors, f"report binding verification failed: {exc}")
+        elif record.get("schema_version") == "1.1":
+            contract["unchecked"].append("DOCX lacks report_source_path for actual binding verification")
+            if manifest.get("status") == "complete":
+                _fail(v12_errors, "complete current-record DOCX requires report_source_path")
 
     legacy = json.loads(json.dumps(manifest))
     legacy["schema_version"] = SCHEMA_VERSION
@@ -1297,9 +1344,15 @@ def _validate_v12(root: Path, manifest: dict, strict: bool = False) -> dict[str,
             "research_record_stats": stats,
             "quality_status": {
                 "structural": "PASS" if not base.get("errors") else "FAIL",
-                "computational_consistency": "PASS" if not v12_errors else "FAIL",
+                "computational_consistency": "FAIL" if v12_errors else "NOT_CHECKED" if contract["unchecked"] else contract["computational_consistency"],
                 "engineering_review": engineering_status,
+                "research_progress": contract["research_progress"],
+                "route_eligibility": contract["route_eligibility"],
+                "maturity_support": contract["maturity_support"],
+                "action_authorization": contract["action_authorization"],
             },
+            "unchecked": contract["unchecked"],
+            "report_bindings": binding_results,
             "warnings": warnings,
             "errors": errors,
             "status": "PASS" if not errors else "FAIL",

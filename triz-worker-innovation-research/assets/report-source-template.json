@@ -1,52 +1,60 @@
 {
-  "schema_version": "1.2",
+  "schema_version": "1.3",
   "research_record_path": "research-record.json",
-  "research_record_sha256": "填写 research-record.json 的 SHA-256",
-  "title": "职工创新技术方案报告",
-  "subtitle": "TRIZ 与证据驱动研究",
-  "status": "V0 概念研究｜当前允许：代表性短样验证",
-  "metadata": {
-    "单位": "填写单位名称",
-    "课题负责人": "填写负责人",
-    "日期": "填写日期"
-  },
+  "research_record_sha256": "填写生成时的记录散列",
+  "figure_manifest_path": "figures/figure-manifest.json",
+  "title": "职工创新技术方案研究报告",
   "sections": [
     {
-      "title": "1. 决策摘要",
-      "level": 1,
+      "title": "现场问题与推荐",
       "blocks": [
-        {"type": "paragraph", "text": "用现场语言说明推荐什么、采用什么方法、解决什么难点，以及当前证据边界。"},
         {
-          "type": "table",
-          "headers": ["路线", "采用的方法及解决的难点", "证据与角色"],
-          "rows": [["R0", "填写完整方法—难点动作链", "成熟基准"]]
+          "type": "paragraph",
+          "claim_ref": "/claims/CLM-001"
         }
       ]
     },
     {
-      "title": "2. 作用机理",
-      "level": 1,
+      "title": "核心作用机理",
       "blocks": [
         {
           "type": "figure",
-          "figure_id": "FIG-2-1",
-          "figure_type": "F5-motion-sequence",
+          "figure_ref": "FIG-MECH",
+          "figure_id": "FIG-MECH",
+          "figure_type": "F4-mechanism-section",
           "design_status": "V0",
-          "path": "assets/figure-template.svg",
-          "caption": "图2-1 通用分层对象受控处理的四阶段工作过程",
-          "alt": "工具依次接近目标层、建立受控界面、施加主作用并形成目标输出；被保护区域与禁止越界面单独标出。",
-          "main_message": "核心动作应拆成连续状态，读者无需依赖长段正文即可理解输入、作用和输出。",
-          "claim_limit": "V0 概念原理图；具体结构、尺寸、材料和安全能力待验证。"
+          "main_message": "按真实领域填写并从图示记录取值",
+          "claim_limit": "按实际证据填写当前边界，不使用教学尺寸代替现场数据"
+        }
+      ]
+    },
+    {
+      "title": "设计参数与证据",
+      "blocks": [
+        {
+          "type": "table",
+          "table_ref": "/parameters",
+          "columns": [
+            {
+              "header": "参数",
+              "field": "name"
+            },
+            {
+              "header": "值",
+              "field": "value"
+            },
+            {
+              "header": "单位",
+              "field": "unit"
+            },
+            {
+              "header": "依据",
+              "field": "evidence_status"
+            }
+          ]
         }
       ]
     }
   ],
-  "sources": [
-    {
-      "id": "SRC-01",
-      "title": "填写来源完整标题",
-      "url": "https://example.com/source",
-      "claim": "填写该来源直接支持的命题及适用边界"
-    }
-  ]
+  "sources": []
 }

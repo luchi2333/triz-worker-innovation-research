@@ -41,6 +41,17 @@ if hasattr(sys.stderr, "reconfigure"):
 
 # 发布清单：必须存在
 REQUIRED = [
+    "scripts/test_pipeline.py",
+    "scripts/research_contract.py",
+    "scripts/report_bindings.py",
+    "scripts/validate_research.py",
+    "scripts/build_figures.py",
+    "scripts/run_tutorial.py",
+    "assets/tutorial-record.json",
+    "assets/tutorial-report-source.json",
+    "assets/report-explainer.html",
+    "references/research-record-contract.md",
+
     "SKILL.md",
     "agents/openai.yaml",
     "scripts/lookup_matrix.py",
@@ -92,7 +103,7 @@ FORBIDDEN_DIRS = {
 # 禁止出现在包内的文件后缀
 FORBIDDEN_SUFFIXES = {".pyc", ".pyo", ".zip", ".tar", ".gz", ".bak", ".orig", ".tmp"}
 
-TEXT_SUFFIXES = {".md", ".py", ".mjs", ".json", ".yaml", ".svg"}
+TEXT_SUFFIXES = {".md", ".py", ".mjs", ".json", ".yaml", ".svg", ".html"}
 
 # 通用内容合规扫描（不含任何具体项目案例词）。
 # 具体项目的案例特征词扫描属于项目工作区的私有发布前 QA，不进入公开包。
@@ -452,8 +463,8 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
     except json.JSONDecodeError as exc:
         fail(errors, f"Research record template is invalid JSON: {exc}")
         research_template = {}
-    if research_template.get("schema_version") != "1.0":
-        fail(errors, "Research record template must use schema_version 1.0")
+    if research_template.get("schema_version") != "1.1":
+        fail(errors, "Research record template must use schema_version 1.1")
     for key in ["variables", "contradictions", "queries", "sources", "claims", "routes", "assessments", "models_and_tests"]:
         if key not in research_template:
             fail(errors, f"Research record template missing: {key}")
@@ -468,8 +479,8 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
     except json.JSONDecodeError as exc:
         fail(errors, f"Report source template is invalid JSON: {exc}")
         report_template = {}
-    if report_template.get("schema_version") != "1.2":
-        fail(errors, "Report source template must use schema_version 1.2")
+    if report_template.get("schema_version") != "1.3":
+        fail(errors, "Report source template must use schema_version 1.3")
     for key in ["research_record_path", "research_record_sha256"]:
         if key not in report_template:
             fail(errors, f"Report source template missing provenance field: {key}")
@@ -820,6 +831,11 @@ def main(argv: list[str]) -> int:
         marker="DELIVERABLE_SELF_TEST_PASS",
     )
     data = load_matrix(errors)
+    pipeline = run_self_test(
+        [sys.executable, "scripts/test_pipeline.py"],
+        "ResearchPipeline", errors, warnings, strict,
+        marker="PIPELINE_SELF_TEST_PASS",
+    )
     readme_golden = check_readme_golden(data, errors, warnings)
     check_readme_golden_negative(data, errors)
 
@@ -863,6 +879,7 @@ def main(argv: list[str]) -> int:
         "row_shards": row_shards,
         "report_builder": report_builder,
         "deliverable_validator": deliverable_validator,
+        "research_pipeline": pipeline,
         "readme_golden": readme_golden,
         "generic_leak_hits": leak_hits,
         "warnings": warnings,

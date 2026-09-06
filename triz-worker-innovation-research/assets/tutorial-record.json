@@ -1,0 +1,1255 @@
+{
+  "schema_version": "1.1",
+  "project": {
+    "title": "可调定位机构图文研究教学样例",
+    "record_status": "working",
+    "maturity": "V0",
+    "last_updated": "2026-09-06",
+    "tutorial": true
+  },
+  "variables": [
+    {
+      "id": "VAR-01",
+      "object": "目标对象",
+      "quantity": "控制量",
+      "unit": "1",
+      "preferred_direction": "range",
+      "evidence_status": "H",
+      "evidence_ids": [],
+      "decision_rule": {
+        "enabled": false,
+        "comparison": "below",
+        "threshold_variable": false,
+        "earlier_warning_change": "increase"
+      }
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "CON-01",
+      "control_variable_id": "VAR-01",
+      "change_direction": "increase",
+      "useful_result": "目标作用增强",
+      "worsened_result": "副作用增加",
+      "causality_basis": "当前仅为待验证假设",
+      "ec2_reverse_case": "反向改变时目标作用下降且副作用减小",
+      "eligibility": "assumption_only",
+      "matrix_mapping": {
+        "improving_parameter": null,
+        "worsening_parameter": null,
+        "matrix_cell": null,
+        "principles": []
+      }
+    }
+  ],
+  "queries": [],
+  "sources": [],
+  "claims": [
+    {
+      "id": "CLM-001",
+      "text": "概念上通过松开与夹紧切换调节和保持状态",
+      "target_kind": "proposed_system",
+      "target_id": "R1",
+      "conditions": "仅限概念阶段",
+      "evidence_status": "H",
+      "supporting_source_ids": [],
+      "opposing_source_ids": [],
+      "unknowns": [
+        "目标适配"
+      ],
+      "allowed_wording": "该教学候选通过松开与夹紧切换调节和保持状态，抗滑移能力待验证。",
+      "next_validation": "代表性短样试验"
+    },
+    {
+      "id": "CLM-000",
+      "text": "成熟基准仅作对照",
+      "target_kind": "proposed_system",
+      "target_id": "R0",
+      "conditions": "当前工况",
+      "evidence_status": "H",
+      "supporting_source_ids": [],
+      "opposing_source_ids": [],
+      "unknowns": [
+        "现场完整节拍"
+      ],
+      "allowed_wording": "作为基准候选",
+      "next_validation": "完整节拍对照"
+    }
+  ],
+  "routes": [
+    {
+      "id": "R0",
+      "role": "baseline",
+      "maturity": "V0",
+      "mechanism_kind": "mechanical",
+      "evidence_status": "H",
+      "components": [
+        {
+          "id": "M-R0",
+          "name": "候选模块",
+          "target_kind": "proposed_system",
+          "maturity": "V0",
+          "evidence_ids": [
+            "CLM-000"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "id": "STEP-01",
+          "action": "完成目标作用",
+          "input_range": "代表对象",
+          "output_range": "目标状态",
+          "handoff_to": null,
+          "handoff_status": "compatible",
+          "evidence_ids": [
+            "CLM-000"
+          ]
+        }
+      ],
+      "active_effects": [
+        {
+          "id": "ACT-01",
+          "type": "mechanical",
+          "source": "M-R0",
+          "target": "目标对象"
+        }
+      ],
+      "interactions": [],
+      "interfaces": [
+        {
+          "from": "操作者",
+          "to": "M-R0",
+          "kind": "control",
+          "status": "defined"
+        }
+      ],
+      "capability_range": {
+        "input": "代表对象",
+        "output": "目标状态",
+        "environment": "受控",
+        "known_gaps": []
+      },
+      "failure_fallback": "停止并回到基准方法",
+      "identifiability": null,
+      "claim_ids": [
+        "CLM-000"
+      ]
+    },
+    {
+      "id": "R1",
+      "role": "primary",
+      "maturity": "V0",
+      "mechanism_kind": "mechanical",
+      "evidence_status": "H",
+      "components": [
+        {
+          "id": "B01",
+          "name": "带 T 槽底板",
+          "target_kind": "proposed_system",
+          "maturity": "V0",
+          "evidence_ids": [
+            "CLM-001"
+          ]
+        },
+        {
+          "id": "B02",
+          "name": "可移动挡块",
+          "target_kind": "proposed_system",
+          "maturity": "V0",
+          "evidence_ids": [
+            "CLM-001"
+          ]
+        },
+        {
+          "id": "B03",
+          "name": "手拧螺钉",
+          "target_kind": "proposed_system",
+          "maturity": "V0",
+          "evidence_ids": [
+            "CLM-001"
+          ]
+        },
+        {
+          "id": "B04",
+          "name": "T 螺母",
+          "target_kind": "proposed_system",
+          "maturity": "V0",
+          "evidence_ids": [
+            "CLM-001"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "id": "A01",
+          "action": "旋松 B03",
+          "input_range": "教学机构，实际范围待定",
+          "output_range": "减小压紧作用",
+          "handoff_status": "compatible",
+          "evidence_ids": [
+            "CLM-001"
+          ]
+        },
+        {
+          "id": "A02",
+          "action": "沿槽移动 B02",
+          "input_range": "教学机构，实际范围待定",
+          "output_range": "到达候选位置",
+          "handoff_status": "compatible",
+          "evidence_ids": [
+            "CLM-001"
+          ]
+        },
+        {
+          "id": "A03",
+          "action": "旋紧 B03",
+          "input_range": "教学机构，实际范围待定",
+          "output_range": "形成夹紧状态",
+          "handoff_status": "compatible",
+          "evidence_ids": [
+            "CLM-001"
+          ]
+        },
+        {
+          "id": "A04",
+          "action": "对象推靠 B02",
+          "input_range": "教学机构，实际范围待定",
+          "output_range": "接触定位面，偏差待测",
+          "handoff_status": "compatible",
+          "evidence_ids": [
+            "CLM-001"
+          ]
+        }
+      ],
+      "active_effects": [
+        {
+          "id": "ACT-01",
+          "type": "mechanical",
+          "source": "B03",
+          "target": "B02/B04"
+        }
+      ],
+      "interactions": [],
+      "interfaces": [
+        {
+          "from": "B03",
+          "to": "B04",
+          "kind": "thread",
+          "status": "defined"
+        }
+      ],
+      "capability_range": {
+        "input": "代表对象",
+        "output": "目标状态",
+        "environment": "受控",
+        "known_gaps": []
+      },
+      "failure_fallback": "停止并回到基准方法",
+      "identifiability": null,
+      "claim_ids": [
+        "CLM-001"
+      ]
+    }
+  ],
+  "assessments": {
+    "scorecard": {
+      "used": false,
+      "dimensions": [],
+      "rows": []
+    },
+    "gates": [],
+    "engineering_review": {
+      "status": "pending",
+      "reviewer_role": "待指定",
+      "reviewed_artifact_sha256": null,
+      "findings": [
+        "待专业复核"
+      ]
+    }
+  },
+  "models_and_tests": {
+    "models": [],
+    "tests": [],
+    "benefit_scenarios": [],
+    "protocols": []
+  },
+  "absence_assessments": [],
+  "workflow": {
+    "current_stage": "G1",
+    "completed_stage": "G0",
+    "next_actions": [
+      "确认真实对象与载荷，再制定试验判据"
+    ],
+    "pending_questions": [
+      "目标对象和现场推靠载荷待确定"
+    ],
+    "authorization": "tutorial-only"
+  },
+  "inputs": [
+    {
+      "id": "IN-01",
+      "text": "教学假设：定位位置需要调整，使用时希望保持稳定。",
+      "locator": "教学构造，无真实现场来源",
+      "evidence_status": "H"
+    }
+  ],
+  "problems": [
+    {
+      "id": "PR-01",
+      "input_ids": [
+        "IN-01"
+      ],
+      "text": "调整便利与定位稳定需要分别实现，实际载荷未知。",
+      "hypotheses": [
+        "夹紧后的接触作用可能限制滑移，需验证。"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "REQ-01",
+      "problem_ids": [
+        "PR-01"
+      ],
+      "criterion": "在现场规定推力下检验滑移量；载荷和判据待现场确定。",
+      "evidence_status": "H"
+    }
+  ],
+  "decisions": [],
+  "mechanisms": [
+    {
+      "id": "MECH-01",
+      "route_ids": [
+        "R1"
+      ],
+      "requirement_ids": [
+        "REQ-01"
+      ],
+      "method": "按工作状态分离调节与保持要求",
+      "input": "操作者旋转 B03",
+      "action_path": [
+        "B03 头部压 B02",
+        "B04 上抵槽肩",
+        "接触作用预期限制沿槽滑移"
+      ],
+      "output": "建立可调定位位置，保持能力待验证",
+      "conditions": "对象尺寸、载荷、材料和配合尚需确定",
+      "falsification": "测量规定推力下的滑移量，若超出判据则否定当前夹紧设计",
+      "component_ids": [
+        "B01",
+        "B02",
+        "B03",
+        "B04"
+      ],
+      "evidence_ids": [
+        "IN-01"
+      ],
+      "claim_ids": [
+        "CLM-001"
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "id": "P-L",
+      "symbol": "L",
+      "name": "底板长",
+      "value": 160,
+      "unit": "mm",
+      "evidence_status": "H",
+      "evidence_ids": [
+        "IN-01"
+      ],
+      "rationale": "教学几何参数，非现场测量"
+    },
+    {
+      "id": "P-W",
+      "symbol": "W",
+      "name": "底板宽",
+      "value": 80,
+      "unit": "mm",
+      "evidence_status": "H",
+      "evidence_ids": [
+        "IN-01"
+      ],
+      "rationale": "教学几何参数，非现场测量"
+    },
+    {
+      "id": "P-T",
+      "symbol": "T",
+      "name": "底板厚",
+      "value": 12,
+      "unit": "mm",
+      "evidence_status": "H",
+      "evidence_ids": [
+        "IN-01"
+      ],
+      "rationale": "教学几何参数，非现场测量"
+    },
+    {
+      "id": "P-X",
+      "symbol": "X",
+      "name": "定位中心",
+      "value": 80,
+      "unit": "mm",
+      "evidence_status": "H",
+      "evidence_ids": [
+        "IN-01"
+      ],
+      "rationale": "教学几何参数，非现场测量"
+    },
+    {
+      "id": "P-BL",
+      "symbol": "BL",
+      "name": "挡块长",
+      "value": 36,
+      "unit": "mm",
+      "evidence_status": "H",
+      "evidence_ids": [
+        "IN-01"
+      ],
+      "rationale": "教学几何参数，非现场测量"
+    },
+    {
+      "id": "P-BW",
+      "symbol": "BW",
+      "name": "挡块宽",
+      "value": 56,
+      "unit": "mm",
+      "evidence_status": "H",
+      "evidence_ids": [
+        "IN-01"
+      ],
+      "rationale": "教学几何参数，非现场测量"
+    },
+    {
+      "id": "P-BH",
+      "symbol": "BH",
+      "name": "挡块高",
+      "value": 12,
+      "unit": "mm",
+      "evidence_status": "H",
+      "evidence_ids": [
+        "IN-01"
+      ],
+      "rationale": "教学几何参数，非现场测量"
+    },
+    {
+      "id": "P-SN",
+      "symbol": "SN",
+      "name": "槽口宽",
+      "value": 8,
+      "unit": "mm",
+      "evidence_status": "H",
+      "evidence_ids": [
+        "IN-01"
+      ],
+      "rationale": "教学几何参数，非现场测量"
+    },
+    {
+      "id": "P-SC",
+      "symbol": "SC",
+      "name": "槽腔宽",
+      "value": 16,
+      "unit": "mm",
+      "evidence_status": "H",
+      "evidence_ids": [
+        "IN-01"
+      ],
+      "rationale": "教学几何参数，非现场测量"
+    },
+    {
+      "id": "P-SD",
+      "symbol": "SD",
+      "name": "总槽深",
+      "value": 10,
+      "unit": "mm",
+      "evidence_status": "H",
+      "evidence_ids": [
+        "IN-01"
+      ],
+      "rationale": "教学几何参数，非现场测量"
+    },
+    {
+      "id": "P-SH",
+      "symbol": "SH",
+      "name": "槽肩厚",
+      "value": 4,
+      "unit": "mm",
+      "evidence_status": "H",
+      "evidence_ids": [
+        "IN-01"
+      ],
+      "rationale": "教学几何参数，非现场测量"
+    }
+  ],
+  "figure_specs": [
+    {
+      "id": "FIG-MECH",
+      "title": "核心夹紧机理横截面",
+      "figure_type": "F4-mechanism-section",
+      "purpose": "explanation",
+      "design_status": "V0",
+      "main_message": "螺钉与 T 螺母夹住槽肩，通过接触作用预期限制滑移。",
+      "claim_limit": "H 教学参数，结构与保持能力尚未验证。",
+      "route_ids": [
+        "R1"
+      ],
+      "mechanism_id": "MECH-01",
+      "parameter_ids": [
+        "P-L",
+        "P-W",
+        "P-T",
+        "P-X",
+        "P-BL",
+        "P-BW",
+        "P-BH",
+        "P-SN",
+        "P-SC",
+        "P-SD",
+        "P-SH"
+      ],
+      "width": 840,
+      "height": 445,
+      "primitives": [
+        {
+          "kind": "rect",
+          "x": 65,
+          "y": {
+            "expr": "320-T*4"
+          },
+          "width": {
+            "expr": "W*4"
+          },
+          "height": {
+            "expr": "T*4"
+          },
+          "semantic": "structure",
+          "component_id": "B01"
+        },
+        {
+          "kind": "rect",
+          "x": {
+            "expr": "65+W*2-SC*2"
+          },
+          "y": {
+            "expr": "320-T*4+SH*4"
+          },
+          "width": {
+            "expr": "SC*4"
+          },
+          "height": {
+            "expr": "(SD-SH)*4"
+          },
+          "semantic": "white"
+        },
+        {
+          "kind": "rect",
+          "x": {
+            "expr": "65+W*2-SN*2"
+          },
+          "y": {
+            "expr": "320-T*4"
+          },
+          "width": {
+            "expr": "SN*4"
+          },
+          "height": {
+            "expr": "SH*4"
+          },
+          "semantic": "white"
+        },
+        {
+          "kind": "rect",
+          "x": {
+            "expr": "65+W*2-BW*2"
+          },
+          "y": {
+            "expr": "320-T*4-BH*4"
+          },
+          "width": {
+            "expr": "BW*4"
+          },
+          "height": {
+            "expr": "BH*4"
+          },
+          "semantic": "active",
+          "component_id": "B02"
+        },
+        {
+          "kind": "rect",
+          "x": {
+            "expr": "65+W*2-28"
+          },
+          "y": {
+            "expr": "320-T*4+SH*4"
+          },
+          "width": 56,
+          "height": 16,
+          "semantic": "structure",
+          "component_id": "B04"
+        },
+        {
+          "kind": "rect",
+          "x": {
+            "expr": "65+W*2-8"
+          },
+          "y": {
+            "expr": "320-T*4-BH*4"
+          },
+          "width": 16,
+          "height": {
+            "expr": "BH*4+SH*4+12"
+          },
+          "semantic": "active",
+          "component_id": "B03"
+        },
+        {
+          "kind": "rect",
+          "x": {
+            "expr": "65+W*2-43"
+          },
+          "y": {
+            "expr": "320-T*4-BH*4-25"
+          },
+          "width": 86,
+          "height": 25,
+          "semantic": "active",
+          "component_id": "B03"
+        },
+        {
+          "kind": "line",
+          "x1": 280,
+          "y1": 205,
+          "x2": 535,
+          "y2": 125
+        },
+        {
+          "kind": "text",
+          "x": 550,
+          "y": 130,
+          "text_template": "B03 手拧螺钉",
+          "font_size": 20
+        },
+        {
+          "kind": "line",
+          "x1": 340,
+          "y1": 244,
+          "x2": 535,
+          "y2": 204
+        },
+        {
+          "kind": "text",
+          "x": 550,
+          "y": 210,
+          "text_template": "B02 可移动挡块",
+          "font_size": 20
+        },
+        {
+          "kind": "line",
+          "x1": 251,
+          "y1": 291,
+          "x2": 535,
+          "y2": 286
+        },
+        {
+          "kind": "text",
+          "x": 550,
+          "y": 292,
+          "text_template": "B04 T 螺母",
+          "font_size": 20
+        },
+        {
+          "kind": "line",
+          "x1": 385,
+          "y1": 312,
+          "x2": 535,
+          "y2": 365
+        },
+        {
+          "kind": "text",
+          "x": 550,
+          "y": 371,
+          "text_template": "B01 带 T 槽底板",
+          "font_size": 20
+        },
+        {
+          "kind": "arrow",
+          "x1": 148,
+          "y1": 229,
+          "x2": 148,
+          "y2": 267
+        },
+        {
+          "kind": "arrow",
+          "x1": 225,
+          "y1": 356,
+          "x2": 225,
+          "y2": 310
+        },
+        {
+          "kind": "text",
+          "x": 30,
+          "y": 417,
+          "text_template": "向下压挡块，向上抵槽肩；保持能力待验证。",
+          "font_size": 20
+        }
+      ]
+    },
+    {
+      "id": "FIG-MOTION",
+      "title": "松开移位锁定靠位的动作顺序",
+      "figure_type": "F5-motion-sequence",
+      "purpose": "explanation",
+      "design_status": "V0",
+      "main_message": "先松开再移位，锁定后才接触工件；不得把移动状态当作承载状态。",
+      "claim_limit": "H 教学参数，结构与保持能力尚未验证。",
+      "route_ids": [
+        "R1"
+      ],
+      "mechanism_id": "MECH-01",
+      "parameter_ids": [
+        "P-L",
+        "P-W",
+        "P-T",
+        "P-X",
+        "P-BL",
+        "P-BW",
+        "P-BH",
+        "P-SN",
+        "P-SC",
+        "P-SD",
+        "P-SH"
+      ],
+      "width": 420,
+      "height": 275,
+      "primitives": [],
+      "frames": [
+        {
+          "id": "A01",
+          "label": "A01 松开",
+          "description": "旋松 B03，减小压紧作用，确认仍保持螺纹连接。",
+          "parameter_overrides": {
+            "X": 35
+          },
+          "primitives": [
+            {
+              "kind": "rect",
+              "x": 40,
+              "y": 65,
+              "width": {
+                "expr": "L*2"
+              },
+              "height": {
+                "expr": "W*2"
+              },
+              "semantic": "structure",
+              "component_id": "B01"
+            },
+            {
+              "kind": "rect",
+              "x": 40,
+              "y": {
+                "expr": "65+(W-SN)*2/2"
+              },
+              "width": {
+                "expr": "L*2"
+              },
+              "height": {
+                "expr": "SN*2"
+              },
+              "semantic": "white"
+            },
+            {
+              "kind": "rect",
+              "x": {
+                "expr": "40+(X-BL/2)*2"
+              },
+              "y": {
+                "expr": "65+(W-BW)*2/2"
+              },
+              "width": {
+                "expr": "BL*2"
+              },
+              "height": {
+                "expr": "BW*2"
+              },
+              "semantic": "active",
+              "component_id": "B02"
+            },
+            {
+              "kind": "circle",
+              "cx": {
+                "expr": "40+X*2"
+              },
+              "cy": {
+                "expr": "65+W*2/2"
+              },
+              "r": 12,
+              "component_id": "B03",
+              "semantic": "active"
+            },
+            {
+              "kind": "text",
+              "x": 42,
+              "y": 255,
+              "text_template": "位置 x = ${X} mm · H",
+              "font_size": 18
+            },
+            {
+              "kind": "text",
+              "x": 110,
+              "y": 52,
+              "font_size": 17,
+              "text": "旋松螺钉，解除夹紧"
+            }
+          ]
+        },
+        {
+          "id": "A02",
+          "label": "A02 移位",
+          "description": "B02、B03、B04 一起沿槽移动至目标位置。",
+          "parameter_overrides": {},
+          "primitives": [
+            {
+              "kind": "rect",
+              "x": 40,
+              "y": 65,
+              "width": {
+                "expr": "L*2"
+              },
+              "height": {
+                "expr": "W*2"
+              },
+              "semantic": "structure",
+              "component_id": "B01"
+            },
+            {
+              "kind": "rect",
+              "x": 40,
+              "y": {
+                "expr": "65+(W-SN)*2/2"
+              },
+              "width": {
+                "expr": "L*2"
+              },
+              "height": {
+                "expr": "SN*2"
+              },
+              "semantic": "white"
+            },
+            {
+              "kind": "rect",
+              "x": {
+                "expr": "40+(X-BL/2)*2"
+              },
+              "y": {
+                "expr": "65+(W-BW)*2/2"
+              },
+              "width": {
+                "expr": "BL*2"
+              },
+              "height": {
+                "expr": "BW*2"
+              },
+              "semantic": "active",
+              "component_id": "B02"
+            },
+            {
+              "kind": "circle",
+              "cx": {
+                "expr": "40+X*2"
+              },
+              "cy": {
+                "expr": "65+W*2/2"
+              },
+              "r": 12,
+              "component_id": "B03",
+              "semantic": "active"
+            },
+            {
+              "kind": "text",
+              "x": 42,
+              "y": 255,
+              "text_template": "位置 x = ${X} mm · H",
+              "font_size": 18
+            },
+            {
+              "kind": "arrow",
+              "x1": 108,
+              "y1": 50,
+              "x2": 295,
+              "y2": 50
+            }
+          ]
+        },
+        {
+          "id": "A03",
+          "label": "A03 锁定",
+          "description": "旋紧 B03，夹紧挡块与槽肩，需用试验确认保持能力。",
+          "parameter_overrides": {},
+          "primitives": [
+            {
+              "kind": "rect",
+              "x": 40,
+              "y": 65,
+              "width": {
+                "expr": "L*2"
+              },
+              "height": {
+                "expr": "W*2"
+              },
+              "semantic": "structure",
+              "component_id": "B01"
+            },
+            {
+              "kind": "rect",
+              "x": 40,
+              "y": {
+                "expr": "65+(W-SN)*2/2"
+              },
+              "width": {
+                "expr": "L*2"
+              },
+              "height": {
+                "expr": "SN*2"
+              },
+              "semantic": "white"
+            },
+            {
+              "kind": "rect",
+              "x": {
+                "expr": "40+(X-BL/2)*2"
+              },
+              "y": {
+                "expr": "65+(W-BW)*2/2"
+              },
+              "width": {
+                "expr": "BL*2"
+              },
+              "height": {
+                "expr": "BW*2"
+              },
+              "semantic": "active",
+              "component_id": "B02"
+            },
+            {
+              "kind": "circle",
+              "cx": {
+                "expr": "40+X*2"
+              },
+              "cy": {
+                "expr": "65+W*2/2"
+              },
+              "r": 12,
+              "component_id": "B03",
+              "semantic": "active"
+            },
+            {
+              "kind": "text",
+              "x": 42,
+              "y": 255,
+              "text_template": "位置 x = ${X} mm · H",
+              "font_size": 18
+            },
+            {
+              "kind": "text",
+              "x": 110,
+              "y": 52,
+              "font_size": 17,
+              "text": "旋紧螺钉，检查锁定"
+            }
+          ]
+        },
+        {
+          "id": "A04",
+          "label": "A04 靠位",
+          "description": "对象推靠挡块，测量重复定位偏差及挡块滑移。",
+          "parameter_overrides": {},
+          "primitives": [
+            {
+              "kind": "rect",
+              "x": 40,
+              "y": 65,
+              "width": {
+                "expr": "L*2"
+              },
+              "height": {
+                "expr": "W*2"
+              },
+              "semantic": "structure",
+              "component_id": "B01"
+            },
+            {
+              "kind": "rect",
+              "x": 40,
+              "y": {
+                "expr": "65+(W-SN)*2/2"
+              },
+              "width": {
+                "expr": "L*2"
+              },
+              "height": {
+                "expr": "SN*2"
+              },
+              "semantic": "white"
+            },
+            {
+              "kind": "rect",
+              "x": {
+                "expr": "40+(X-BL/2)*2"
+              },
+              "y": {
+                "expr": "65+(W-BW)*2/2"
+              },
+              "width": {
+                "expr": "BL*2"
+              },
+              "height": {
+                "expr": "BW*2"
+              },
+              "semantic": "active",
+              "component_id": "B02"
+            },
+            {
+              "kind": "circle",
+              "cx": {
+                "expr": "40+X*2"
+              },
+              "cy": {
+                "expr": "65+W*2/2"
+              },
+              "r": 12,
+              "component_id": "B03",
+              "semantic": "active"
+            },
+            {
+              "kind": "rect",
+              "x": {
+                "expr": "40+10*2"
+              },
+              "y": {
+                "expr": "65+(W/2-12)*2"
+              },
+              "width": {
+                "expr": "(X-BL/2-10)*2"
+              },
+              "height": {
+                "expr": "24*2"
+              },
+              "semantic": "object"
+            },
+            {
+              "kind": "arrow",
+              "x1": {
+                "expr": "40+12*2"
+              },
+              "y1": {
+                "expr": "65+(W/2+19)*2"
+              },
+              "x2": {
+                "expr": "40+(X-BL/2-2)*2"
+              },
+              "y2": {
+                "expr": "65+(W/2+19)*2"
+              }
+            },
+            {
+              "kind": "text",
+              "x": 42,
+              "y": 255,
+              "text_template": "位置 x = ${X} mm · H",
+              "font_size": 18
+            }
+          ]
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "FIG-DESIGN",
+      "title": "初步设计俯视图与关键位置",
+      "figure_type": "F1-object-structure",
+      "purpose": "initial_design",
+      "design_status": "V0",
+      "main_message": "俯视图用同一参数源定位挡块与螺钉；截面关系由核心机理图解释。",
+      "claim_limit": "H 教学参数，结构与保持能力尚未验证。",
+      "route_ids": [
+        "R1"
+      ],
+      "mechanism_id": "MECH-01",
+      "parameter_ids": [
+        "P-L",
+        "P-W",
+        "P-T",
+        "P-X",
+        "P-BL",
+        "P-BW",
+        "P-BH",
+        "P-SN",
+        "P-SC",
+        "P-SD",
+        "P-SH"
+      ],
+      "width": 840,
+      "height": 490,
+      "primitives": [
+        {
+          "kind": "rect",
+          "x": 85,
+          "y": 65,
+          "width": {
+            "expr": "L*3.5"
+          },
+          "height": {
+            "expr": "W*3.5"
+          },
+          "semantic": "structure",
+          "component_id": "B01"
+        },
+        {
+          "kind": "rect",
+          "x": 85,
+          "y": {
+            "expr": "65+(W-SN)*3.5/2"
+          },
+          "width": {
+            "expr": "L*3.5"
+          },
+          "height": {
+            "expr": "SN*3.5"
+          },
+          "semantic": "white"
+        },
+        {
+          "kind": "rect",
+          "x": {
+            "expr": "85+(X-BL/2)*3.5"
+          },
+          "y": {
+            "expr": "65+(W-BW)*3.5/2"
+          },
+          "width": {
+            "expr": "BL*3.5"
+          },
+          "height": {
+            "expr": "BW*3.5"
+          },
+          "semantic": "active",
+          "component_id": "B02"
+        },
+        {
+          "kind": "circle",
+          "cx": {
+            "expr": "85+X*3.5"
+          },
+          "cy": {
+            "expr": "65+W*3.5/2"
+          },
+          "r": 20,
+          "component_id": "B03",
+          "semantic": "active"
+        },
+        {
+          "kind": "line",
+          "x1": 85,
+          "y1": 380,
+          "x2": 645,
+          "y2": 380
+        },
+        {
+          "kind": "line",
+          "x1": 85,
+          "y1": 340,
+          "x2": 85,
+          "y2": 390
+        },
+        {
+          "kind": "line",
+          "x1": {
+            "expr": "85+L*3.5"
+          },
+          "y1": 340,
+          "x2": {
+            "expr": "85+L*3.5"
+          },
+          "y2": 390
+        },
+        {
+          "kind": "text",
+          "x": 305,
+          "y": 374,
+          "text_template": "L = {{/parameters/P-L/value}} mm",
+          "font_size": 20
+        },
+        {
+          "kind": "line",
+          "x1": 85,
+          "y1": 417,
+          "x2": {
+            "expr": "85+X*3.5"
+          },
+          "y2": 417
+        },
+        {
+          "kind": "line",
+          "x1": {
+            "expr": "85+X*3.5"
+          },
+          "y1": 345,
+          "x2": {
+            "expr": "85+X*3.5"
+          },
+          "y2": 423
+        },
+        {
+          "kind": "text",
+          "x": 112,
+          "y": 410,
+          "text_template": "x = {{/parameters/P-X/value}} mm",
+          "font_size": 20
+        },
+        {
+          "kind": "text",
+          "x": 680,
+          "y": 155,
+          "text_template": "B02",
+          "font_size": 20
+        },
+        {
+          "kind": "line",
+          "x1": {
+            "expr": "85+(X+BL/2)*3.5"
+          },
+          "y1": 150,
+          "x2": 665,
+          "y2": 150
+        },
+        {
+          "kind": "text",
+          "x": 680,
+          "y": 235,
+          "text_template": "B03",
+          "font_size": 20
+        },
+        {
+          "kind": "line",
+          "x1": {
+            "expr": "85+X*3.5+20"
+          },
+          "y1": 205,
+          "x2": 665,
+          "y2": 230
+        },
+        {
+          "kind": "text",
+          "x": 35,
+          "y": 470,
+          "text_template": "单位 mm · H 参数 · 剖面与作用关系见核心机理图",
+          "font_size": 20
+        }
+      ]
+    }
+  ]
+}

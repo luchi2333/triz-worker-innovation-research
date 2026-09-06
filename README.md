@@ -18,6 +18,17 @@
 
 适用于工具改进、设备优化、检修工艺和作业流程创新。正式安装路径面向 **OpenAI Codex**；同时按可移植 `SKILL.md` 结构设计，可由支持 Skill 目录或上下文加载的其他 Agent 平台适配使用。
 
+## v2.6：现场记录与图文报告贯通
+
+新增原始输入→问题→需求→机制→参数→试验的稳定引用；正文、参数表、SVG/PNG 和动作图解共用同一记录。实际 Word 文字或图片被改动、参数更新后沿用旧图，都会在绑定校验中被发现。内置可独立运行的 H 教学样例。详见 [升级与迁移说明](docs/v2.6-upgrade.md)。
+
+```bash
+cd triz-worker-innovation-research
+python scripts/run_tutorial.py --output tutorial-output
+```
+
+输出 Word、可编辑 SVG、分步 HTML 和生成回执。可选 `--png-browser` 生成 PNG；初步设计是待验证的二维表达，不是制造放行图。
+
 ## 一分钟开始
 
 把下面一句话复制给 Codex：
@@ -79,7 +90,7 @@ Skill 会补齐对象、动作链、边界、测量方法和不能牺牲的约�
 
 ### 3. 用户先确认，才进入 Deep Research
 
-第一次完整 TRIZ 分析后，Skill 在 `G1.5` 暂停。用户可以修正现场条件、参数映射和研究方向；沉默不等于同意。确认后才检索：
+第一次完整 TRIZ 分析后，Skill 在 `G1.5` 核对方向。没有授权时等待用户修正或选择；已有明确委托时记录原话和范围后继续。沉默不等于同意。方向确认或委托记录后才检索：
 
 **Products · Patents · Standards · Papers · Manufacturer Documentation · Cross-industry Analogies · Negative Evidence**
 
@@ -169,7 +180,7 @@ python triz-worker-innovation-research/scripts/build_report.py --self-test
 python triz-worker-innovation-research/scripts/validate_deliverables.py --self-test
 ```
 
-严格校验覆盖文件清单、版本、矩阵哈希、黄金单元、39 个行分片、README 示例、Python/Node 18 组行为一致性，以及 DOCX 生成器和成果校验器的正负向自检。成果清单 schema 1.2 会读取 `research-record.json`，验证 Figure Plan、领域图组、有效字号、真实计数/引用/评分/范围/效益、DOCX 实际图序、散列和逐页检查证据。完成实际课题后，先复制并填写 `assets/research-record-template.json`，再复制交付清单模板并运行：
+严格校验覆盖文件清单、版本、矩阵哈希、黄金单元、39 个行分片、README 示例、Python/Node 18 组行为一致性，以及 DOCX 生成器、成果校验器和新增研究图文链路的正负向自检。成果清单 schema 1.2 会读取 `research-record.json`，验证 Figure Plan、领域图组、有效字号、真实计数/引用/评分/范围/效益、DOCX 实际图序、散列和逐页检查证据。完成实际课题后，先复制并填写 `assets/research-record-template.json`，再复制交付清单模板并运行：
 
 ```bash
 python triz-worker-innovation-research/scripts/validate_deliverables.py \
