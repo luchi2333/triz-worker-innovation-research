@@ -2,8 +2,8 @@
 name: triz-worker-innovation-research
 description: "用于一线职工创新课题的端到端 TRIZ 研究：把现场问题转化为带证据标记的问题模型，对经典 39×39 矛盾矩阵做确定性查询，完成可复现的标准/产品/专利/文献查新、可追溯候选方案、安全与验证闸门、效益测算和技术方案报告。End-to-end TRIZ research for frontline worker innovation: evidence-labelled problem modelling, deterministic Altshuller 39x39 matrix lookup, reproducible research, gated concepts, benefit estimates and a technical-solution report. 自包含：不得要求用户另装 deep-research、矩阵插件或多智能体框架。Do not use as a patentability/FTO legal opinion or to claim field performance without measured evidence."
 metadata:
-  version: "2.6.0"
-  last_updated: "2026-09-06"
+  version: "2.8.0"
+  last_updated: "2026-09-07"
   portability: "standalone-cross-platform"
 ---
 
@@ -12,6 +12,10 @@ metadata:
 把一线现场问题转化为可追溯、可查新、可验证并可形成正式技术报告的创新研究。完成质量以“事实—矛盾—矩阵—机理—证据—方案—风险—试验—效益—报告”链条是否闭合为准，不以点子数量或华丽表述为准。
 
 本 Skill 已内置完成研究所需的深度检索、来源核验、跨来源综合、反证审查、报告编排、39×39 矛盾矩阵和 TRIZ 扩展工具。不得要求用户另装 `deep-research`、其他 TRIZ Skill、特定 MCP、特定厂商 Agent 或多智能体框架。
+
+## 检查与更新 Skill
+
+用户要求检查、下载 GitHub 最新版、更新或回退本 Skill 时，按 [skill-update.md](references/skill-update.md) 进入维护模式，执行 `scripts/update_skill.py`；不进入 G0–G5。默认只检查，明确更新授权执行 `--apply`，校验后替换并保留备份。本机版本更高时不降级。
 
 ## 适用与不适用
 
@@ -32,6 +36,10 @@ metadata:
 11. **交付必须落地**：进入 G5 先按 [delivery-contract.md](references/delivery-contract.md) 实测文件、SVG/PNG 图示、DOCX 和渲染能力；再按 [engineering-figure-planning.md](references/engineering-figure-planning.md) 冻结 Figure Plan。核心方案涉及实体、运动或安全机理时，架构图不能代替核心原理图、运动序列图和安全边界图。没有图示、正式文档、逐页检查和交付清单时，不得宣布 G5 完成。
 12. **结构化事实单一来源**：从 G0 开始填写 `research-record.json`，模板见 [research-record-template.json](assets/research-record-template.json)，字段与迁移见 [research-record-contract.md](references/research-record-contract.md)。关键变量、查询、来源、命题、路线、评分、试验和效益只在该记录中维护一次；摘要、正文、附件和清单从同一记录取值，manifest 只做文件索引与生成统计。
 13. **工程关系先于排版**：矩阵查询前核查控制变量方向与因果；路线推荐前核查端到端能力、模块互扰和失效回退；报告装配前按技术领域选择工程图。结构校验、可计算一致性和工程内容复核必须分开报告，前两者通过不等于工程认证。
+14. **V0 也必须有具体设计**：G3 按 [technical-report-quality.md](references/technical-report-quality.md) 形成主线、探索和后备路线的输入/输出、机理与实现说明；G4 补齐带中间量的示例及可复现验证协议；五项最终正文证据是 G5 完成要求，不能提前当作 G3 阶段稿的完成条件。未知现场值保留 H，并给选择方法；不得用算法名称、流程箭头、风险声明或“判据待冻结”替代设计。报告正文必须足够让读者解释原理并按约定复算，不能让读者到 JSON 里寻找关键说明。
+15. **黑白技术出版风格**：表格采用白底黑字三线表，顶线/底线和表头下线，无竖线、彩底和逐行网格；流程图、原理图默认黑白，靠编号、线型、纹理表达区别。严禁五颜六色的低质量图片、装饰性渐变、阴影和把方框改色冒充原理图。真实照片/测量热图保留原始证据颜色时单独说明，不得借此给流程图上色。
+16. **内容闸门独立于格式闸门**：G5 使用绑定最终 DOCX 哈希和正文摘录的 `report-quality-review.json`，逐路线回答追算示例、识别失效、复现实验三个问题。不得脚本批量填 PASS。技术内容未展开时只能交付“方案待完善”，不得宣称完整研究完成；`EVIDENCE_RECORDED` 仅表示证据齐备和复核已记录，绝不是工程正确性认证。
+17. **公式与图示互相校验**：按 [技术模型与输出保真复核](references/model-and-output-audit.md) 检查真实连接、测量端口、单位、极限工况、可辨识反例和输出转换误差。有公式、有算例不等于模型正确；静态限值不能直接替代动态安全判据。旧 schema 的未检查结果不能作为完成凭据；禁止空表、静默补空和按字符数截断核心依据。
 
 ## 交付层级
 

@@ -268,10 +268,19 @@ def _check_svg(path: Path, item: dict, errors: list[str], warnings: list[str]) -
         elif effective < 8:
             warnings.append(f"effective SVG font-size below 8pt for {figure_id}: {effective:.2f}pt")
 
+    # Arrowheads and decorative definitions are not engineering geometry.
+    def visible_nodes(node):
+        if node.tag.rsplit('}', 1)[-1] in {'defs', 'marker', 'clipPath', 'pattern', 'symbol'}:
+            return
+        yield node
+        for child in node:
+            yield from visible_nodes(child)
+
+    local_names = [node.tag.rsplit('}', 1)[-1] for node in visible_nodes(root)]
     if item.get("figure_type") in MECHANICAL_FIGURE_TYPES:
         structural_shapes = {"path", "circle", "ellipse", "polygon", "polyline"}
         if not structural_shapes.intersection(local_names):
-            warnings.append(f"mechanical figure may be a box-only diagram: {figure_id}")
+            warnings.append(f"mechanism figure may be a box-only diagram; reader review required: {figure_id}")
 
     if item.get("figure_type") == "F5-motion-sequence":
         frame_count = item.get("frame_count")
@@ -1364,7 +1373,20 @@ def _validate_v12(root: Path, manifest: dict, strict: bool = False) -> dict[str,
 def validate(root: Path, manifest: dict, strict: bool = False) -> dict[str, object]:
     schema = manifest.get("schema_version")
     if schema == CURRENT_SCHEMA_VERSION:
-        return _validate_v12(root, manifest, strict=strict)
+        result = _validate_v12(root, manifest, strict=strict)
+        from report_quality import audit_quality
+        quality = audit_quality(root, manifest)
+        result['report_quality'] = quality
+        result['quality_status']['technical_completeness'] = quality['technical_status']
+        result['quality_status']['report_style'] = quality['style_status']
+        result['unchecked'].append('Engineering truth and review honesty are not machine-verified')
+        if manifest.get('status') == 'complete':
+            result['errors'].extend(quality['errors'])
+            if quality['errors']:
+                result['status'] = 'FAIL'
+        else:
+            result['warnings'].extend(quality['errors'])
+        return result
     result = _validate_v11(root, manifest, strict=strict)
     result["quality_status"] = {
         "structural": result.get("status"),
@@ -1373,9 +1395,11 @@ def validate(root: Path, manifest: dict, strict: bool = False) -> dict[str, obje
     }
     warning = f"legacy schema {schema} read; v2.5 research-record checks were not executed"
     result.setdefault("warnings", []).append(warning)
-    if strict:
-        result.setdefault("errors", []).append("legacy schema cannot pass v2.5 strict validation")
+    if strict or manifest.get('status') == 'complete':
+        result.setdefault("errors", []).append("legacy schema cannot certify complete delivery; migrate and rerun current checks (strict is mandatory for release)")
         result["status"] = "FAIL"
+    elif not result.get('errors'):
+        result['status'] = 'LEGACY_UNCHECKED'
     return result
 
 

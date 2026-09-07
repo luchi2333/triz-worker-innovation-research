@@ -23,7 +23,7 @@ from research_contract import digest, fill_text, number, scalar
 from build_report import FIGURE_TYPES
 
 ROOT=Path(__file__).resolve().parent.parent
-COLORS={'structure':'#dce6ed','active':'#9dc5dc','object':'#efd0ab','hypothesis':'#edf1f4','danger':'#a3342b','white':'#ffffff','ink':'#19384c','motion':'#155f91'}
+COLORS={'structure':'#e4e4e4','active':'#bebebe','object':'#d4d4d4','hypothesis':'#f0f0f0','danger':'#4b4b4b','white':'#ffffff','ink':'#333333','motion':'#535353'}
 
 
 def expression(value, parameters):
@@ -121,9 +121,9 @@ def render_figure(spec, record, frame_id=None):
            '<title>'+html.escape(spec['title'])+'</title>',
            '<desc>'+html.escape(spec['main_message']+' '+spec['claim_limit'])+'</desc>',
            '<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif}</style>',
-           f'<defs><marker id="{prefix}arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#155f91"/></marker></defs>',
+           f'<defs><marker id="{prefix}arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#535353"/></marker></defs>',
            f'<rect width="{total_w:g}" height="{total_h:g}" fill="white"/>',
-           f'<text x="20" y="30" font-size="22" fill="#19384c">{html.escape(spec["title"])}</text>']
+           f'<text x="20" y="30" font-size="22" fill="#333333">{html.escape(spec["title"])}</text>']
     for index,frame in enumerate(frames):
         if not re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]*',str(frame.get('id',''))):raise ValueError('frame ID must be filename-safe')
         local=parameters.copy()
@@ -131,14 +131,14 @@ def render_figure(spec, record, frame_id=None):
             if key not in local:raise ValueError('frame overrides unknown parameter: '+key)
             local[key]=expression(value,parameters)
         x=(index%columns)*width;y=44+(index//columns)*height
-        parts.append(f'<g transform="translate({x:g} {y:g})"><rect x="2" y="2" width="{width-4:g}" height="{height-4:g}" fill="#f3f7f9" stroke="#d1dde5"/>')
-        if frame.get('label'):parts.append(f'<text x="14" y="29" font-size="19" fill="#19384c">{html.escape(frame["label"])}</text>')
+        parts.append(f'<g transform="translate({x:g} {y:g})"><rect x="2" y="2" width="{width-4:g}" height="{height-4:g}" fill="#f6f6f6" stroke="#dbdbdb"/>')
+        if frame.get('label'):parts.append(f'<text x="14" y="29" font-size="19" fill="#333333">{html.escape(frame["label"])}</text>')
         if not frame.get('primitives',spec.get('primitives',[])):raise ValueError('each figure frame requires authored geometry')
         for item in frame.get('primitives',spec.get('primitives',[])):
             parts.append(primitive_svg(item,local,record,prefix,components))
         parts.append('</g>')
     footer=spec['design_status']+' · '+spec['claim_limit']
-    parts.append(f'<text x="20" y="{total_h-16:g}" font-size="17" fill="#52687a">{html.escape(footer)}</text></svg>')
+    parts.append(f'<text x="20" y="{total_h-16:g}" font-size="17" fill="#656565">{html.escape(footer)}</text></svg>')
     return ''.join(parts), {'width':total_w,'height':total_h}
 
 

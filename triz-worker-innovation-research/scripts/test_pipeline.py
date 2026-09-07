@@ -293,7 +293,9 @@ class PipelineTests(unittest.TestCase):
             errors, warnings = [], []
             delivery._check_svg(self.root / 'figures' / (spec['id']+'.svg'), item, errors, warnings)
             self.assertEqual(errors, [])
-            self.assertEqual(warnings, [])
+            # Rectangular geometry needs reader review; marker paths no longer
+            # suppress this advisory. It is not an engineering validity test.
+            self.assertTrue(all('box-only' in warning for warning in warnings))
         errors=[]
         delivery._check_figure_numbering([{'number': str(i)} for i in [1,2,3]], errors)
         self.assertEqual(errors, [])

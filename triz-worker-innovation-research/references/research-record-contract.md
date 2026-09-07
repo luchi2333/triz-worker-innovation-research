@@ -74,6 +74,8 @@ HTML 可切换图和动作，静态打印保留完整图组与分步说明；参
 
 ## 6. 从记录生成并核验实际报告
 
+v2.7.1：`text_template` 可以使用 `[[triz_parameter:28]]` 确定性输出标准参数编号和名称，使用 `[[evidence_legend]]` 输出统一 F/M/S/H 定义；不得手工重定义。表格缺字段、空单元格或列数错配须修复，未知值写明依据/原因。协议及来源关键限定语不得按字符数截断，见 [model-and-output-audit.md](model-and-output-audit.md)。
+
 报告源使用 schema 1.3，`research_record_path/research_record_sha256/figure_manifest_path` 指向当前记录与同版本图组。原有 schema 1.2 可读取，但正文绑定检查为 `LEGACY_UNCHECKED`。
 
 | 内容 | 报告源写法 |

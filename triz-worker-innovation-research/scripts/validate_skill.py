@@ -41,6 +41,14 @@ if hasattr(sys.stderr, "reconfigure"):
 
 # 发布清单：必须存在
 REQUIRED = [
+    "scripts/update_skill.py",
+    "scripts/test_update_skill.py",
+    "references/skill-update.md",
+    "scripts/report_quality.py",
+    "scripts/test_report_quality.py",
+    "assets/report-quality-review-template.json",
+    "references/technical-report-quality.md",
+    "references/model-and-output-audit.md",
     "scripts/test_pipeline.py",
     "scripts/research_contract.py",
     "scripts/report_bindings.py",
@@ -831,6 +839,16 @@ def main(argv: list[str]) -> int:
         marker="DELIVERABLE_SELF_TEST_PASS",
     )
     data = load_matrix(errors)
+    report_quality = run_self_test(
+        [sys.executable, "scripts/test_report_quality.py"],
+        "ReportQuality", errors, warnings, strict,
+        marker="REPORT_QUALITY_SELF_TEST_PASS",
+    )
+    updater = run_self_test(
+        [sys.executable, "scripts/test_update_skill.py"],
+        "SkillUpdater", errors, warnings, strict,
+        marker="SKILL_UPDATER_SELF_TEST_PASS",
+    )
     pipeline = run_self_test(
         [sys.executable, "scripts/test_pipeline.py"],
         "ResearchPipeline", errors, warnings, strict,
@@ -880,6 +898,8 @@ def main(argv: list[str]) -> int:
         "report_builder": report_builder,
         "deliverable_validator": deliverable_validator,
         "research_pipeline": pipeline,
+        "report_quality": report_quality,
+        "skill_updater": updater,
         "readme_golden": readme_golden,
         "generic_leak_hits": leak_hits,
         "warnings": warnings,

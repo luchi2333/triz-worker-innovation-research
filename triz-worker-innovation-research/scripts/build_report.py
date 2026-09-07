@@ -92,7 +92,9 @@ def _page_break() -> str:
 
 
 def _cell(text: object, *, header: bool = False, width: int = 2400) -> str:
-    shade = '<w:shd w:fill="D9EEF2"/>' if header else ""
+    shade = '<w:shd w:val="clear" w:fill="FFFFFF"/>'
+    if header:
+        shade += '<w:tcBorders><w:bottom w:val="single" w:sz="4" w:color="000000"/></w:tcBorders>'
     value = _paragraph(str(text), bold=header, size=19, after=40)
     return (
         f'<w:tc><w:tcPr><w:tcW w:w="{width}" w:type="dxa"/>{shade}'
@@ -103,15 +105,24 @@ def _cell(text: object, *, header: bool = False, width: int = 2400) -> str:
 
 
 def _table(headers: list[object], rows: list[list[object]]) -> str:
+    if not headers or any(value is None or not str(value).strip() for value in headers):
+        raise ValueError('table headers must be explicit and nonempty')
+    if not rows:
+        raise ValueError('empty report table: use an explicit unavailable-data paragraph')
+    for index, row in enumerate(rows):
+        if len(row) != len(headers):
+            raise ValueError(f'table row {index + 1} has {len(row)} cells; expected {len(headers)}; never truncate or pad silently')
+        if any(value is None or not str(value).strip() for value in row):
+            raise ValueError(f'table row {index + 1} contains blank cells; resolve field mapping or explicitly state unknown/not applicable')
     columns = max(1, len(headers))
     width = max(900, 9360 // columns)
     borders = (
-        '<w:tblBorders><w:top w:val="single" w:sz="6" w:color="A7B6C2"/>'
-        '<w:left w:val="single" w:sz="6" w:color="A7B6C2"/>'
-        '<w:bottom w:val="single" w:sz="6" w:color="A7B6C2"/>'
-        '<w:right w:val="single" w:sz="6" w:color="A7B6C2"/>'
-        '<w:insideH w:val="single" w:sz="4" w:color="C9D3DB"/>'
-        '<w:insideV w:val="single" w:sz="4" w:color="C9D3DB"/></w:tblBorders>'
+        '<w:tblBorders><w:top w:val="single" w:sz="8" w:color="000000"/>'
+        '<w:left w:val="nil"/>'
+        '<w:bottom w:val="single" w:sz="8" w:color="000000"/>'
+        '<w:right w:val="nil"/>'
+        '<w:insideH w:val="nil"/>'
+        '<w:insideV w:val="nil"/></w:tblBorders>'
     )
     xml = [f'<w:tbl><w:tblPr><w:tblW w:w="9360" w:type="dxa"/>{borders}</w:tblPr>']
     if headers:
@@ -119,8 +130,8 @@ def _table(headers: list[object], rows: list[list[object]]) -> str:
         xml.extend(_cell(value, header=True, width=width) for value in headers)
         xml.append("</w:tr>")
     for row in rows:
-        values = list(row[:columns]) + [""] * max(0, columns - len(row))
-        xml.append("<w:tr>")
+        values = list(row)
+        xml.append('<w:tr><w:trPr><w:cantSplit/></w:trPr>')
         xml.extend(_cell(value, width=width) for value in values)
         xml.append("</w:tr>")
     xml.append("</w:tbl>")
@@ -202,8 +213,8 @@ def _styles_xml() -> str:
   <w:style w:type="paragraph" w:styleId="Subtitle"><w:name w:val="Subtitle"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:jc w:val="center"/><w:spacing w:after="300"/></w:pPr><w:rPr><w:color w:val="000000"/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr></w:style>
   <w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="300" w:after="120"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:style>
   <w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="220" w:after="100"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:color w:val="000000"/><w:sz w:val="26"/><w:szCs w:val="26"/></w:rPr></w:style>
-  <w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:rPr><w:color w:val="0563C1"/><w:u w:val="single"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="Caption"><w:name w:val="Caption"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:jc w:val="center"/><w:spacing w:after="160"/></w:pPr><w:rPr><w:color w:val="486581"/><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>
+  <w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:rPr><w:color w:val="000000"/><w:u w:val="single"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Caption"><w:name w:val="Caption"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:jc w:val="center"/><w:spacing w:after="160"/></w:pPr><w:rPr><w:color w:val="000000"/><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>
 </w:styles>"""
 
 
@@ -248,7 +259,7 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
         body.append(_paragraph(subtitle, style="Subtitle", size=28, align="center"))
     status = str(data.get("status", "")).strip()
     if status:
-        body.append(_paragraph(status, bold=True, color="147D92", size=22, align="center", before=180))
+        body.append(_paragraph(status, bold=True, color="000000", size=22, align="center", before=180))
     metadata = data.get("metadata", {})
     if isinstance(metadata, dict):
         for key, value in metadata.items():
@@ -283,8 +294,10 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
                 for item in block.get("items", []):
                     body.append(_paragraph(f"• {item}", after=70))
             elif kind == "table":
-                headers = list(block.get("headers", []))
-                rows = [list(row) for row in block.get("rows", [])]
+                headers = block.get("headers", [])
+                rows = block.get("rows", [])
+                if not isinstance(headers, list) or not isinstance(rows, list) or any(not isinstance(row, list) for row in rows):
+                    raise ValueError('table headers and each row must be arrays')
                 body.append(_table(headers, rows))
             elif kind == "figure":
                 path = _resolve_asset(source_path, str(block.get("path", "")))
@@ -322,8 +335,8 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
                 figure_count += 1
                 caption_text = caption if design_status in caption else f"{caption}（{design_status} 概念原理图）"
                 body.append(_paragraph(caption_text, style="Caption", size=19, align="center", after=70))
-                body.append(_paragraph(f"图示要点：{main_message}", bold=True, color="102A43", size=19, after=55))
-                body.append(_paragraph(f"证据边界：{claim_limit}", color="627D98", size=18, after=150))
+                body.append(_paragraph(f"图示要点：{main_message}", bold=True, color="000000", size=19, after=55))
+                body.append(_paragraph(f"证据边界：{claim_limit}", color="000000", size=18, after=150))
 
             if block.get("_binding_id"):
                 content = "".join(body[block_start:])
@@ -439,7 +452,7 @@ def self_test() -> None:
         root = Path(tmp)
         svg = root / "figure.svg"
         svg.write_text(
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450"><rect width="800" height="450" fill="#eef6f8"/><text x="80" y="220">作用机理</text></svg>',
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450"><rect width="800" height="450" fill="#ffffff"/><text x="80" y="220">作用机理</text></svg>',
             encoding="utf-8",
         )
         source = root / "report.json"

@@ -1,5 +1,7 @@
 # G5 成果生成与交付闸门
 
+v2.7 增加 [技术方案具体度与黑白验收](technical-report-quality.md)：先完成技术内容，再装配文件。manifest 的 `report_quality_review` 指向生成后读者复核收据（默认 `report-quality-review.json`）。完整交付必须具有逐路线五项正文证据、图文对应和读者挑战复核；仅结构/计算 PASS 不代表 G5 完成。技术证据状态 `EVIDENCE_RECORDED` 与工程正确性分开，待完善内容不得因文件齐备而升级。
+
 新增字段、阶段检查、既有授权、机制卡和同源图文生成统一见 [research-record-contract.md](research-record-contract.md)。G0/G3/G5 对应使用，不另设第二套状态或成熟度。
 
 

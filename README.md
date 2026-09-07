@@ -18,6 +18,14 @@
 
 适用于工具改进、设备优化、检修工艺和作业流程创新。正式安装路径面向 **OpenAI Codex**；同时按可移植 `SKILL.md` 结构设计，可由支持 Skill 目录或上下文加载的其他 Agent 平台适配使用。
 
+## v2.7：具体方案验收与黑白报告
+
+v2.7.1 补充模型与输出保真检查：旧 schema 不能借非 strict 获得完整交付 PASS；拒绝空表和列数错配；提供标准参数名称/证据定义文本引用；增加图—方程、可辨识反例和误差转换审阅规则。
+
+V0 报告也须展开输入、机理、实现、例算和验证协议。新增绑定最终 DOCX 的读者复核收据；结构一致、图数齐全不再等同于方案完整。Word 默认黑白三线表，SVG/HTML 默认单色，检查实际文件样式。自动检查仅核验内容证据覆盖，不能证明工程原理或评审真实性。详见 [技术报告质量规则](triz-worker-innovation-research/references/technical-report-quality.md)。
+
+既有研究记录 1.1、报告源 1.3、交付清单 1.2 继续读取；旧报告重新申请 complete 时须补齐具体方案、路线协议与 `report-quality-review.json`，不能把旧 PASS 当作 v2.7 内容验收。
+
 ## v2.6：现场记录与图文报告贯通
 
 新增原始输入→问题→需求→机制→参数→试验的稳定引用；正文、参数表、SVG/PNG 和动作图解共用同一记录。实际 Word 文字或图片被改动、参数更新后沿用旧图，都会在绑定校验中被发现。内置可独立运行的 H 教学样例。详见 [升级与迁移说明](docs/v2.6-upgrade.md)。
@@ -239,3 +247,7 @@ python triz-worker-innovation-research/scripts/validate_deliverables.py \
 ## 许可与归属
 
 原创代码、工作流、模板和说明采用 [MIT License](LICENSE)。经典 TRIZ 方法、参数、发明原理和矩阵归其原始作者及相关权利人；来源与再分发说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+## GitHub 更新
+
+在已安装 skill 目录运行 python scripts/update_skill.py --check；执行 --apply 下载更新。保留备份，不降级。详见 [更新与回退](triz-worker-innovation-research/references/skill-update.md)。

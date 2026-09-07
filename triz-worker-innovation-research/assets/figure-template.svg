@@ -2,64 +2,64 @@
   <title id="title">通用分层对象受控处理四阶段工作过程</title>
   <desc id="desc">四帧依次显示工具接近目标层、建立受控界面、施加主作用和形成输出，并以红色禁止线保护下层对象。</desc>
   <defs>
-    <marker id="blueArrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#176B87"/></marker>
-    <pattern id="targetPattern" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M-3 3 L3-3 M0 12 L12 0 M9 15 L15 9" stroke="#A65F2B" stroke-width="2"/></pattern>
+    <marker id="blueArrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#5b5b5b"/></marker>
+    <pattern id="targetPattern" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M-3 3 L3-3 M0 12 L12 0 M9 15 L15 9" stroke="#6a6a6a" stroke-width="2"/></pattern>
   </defs>
-  <rect width="1200" height="675" rx="26" fill="#F6F8FA"/>
-  <text x="60" y="70" font-family="Microsoft YaHei, sans-serif" font-size="34" font-weight="700" fill="#17324D">四阶段工作过程｜V0 概念原理图</text>
-  <text x="60" y="108" font-family="Microsoft YaHei, sans-serif" font-size="20" fill="#52677B">每一帧只表达一个状态变化；深蓝=有用作用，铜色纹理=目标层，浅橙=被保护区域，红=禁止越界</text>
+  <rect width="1200" height="675" rx="26" fill="#f8f8f8"/>
+  <text x="60" y="70" font-family="Microsoft YaHei, sans-serif" font-size="34" font-weight="700" fill="#2e2e2e">四阶段工作过程｜V0 概念原理图</text>
+  <text x="60" y="108" font-family="Microsoft YaHei, sans-serif" font-size="20" fill="#646464">每一帧只表达一个状态变化；深蓝=有用作用，铜色纹理=目标层，浅橙=被保护区域，红=禁止越界</text>
   <g font-family="Microsoft YaHei, sans-serif">
     <g transform="translate(45 145)">
-      <rect width="255" height="390" rx="18" fill="#FFFFFF" stroke="#CBD5DF" stroke-width="2"/>
-      <circle cx="34" cy="35" r="19" fill="#17324D"/><text x="34" y="42" text-anchor="middle" font-size="20" font-weight="700" fill="#FFF">1</text>
-      <text x="68" y="43" font-size="23" font-weight="700" fill="#17324D">初始状态</text>
-      <rect x="35" y="155" width="185" height="58" rx="24" fill="url(#targetPattern)" stroke="#A65F2B" stroke-width="3"/>
-      <rect x="35" y="213" width="185" height="74" rx="18" fill="#F5D6B3" stroke="#C98245" stroke-width="2"/>
-      <text x="128" y="190" text-anchor="middle" font-size="19" fill="#70401F">目标层</text>
-      <text x="128" y="255" text-anchor="middle" font-size="19" fill="#633A20">被保护区域</text>
-      <path d="M70 132 L70 92 L200 92" fill="none" stroke="#4A5563" stroke-width="8" stroke-linecap="round"/>
-      <polygon points="200,78 229,92 200,106" fill="#4A5563"/>
-      <text x="136" y="72" text-anchor="middle" font-size="18" fill="#4A5563">工具尚未接触</text>
+      <rect width="255" height="390" rx="18" fill="#ffffff" stroke="#d4d4d4" stroke-width="2"/>
+      <circle cx="34" cy="35" r="19" fill="#2e2e2e"/><text x="34" y="42" text-anchor="middle" font-size="20" font-weight="700" fill="#FFF">1</text>
+      <text x="68" y="43" font-size="23" font-weight="700" fill="#2e2e2e">初始状态</text>
+      <rect x="35" y="155" width="185" height="58" rx="24" fill="url(#targetPattern)" stroke="#6a6a6a" stroke-width="3"/>
+      <rect x="35" y="213" width="185" height="74" rx="18" fill="#dadada" stroke="#8d8d8d" stroke-width="2"/>
+      <text x="128" y="190" text-anchor="middle" font-size="19" fill="#484848">目标层</text>
+      <text x="128" y="255" text-anchor="middle" font-size="19" fill="#414141">被保护区域</text>
+      <path d="M70 132 L70 92 L200 92" fill="none" stroke="#545454" stroke-width="8" stroke-linecap="round"/>
+      <polygon points="200,78 229,92 200,106" fill="#545454"/>
+      <text x="136" y="72" text-anchor="middle" font-size="18" fill="#545454">工具尚未接触</text>
     </g>
     <g transform="translate(330 145)">
-      <rect width="255" height="390" rx="18" fill="#FFFFFF" stroke="#CBD5DF" stroke-width="2"/>
-      <circle cx="34" cy="35" r="19" fill="#17324D"/><text x="34" y="42" text-anchor="middle" font-size="20" font-weight="700" fill="#FFF">2</text>
-      <text x="68" y="43" font-size="23" font-weight="700" fill="#17324D">建立界面</text>
-      <rect x="35" y="155" width="185" height="58" rx="24" fill="url(#targetPattern)" stroke="#A65F2B" stroke-width="3"/>
-      <rect x="35" y="213" width="185" height="74" rx="18" fill="#F5D6B3" stroke="#C98245" stroke-width="2"/>
-      <polygon points="46,145 154,174 46,203" fill="#4A5563" stroke="#263746" stroke-width="2"/>
-      <text x="86" y="135" font-size="18" fill="#4A5563">工具</text>
-      <line x1="15" y1="174" x2="78" y2="174" stroke="#176B87" stroke-width="6" marker-end="url(#blueArrow)"/>
-      <text x="92" y="323" text-anchor="middle" font-size="18" fill="#176B87">只进入目标界面</text>
-      <line x1="35" y1="290" x2="220" y2="290" stroke="#C73D3D" stroke-width="4" stroke-dasharray="10 7"/>
-      <text x="128" y="350" text-anchor="middle" font-size="18" fill="#A52D2D">禁止越界</text>
+      <rect width="255" height="390" rx="18" fill="#ffffff" stroke="#d4d4d4" stroke-width="2"/>
+      <circle cx="34" cy="35" r="19" fill="#2e2e2e"/><text x="34" y="42" text-anchor="middle" font-size="20" font-weight="700" fill="#FFF">2</text>
+      <text x="68" y="43" font-size="23" font-weight="700" fill="#2e2e2e">建立界面</text>
+      <rect x="35" y="155" width="185" height="58" rx="24" fill="url(#targetPattern)" stroke="#6a6a6a" stroke-width="3"/>
+      <rect x="35" y="213" width="185" height="74" rx="18" fill="#dadada" stroke="#8d8d8d" stroke-width="2"/>
+      <polygon points="46,145 154,174 46,203" fill="#545454" stroke="#343434" stroke-width="2"/>
+      <text x="86" y="135" font-size="18" fill="#545454">工具</text>
+      <line x1="15" y1="174" x2="78" y2="174" stroke="#5b5b5b" stroke-width="6" marker-end="url(#blueArrow)"/>
+      <text x="92" y="323" text-anchor="middle" font-size="18" fill="#5b5b5b">只进入目标界面</text>
+      <line x1="35" y1="290" x2="220" y2="290" stroke="#5a5a5a" stroke-width="4" stroke-dasharray="10 7"/>
+      <text x="128" y="350" text-anchor="middle" font-size="18" fill="#474747">禁止越界</text>
     </g>
     <g transform="translate(615 145)">
-      <rect width="255" height="390" rx="18" fill="#FFFFFF" stroke="#CBD5DF" stroke-width="2"/>
-      <circle cx="34" cy="35" r="19" fill="#17324D"/><text x="34" y="42" text-anchor="middle" font-size="20" font-weight="700" fill="#FFF">3</text>
-      <text x="68" y="43" font-size="23" font-weight="700" fill="#17324D">施加主作用</text>
-      <path d="M35 185 C80 130,175 130,220 185 L220 213 L35 213 Z" fill="url(#targetPattern)" stroke="#A65F2B" stroke-width="3"/>
-      <rect x="35" y="213" width="185" height="74" rx="18" fill="#F5D6B3" stroke="#C98245" stroke-width="2"/>
-      <polygon points="48,148 156,177 48,206" fill="#4A5563" stroke="#263746" stroke-width="2"/>
-      <line x1="18" y1="177" x2="82" y2="177" stroke="#176B87" stroke-width="6" marker-end="url(#blueArrow)"/>
-      <path d="M95 145 C115 105,140 105,160 145" fill="none" stroke="#176B87" stroke-width="5" marker-end="url(#blueArrow)"/>
-      <text x="130" y="88" text-anchor="middle" font-size="18" fill="#176B87">主作用与目标层变形</text>
-      <line x1="35" y1="290" x2="220" y2="290" stroke="#C73D3D" stroke-width="4" stroke-dasharray="10 7"/>
-      <text x="128" y="350" text-anchor="middle" font-size="18" fill="#A52D2D">候选屏障｜需 V1 验证</text>
+      <rect width="255" height="390" rx="18" fill="#ffffff" stroke="#d4d4d4" stroke-width="2"/>
+      <circle cx="34" cy="35" r="19" fill="#2e2e2e"/><text x="34" y="42" text-anchor="middle" font-size="20" font-weight="700" fill="#FFF">3</text>
+      <text x="68" y="43" font-size="23" font-weight="700" fill="#2e2e2e">施加主作用</text>
+      <path d="M35 185 C80 130,175 130,220 185 L220 213 L35 213 Z" fill="url(#targetPattern)" stroke="#6a6a6a" stroke-width="3"/>
+      <rect x="35" y="213" width="185" height="74" rx="18" fill="#dadada" stroke="#8d8d8d" stroke-width="2"/>
+      <polygon points="48,148 156,177 48,206" fill="#545454" stroke="#343434" stroke-width="2"/>
+      <line x1="18" y1="177" x2="82" y2="177" stroke="#5b5b5b" stroke-width="6" marker-end="url(#blueArrow)"/>
+      <path d="M95 145 C115 105,140 105,160 145" fill="none" stroke="#5b5b5b" stroke-width="5" marker-end="url(#blueArrow)"/>
+      <text x="130" y="88" text-anchor="middle" font-size="18" fill="#5b5b5b">主作用与目标层变形</text>
+      <line x1="35" y1="290" x2="220" y2="290" stroke="#5a5a5a" stroke-width="4" stroke-dasharray="10 7"/>
+      <text x="128" y="350" text-anchor="middle" font-size="18" fill="#474747">候选屏障｜需 V1 验证</text>
     </g>
     <g transform="translate(900 145)">
-      <rect width="255" height="390" rx="18" fill="#FFFFFF" stroke="#CBD5DF" stroke-width="2"/>
-      <circle cx="34" cy="35" r="19" fill="#17324D"/><text x="34" y="42" text-anchor="middle" font-size="20" font-weight="700" fill="#FFF">4</text>
-      <text x="68" y="43" font-size="23" font-weight="700" fill="#17324D">形成输出</text>
-      <rect x="35" y="213" width="185" height="74" rx="18" fill="#F5D6B3" stroke="#C98245" stroke-width="2"/>
-      <path d="M45 170 C95 120,165 120,215 170" fill="none" stroke="#A65F2B" stroke-width="18" stroke-linecap="round"/>
-      <line x1="125" y1="150" x2="125" y2="92" stroke="#176B87" stroke-width="6" marker-end="url(#blueArrow)"/>
-      <text x="128" y="70" text-anchor="middle" font-size="18" fill="#176B87">目标层受控分离</text>
-      <text x="128" y="255" text-anchor="middle" font-size="19" fill="#633A20">被保护区域保持隔离</text>
-      <line x1="35" y1="290" x2="220" y2="290" stroke="#C73D3D" stroke-width="4" stroke-dasharray="10 7"/>
-      <text x="128" y="350" text-anchor="middle" font-size="18" fill="#52677B">输出：可检查、可回退</text>
+      <rect width="255" height="390" rx="18" fill="#ffffff" stroke="#d4d4d4" stroke-width="2"/>
+      <circle cx="34" cy="35" r="19" fill="#2e2e2e"/><text x="34" y="42" text-anchor="middle" font-size="20" font-weight="700" fill="#FFF">4</text>
+      <text x="68" y="43" font-size="23" font-weight="700" fill="#2e2e2e">形成输出</text>
+      <rect x="35" y="213" width="185" height="74" rx="18" fill="#dadada" stroke="#8d8d8d" stroke-width="2"/>
+      <path d="M45 170 C95 120,165 120,215 170" fill="none" stroke="#6a6a6a" stroke-width="18" stroke-linecap="round"/>
+      <line x1="125" y1="150" x2="125" y2="92" stroke="#5b5b5b" stroke-width="6" marker-end="url(#blueArrow)"/>
+      <text x="128" y="70" text-anchor="middle" font-size="18" fill="#5b5b5b">目标层受控分离</text>
+      <text x="128" y="255" text-anchor="middle" font-size="19" fill="#414141">被保护区域保持隔离</text>
+      <line x1="35" y1="290" x2="220" y2="290" stroke="#5a5a5a" stroke-width="4" stroke-dasharray="10 7"/>
+      <text x="128" y="350" text-anchor="middle" font-size="18" fill="#646464">输出：可检查、可回退</text>
     </g>
   </g>
-  <rect x="60" y="575" width="1080" height="60" rx="14" fill="#E8F1F5"/>
-  <text x="600" y="612" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="22" font-weight="700" fill="#17324D">图示要点：把动态机理拆成连续状态，同时明确目标层、工具、被保护对象和禁止越界面。</text>
+  <rect x="60" y="575" width="1080" height="60" rx="14" fill="#efefef"/>
+  <text x="600" y="612" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="22" font-weight="700" fill="#2e2e2e">图示要点：把动态机理拆成连续状态，同时明确目标层、工具、被保护对象和禁止越界面。</text>
 </svg>

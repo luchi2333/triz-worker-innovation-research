@@ -1,0 +1,87 @@
+{
+  "schema_version": "1.0",
+  "technical_dossiers": [
+    {
+      "route_id": "",
+      "protocol_id": "",
+      "domain": "",
+      "design_kind": "development",
+      "input_output": {
+        "artifact_path": "report.docx",
+        "artifact_sha256": "",
+        "location": "",
+        "quote": ""
+      },
+      "mechanism": {
+        "artifact_path": "report.docx",
+        "artifact_sha256": "",
+        "location": "",
+        "quote": ""
+      },
+      "implementation": {
+        "artifact_path": "report.docx",
+        "artifact_sha256": "",
+        "location": "",
+        "quote": ""
+      },
+      "worked_example": {
+        "artifact_path": "report.docx",
+        "artifact_sha256": "",
+        "location": "",
+        "quote": ""
+      },
+      "validation": {
+        "artifact_path": "report.docx",
+        "artifact_sha256": "",
+        "location": "",
+        "quote": ""
+      },
+      "diagram": {
+        "figure_id": "",
+        "kind": "",
+        "why_this_explains_mechanism": "",
+        "report_evidence": {
+          "artifact_path": "report.docx",
+          "artifact_sha256": "",
+          "location": "",
+          "quote": ""
+        }
+      },
+      "reader_review": {
+        "status": "pending",
+        "reviewer": "",
+        "mode": "serial-reader",
+        "trace_example": {
+          "answer": "",
+          "evidence": {
+            "artifact_path": "report.docx",
+            "artifact_sha256": "",
+            "location": "",
+            "quote": ""
+          }
+        },
+        "distinguish_failure": {
+          "answer": "",
+          "evidence": {
+            "artifact_path": "report.docx",
+            "artifact_sha256": "",
+            "location": "",
+            "quote": ""
+          }
+        },
+        "reproduce_test": {
+          "answer": "",
+          "evidence": {
+            "artifact_path": "report.docx",
+            "artifact_sha256": "",
+            "location": "",
+            "quote": ""
+          }
+        },
+        "open_issues": [
+          "尚未实施读者复核"
+        ]
+      }
+    }
+  ]
+}

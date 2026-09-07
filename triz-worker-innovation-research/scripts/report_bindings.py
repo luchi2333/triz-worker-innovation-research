@@ -11,6 +11,22 @@ import zipfile
 from research_contract import digest, fill_text, local_file, resolve_ref, scalar
 
 W='{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
+EVIDENCE_LEGEND = '证据标记：F 现场报告事实；M 受控实测；S 可追溯外部来源（含厂家规格）；H 工程假设或推导。'
+
+
+def canonical_text(text):
+    """Render vocabulary owned by the skill, never retyped by the report author."""
+    text = text.replace('[[evidence_legend]]', EVIDENCE_LEGEND)
+    def parameter(match):
+        data = json.loads((Path(__file__).resolve().parent.parent / 'references/contradiction-matrix.json').read_text(encoding='utf-8'))
+        raw = match.group(1)
+        if not raw.isdigit():
+            raise ValueError('TRIZ parameter reference must be an integer ID')
+        item = next((p for p in data['parameters'] if p['id'] == int(raw)), None)
+        if item is None:
+            raise ValueError('TRIZ parameter reference must be 1..39')
+        return f"#{item['id']} {item['zh']}"
+    return re.sub(r'\[\[triz_parameter:([^\]]+)\]\]', parameter, text)
 
 
 def compile_source(source, record, root):
@@ -38,7 +54,7 @@ def compile_source(source, record, root):
             refs=[];expected=[];kind=block.get('type');bound=False
             def interpolate(text):
                 nonlocal refs
-                rendered,found=fill_text(text,record);refs.extend(found)
+                rendered,found=fill_text(canonical_text(text),record);refs.extend(found)
                 def figure_link(match):
                     fid=match.group(1)
                     if fid not in figure_numbers:raise ValueError('unknown figure reference: '+fid)

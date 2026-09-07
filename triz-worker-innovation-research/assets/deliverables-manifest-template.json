@@ -1,5 +1,6 @@
 {
   "schema_version": "1.2",
+  "report_quality_review": "report-quality-review.json",
   "delivery_level": "standard",
   "status": "blocked",
   "maturity": "V0",
