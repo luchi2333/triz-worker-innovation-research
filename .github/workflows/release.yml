@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHONUTF8: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
       RELEASE_TAG: ${{ inputs.tag }}
     steps:
       - uses: actions/checkout@v4
