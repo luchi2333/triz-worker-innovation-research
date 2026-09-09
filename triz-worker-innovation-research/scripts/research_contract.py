@@ -10,6 +10,7 @@ import itertools
 import math
 import re
 from pathlib import Path
+from engineering_checks import comparable, benefit_with_units
 
 RECORD_SCHEMAS = {"1.0", "1.1"}
 STAGES = ["G0", "G1", "G1.5", "G2", "G3", "G4", "G5"]
@@ -216,7 +217,7 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
         tid=test.get("id");rid=test.get("route_id");level=test.get("maturity")
         local_errors=[];protocol=protocols.get(test.get("protocol_id"))
         if not tid or tid in valid_tests:local_errors.append("requires a unique test ID")
-        if rid not in routes or test.get("target_kind")!="proposed_system":local_errors.append("requires the target system route")
+        if rid not in routes or test.get("target_kind") not in {"proposed_system", "baseline_system"}:local_errors.append("requires the target system route")
         if level not in {"V1","V2","V3"}:local_errors.append("completed test requires V1/V2/V3")
         if not isinstance(protocol,dict):local_errors.append("requires a predeclared protocol")
         else:
@@ -224,7 +225,9 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
                 if not protocol.get(key):local_errors.append("protocol missing "+key)
             if rid not in protocol.get("route_ids",[]):local_errors.append("protocol route does not match")
             scopes={"V1":"short_sample","V2":"full_process","V3":"controlled_field"}
-            if protocol.get("scope")!=scopes.get(level):local_errors.append("protocol scope does not support maturity")
+            if test.get('target_kind') == 'baseline_system':
+                if protocol.get('scope') not in scopes.values():local_errors.append('invalid baseline protocol scope')
+            elif protocol.get("scope")!=scopes.get(level):local_errors.append("protocol scope does not support maturity")
         if not isinstance(test.get("sample_count"),int) or isinstance(test.get("sample_count"),bool) or test.get("sample_count",0)<1:
             local_errors.append("requires actual sample count")
         if not test.get("conditions") or not test.get("date"):local_errors.append("requires actual conditions and date")
@@ -276,8 +279,13 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
         if baseline and (baseline==test['id'] or baseline not in valid_tests):
             errors.append(f"test {test['id']} requires a distinct completed baseline with valid raw artifacts")
             passed_tests.discard(test['id'])
+        elif baseline:
+            comparison_errors = comparable(test, valid_tests[baseline], protocols)
+            errors.extend(f"test {test['id']}: {e}" for e in comparison_errors)
+            if comparison_errors: passed_tests.discard(test['id'])
     for tid in passed_tests:
         test=valid_tests[tid];rid=test['route_id'];level=test['maturity']
+        if test.get('target_kind') == 'baseline_system': continue
         if MATURITY[level]>MATURITY[support[rid]]:support[rid]=level
     for claim in rows(record,"claims"):
         if claim.get("evidence_status") in {"M","measured","verified"} and claim.get("target_kind")=="proposed_system":
@@ -315,13 +323,14 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
         mid=str(model.get("id","?"));unit=str(model.get("unit",""))
         try:
             calculated=calculate_benefit(model);expected=number(model.get("expected_result"))
+            try: calculated=number(benefit_with_units(model))
+            except NotImplementedError as exc: unchecked.append(f"benefit {mid} dimensional consistency: {exc}")
             if not math.isclose(calculated,expected,rel_tol=1e-9,abs_tol=1e-9):errors.append(f"benefit {mid} arithmetic mismatch")
             if not unit:errors.append(f"benefit {mid} requires result unit")
             if model.get("formula_type")=="linear_difference_rate":
                 units=model.get("input_units",{})
                 if not units or not all(units.get(k) for k in ["baseline","candidate","quantity","unit_rate"]):
                     unchecked.append(f"benefit {mid} input dimensional consistency")
-                elif units["baseline"]!=units["candidate"]:errors.append(f"benefit {mid} baseline/candidate unit mismatch")
             # Legacy public values get an explicit limited check; new DOCX bindings use SDTs.
             for output in model.get("outputs",[]):
                 if not isinstance(output,dict):continue

@@ -28,7 +28,7 @@ from xml.sax.saxutils import escape, quoteattr
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from report_bindings import compile_source, verify_docx_bindings
+from report_bindings import compile_source, verify_docx_bindings, document_text_hash
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -264,7 +264,7 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
     if isinstance(metadata, dict):
         for key, value in metadata.items():
             body.append(_paragraph(f"{key}：{value}", size=20, align="center", after=80))
-    body.append(_page_break())
+    if data.get('cover_page', True):body.append(_page_break())
 
     figure_count = 0
     for section in data.get("sections", []):
@@ -425,6 +425,7 @@ def build_report(source_path: Path, output_path: Path) -> dict[str, object]:
             package.writestr("customXml/triz-provenance.json", json.dumps({
                 "research_record_sha256": record_hash,
                 "report_source_sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
+                "document_text_sha256": document_text_hash(document_xml),
                 "bound_blocks": len(data["_bindings"]),
                 "unbound_narrative_blocks": data["_narrative_blocks"],
             }))

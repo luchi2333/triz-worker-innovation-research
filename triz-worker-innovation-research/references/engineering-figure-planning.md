@@ -1,5 +1,7 @@
 # 工程图规划与技术可视化
 
+v2.9 的具体绘图方法、领域图元与最终嵌入检查见 [engineering-diagram-authoring.md](engineering-diagram-authoring.md)。图纸规划遵循本文件，绘图实现按该资源进行。
+
 新增字段、阶段检查、既有授权、机制卡和同源图文生成统一见 [research-record-contract.md](research-record-contract.md)。G0/G3/G5 对应使用，不另设第二套状态或成熟度。
 
 

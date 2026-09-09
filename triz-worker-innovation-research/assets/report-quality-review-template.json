@@ -51,6 +51,9 @@
         "status": "pending",
         "reviewer": "",
         "mode": "serial-reader",
+        "reviewed_at": null,
+        "model_or_tool_identity": "unknown",
+        "review_run_id": null,
         "trace_example": {
           "answer": "",
           "evidence": {

@@ -9,9 +9,21 @@ from xml.etree import ElementTree as ET
 import zipfile
 
 from research_contract import digest, fill_text, local_file, resolve_ref, scalar
+from figure_readability import check_control_extent
 
 W='{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 EVIDENCE_LEGEND = '证据标记：F 现场报告事实；M 受控实测；S 可追溯外部来源（含厂家规格）；H 工程假设或推导。'
+
+
+def document_text_hash(document):
+    if isinstance(document,str):document=ET.fromstring(document)
+    texts=[''.join(t.text or '' for t in p.iter(W+'t')) for p in document.iter(W+'p')]
+    return hashlib.sha256(json.dumps(texts,ensure_ascii=False).encode('utf-8')).hexdigest()
+
+
+def critical_literal(text):
+    text=re.sub(r'\{\{[^{}]+\}\}|\[\[[^\]]+\]\]', '', text)
+    return bool(re.search(r'\d+(?:\.\d+)?\s*(?:%|％|mm|cm|kV|mA|MΩ|kΩ|Ω|元|万元|秒|分钟|小时|人|次|件|端)\b|\d+(?:\.\d+)?\s*(?:%|％|元|万元|秒|分钟|小时)|\bV[0-3]\b|实测|已验证|零损伤|安全阈值|推荐路线',text))
 
 
 def canonical_text(text):
@@ -30,7 +42,7 @@ def canonical_text(text):
 
 
 def compile_source(source, record, root):
-    data=copy.deepcopy(source);bindings=[];figure_numbers={};figures={}
+    data=copy.deepcopy(source);bindings=[];figure_numbers={};figures={};critical_issues=[]
     if data.get('figure_manifest_path'):
         figure_path=local_file(root,data['figure_manifest_path'])
         payload=json.loads(figure_path.read_text(encoding='utf-8'))
@@ -52,6 +64,12 @@ def compile_source(source, record, root):
     for si,section in enumerate(data.get('sections',[])):
         for bi,block in enumerate(section.get('blocks',[])):
             refs=[];expected=[];kind=block.get('type');bound=False
+            if not block.get('claim_ref') and kind in {'paragraph','key_message','bullets','table'}:
+                literal=json.dumps({k:v for k,v in block.items() if k in {'text','text_template','items','item_templates','rows'}},ensure_ascii=False)
+                if critical_literal(literal) or block.get('fact_role') in {'performance','safety','maturity','recommendation','benefit','dimension'}:
+                    # Templates may interpolate numbers, but a declared critical statement
+                    # is owned in its entirety by a record claim.
+                    critical_issues.append(f'sections/{si}/blocks/{bi}: critical fact needs claim_ref or record-owned table')
             def interpolate(text):
                 nonlocal refs
                 rendered,found=fill_text(canonical_text(text),record);refs.extend(found)
@@ -104,25 +122,33 @@ def compile_source(source, record, root):
             if bound:
                 bid=f'TRIZ-B{len(bindings)+1:04d}';block['_binding_id']=bid
                 bindings.append({'id':bid,'source_location':f'sections/{si}/blocks/{bi}', 'refs':refs,'expected_texts':expected,'kind':kind,
+                                 'svg_path':figures.get(block.get('figure_ref'),{}).get('svg_path'),
                                  'figure_sha256':digest(local_file(root,block['path'])) if kind=='figure' else None})
             elif kind not in {'page_break'}:narrative_blocks+=1
-    data['_bindings']=bindings;data['_narrative_blocks']=narrative_blocks
+    data['_bindings']=bindings;data['_narrative_blocks']=narrative_blocks;data['_critical_issues']=critical_issues
     return data
 
 
-def verify_docx_bindings(docx_path, source_path):
+def verify_docx_bindings(docx_path, source_path, require_critical=False):
     source_path=Path(source_path).resolve();source=json.loads(source_path.read_text(encoding='utf-8'))
     if source.get('schema_version')!='1.3':return {'status':'LEGACY_UNCHECKED','errors':[],'bound_blocks':0}
     record_path=local_file(source_path.parent,source.get('research_record_path'))
     if digest(record_path)!=source.get('research_record_sha256'):raise ValueError('report source refers to a stale research record')
     record=json.loads(record_path.read_text(encoding='utf-8'));compiled=compile_source(source,record,source_path.parent)
     errors=[]
+    if require_critical or source.get('critical_facts_policy')=='bound':
+        if source.get('critical_facts_policy')!='bound':errors.append('complete report requires critical_facts_policy=bound')
+        errors.extend(compiled['_critical_issues'])
     with zipfile.ZipFile(docx_path) as package:
         document=ET.fromstring(package.read('word/document.xml'))
         source_hash=hashlib.sha256(source_path.read_bytes()).hexdigest()
         if 'customXml/triz-provenance.json' not in package.namelist():errors.append('DOCX missing generation provenance')
         else:
             provenance=json.loads(package.read('customXml/triz-provenance.json'))
+            if provenance.get('document_text_sha256'):
+                if provenance['document_text_sha256']!=document_text_hash(document):
+                    errors.append('actual DOCX narrative differs from generated report; rebuild and review')
+            elif require_critical:errors.append('complete report requires whole-text generation fingerprint')
             if provenance.get('research_record_sha256')!=digest(record_path) or provenance.get('report_source_sha256')!=source_hash:
                 errors.append('DOCX provenance differs from current record/report source')
         controls={}
@@ -140,6 +166,8 @@ def verify_docx_bindings(docx_path, source_path):
             expected=[value for value in binding['expected_texts'] if value]
             if actual!=expected:errors.append('actual DOCX text differs from record binding: '+binding['id'])
             if binding['figure_sha256']:
+                if binding.get('svg_path'):
+                    check_control_extent(control,local_file(source_path.parent,binding['svg_path']),errors)
                 ns='{http://schemas.openxmlformats.org/drawingml/2006/main}'
                 relns='{http://schemas.openxmlformats.org/officeDocument/2006/relationships}'
                 refs=[node.get(relns+'embed') for node in control.iter(ns+'blip')]
@@ -153,4 +181,5 @@ def verify_docx_bindings(docx_path, source_path):
         wanted={b['id'] for b in compiled['_bindings']}
         if set(controls)-wanted:errors.append('DOCX has unexpected bound blocks')
     return {'status':'FAIL' if errors else 'PASS','errors':errors,'bound_blocks':len(compiled['_bindings']),
-            'unbound_narrative_blocks':compiled['_narrative_blocks'],'scope':'Bound values, claims, tables and figures; unbound narrative needs content review.'}
+            'unbound_narrative_blocks':compiled['_narrative_blocks'], 'critical_fact_issues':compiled['_critical_issues'],
+            'scope':'Bound content and actual image extents checked; critical-language screening is heuristic, semantic completeness needs reader review.'}

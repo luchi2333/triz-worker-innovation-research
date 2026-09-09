@@ -173,6 +173,20 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(self.audit()['errors'])
         self.assertEqual(self.audit()['maturity_support']['R1'], 'V0')
 
+    def test_incomparable_valid_baseline_cannot_support_v2(self):
+        test=self.add_measurement()
+        test.update(maturity='V2',baseline_test_id='BASE-01',comparison_conditions={'temperature_C':20},comparison_rationale='Same sample lot, complete procedure')
+        protocol=self.record['models_and_tests']['protocols'][0]
+        protocol.update(scope='full_process',comparison_basis={'object_population':'lot A','metric_definition':'SLIP','reference_points':'jaw edge','instrument_chain':'CAL-1'})
+        bp=copy.deepcopy(protocol);bp.update(id='PB',route_ids=['R0'])
+        base=copy.deepcopy(test);base.update(id='BASE-01',route_id='R0',protocol_id='PB',target_kind='baseline_system',maturity='V1',claim_ids=[])
+        base.pop('baseline_test_id');self.record['models_and_tests']['protocols'].append(bp);self.record['models_and_tests']['tests'].append(base)
+        self.assertEqual(self.audit()['maturity_support']['R1'],'V2')
+        bp['comparison_basis']['instrument_chain']='UNRELATED'
+        result=self.audit()
+        self.assertEqual(result['maturity_support']['R1'],'V0')
+        self.assertTrue(any('incomparable' in e for e in result['errors']))
+
     def test_invalid_query_and_legitimate_dimensions(self):
         def invalid(m, r):
             r['queries'][0]['date'] = '2026-02-30'
@@ -222,6 +236,32 @@ class PipelineTests(unittest.TestCase):
             parts['word/document.xml'] = ET.tostring(document, encoding='utf-8')
         self.rewrite_docx(mutate)
         self.assertEqual(self.verify()['status'], 'FAIL')
+
+    def test_actual_unbound_prose_tamper(self):
+        def mutate(parts):
+            document=ET.fromstring(parts['word/document.xml'])
+            paragraph=document.find(W+'body/'+W+'p')
+            paragraph.find('.//'+W+'t').text='Unbound claim: efficiency 35%'
+            parts['word/document.xml']=ET.tostring(document,encoding='utf-8')
+        self.rewrite_docx(mutate)
+        self.assertTrue(any('narrative differs' in e for e in self.verify()['errors']))
+
+    def test_actual_embedded_figure_shrink(self):
+        def mutate(parts):
+            document=ET.fromstring(parts['word/document.xml'])
+            wp='{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}'
+            for extent in document.iter(wp+'extent'):
+                extent.set('cx',str(int(extent.get('cx'))//10));extent.set('cy',str(int(extent.get('cy'))//10))
+            parts['word/document.xml']=ET.tostring(document,encoding='utf-8')
+        self.rewrite_docx(mutate)
+        self.assertTrue(any('actual DOCX effective' in e for e in self.verify()['errors']))
+
+    def test_critical_free_text_cannot_complete(self):
+        path=self.root/'report-source.json';source=json.loads(path.read_text(encoding='utf-8'))
+        source['critical_facts_policy']='bound'
+        source['sections'][0]['blocks'].append({'type':'paragraph','text':'预计提高效率 35%。'})
+        write_json(path,source)
+        with self.assertRaisesRegex(ValueError,'critical fact'):build_report(path,self.root/'invalid.docx')
 
     def test_run_splitting_does_not_change_bound_text(self):
         def mutate(parts):

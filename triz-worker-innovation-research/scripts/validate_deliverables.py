@@ -250,7 +250,7 @@ def _check_svg(path: Path, item: dict, errors: list[str], warnings: list[str]) -
     if font_sizes:
         minimum = min(font_sizes)
         result["min_font_size"] = minimum
-        effective = minimum
+        effective = None
         view_box = str(root.attrib.get("viewBox", "")).split()
         display_width = item.get("display_width_pt")
         if len(view_box) == 4 and isinstance(display_width, (int, float)) and display_width > 0:
@@ -262,10 +262,12 @@ def _check_svg(path: Path, item: dict, errors: list[str], warnings: list[str]) -
                 pass
         elif item.get("display_width_pt") is not None:
             _fail(errors, f"invalid display_width_pt/viewBox for {figure_id}")
-        result["effective_min_font_pt"] = round(effective, 3)
-        if effective < 6:
+        if effective is None:
+            warnings.append(f"effective font size unverified without display width: {figure_id}; actual DOCX extent check required")
+        result["effective_min_font_pt"] = round(effective, 3) if effective is not None else None
+        if effective is not None and effective < 6:
             _fail(errors, f"effective SVG font-size below 6pt for {figure_id}: {effective:.2f}pt")
-        elif effective < 8:
+        elif effective is not None and effective < 8:
             warnings.append(f"effective SVG font-size below 8pt for {figure_id}: {effective:.2f}pt")
 
     # Arrowheads and decorative definitions are not engineering geometry.
@@ -1270,7 +1272,7 @@ def _validate_v12(root: Path, manifest: dict, strict: bool = False) -> dict[str,
             document = _safe_path(root, artifact["path"], v12_errors, "bound report")
             if source is not None and document is not None:
                 try:
-                    binding = verify_docx_bindings(document, source)
+                    binding = verify_docx_bindings(document, source, require_critical=manifest.get('status')=='complete')
                     binding_results.append(binding)
                     v12_errors.extend(binding.get("errors", []))
                     if binding.get("status") != "PASS" or not binding.get("bound_blocks"):

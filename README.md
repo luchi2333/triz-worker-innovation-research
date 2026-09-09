@@ -18,6 +18,10 @@
 
 适用于工具改进、设备优化、检修工艺和作业流程创新。正式安装路径面向 **OpenAI Codex**；同时按可移植 `SKILL.md` 结构设计，可由支持 Skill 目录或上下文加载的其他 Agent 平台适配使用。
 
+## v2.9：工程一致性与领域原理图
+
+v2.9 进一步核对基准试验可比性、效益单位与倍率、最终 Word 图片字号和关键正文绑定；增加电气端口/元件及机械接触/限位/尺寸图元。运行 `python triz-worker-innovation-research/scripts/run_engineering_examples.py --output examples` 可生成黑白图文教学样例。详见 [工程绘图](triz-worker-innovation-research/references/engineering-diagram-authoring.md) 和 [迁移要求](triz-worker-innovation-research/references/engineering-correctness-contract.md)。
+
 ## v2.7：具体方案验收与黑白报告
 
 v2.7.1 补充模型与输出保真检查：旧 schema 不能借非 strict 获得完整交付 PASS；拒绝空表和列数错配；提供标准参数名称/证据定义文本引用；增加图—方程、可辨识反例和误差转换审阅规则。
@@ -250,4 +254,4 @@ python triz-worker-innovation-research/scripts/validate_deliverables.py \
 
 ## GitHub 更新
 
-在已安装 skill 目录运行 python scripts/update_skill.py --check；执行 --apply 下载更新。保留备份，不降级。详见 [更新与回退](triz-worker-innovation-research/references/skill-update.md)。
+在已安装 skill 目录运行 `python scripts/update_skill.py --check`；执行 `--apply` 下载更新。默认稳定 Release，显式 `--channel main` 使用开发分支；核对发布包和逐文件哈希、保留备份且不降级。详见 [更新与回退](triz-worker-innovation-research/references/skill-update.md)。

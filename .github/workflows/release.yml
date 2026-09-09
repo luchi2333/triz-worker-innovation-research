@@ -1,0 +1,55 @@
+name: Publish validated stable release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to publish (vX.Y.Z)
+        required: true
+        type: string
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONUTF8: '1'
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Match exact tag and skill version
+        run: |
+          python -c 'import os,re,sys; sys.path.insert(0,"triz-worker-innovation-research/scripts"); from update_skill import metadata; from pathlib import Path; tag=os.environ["RELEASE_TAG"]; assert re.fullmatch(r"v\d+\.\d+\.\d+",tag); assert tag=="v"+metadata(Path("triz-worker-innovation-research/SKILL.md").read_text())'
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "$RELEASE_TAG^{commit}")"
+      - name: Install render dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libreoffice-writer fonts-noto-cjk
+          python -m pip install PyMuPDF
+      - name: Validate and render before packaging
+        run: |
+          python triz-worker-innovation-research/scripts/validate_skill.py --strict
+          python triz-worker-innovation-research/scripts/run_engineering_examples.py --output render-example
+          python triz-worker-innovation-research/scripts/render_smoke.py --docx render-example/engineering-examples.docx --output rendered-pages
+          python triz-worker-innovation-research/scripts/package_release.py --output release-files --commit "$(git rev-parse HEAD)"
+      - name: Publish new release with checksum manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$RELEASE_TAG" release-files/* --verify-tag --draft --title "$RELEASE_TAG" --generate-notes
+          gh release edit "$RELEASE_TAG" --draft=false
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-render-evidence
+          path: |
+            rendered-pages
+            release-files

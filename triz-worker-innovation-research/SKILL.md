@@ -2,8 +2,8 @@
 name: triz-worker-innovation-research
 description: "用于一线职工创新课题的端到端 TRIZ 研究：把现场问题转化为带证据标记的问题模型，对经典 39×39 矛盾矩阵做确定性查询，完成可复现的标准/产品/专利/文献查新、可追溯候选方案、安全与验证闸门、效益测算和技术方案报告。End-to-end TRIZ research for frontline worker innovation: evidence-labelled problem modelling, deterministic Altshuller 39x39 matrix lookup, reproducible research, gated concepts, benefit estimates and a technical-solution report. 自包含：不得要求用户另装 deep-research、矩阵插件或多智能体框架。Do not use as a patentability/FTO legal opinion or to claim field performance without measured evidence."
 metadata:
-  version: "2.8.0"
-  last_updated: "2026-09-07"
+  version: "2.9.0"
+  last_updated: "2026-09-09"
   portability: "standalone-cross-platform"
 ---
 
@@ -16,6 +16,8 @@ metadata:
 ## 检查与更新 Skill
 
 用户要求检查、下载 GitHub 最新版、更新或回退本 Skill 时，按 [skill-update.md](references/skill-update.md) 进入维护模式，执行 `scripts/update_skill.py`；不进入 G0–G5。默认只检查，明确更新授权执行 `--apply`，校验后替换并保留备份。本机版本更高时不降级。
+
+维护更新默认使用稳定 Release，`--channel main` 仅用于明确选择开发通道，稳定包缺失时不静默切换来源。
 
 ## 适用与不适用
 
@@ -42,6 +44,8 @@ metadata:
 17. **公式与图示互相校验**：按 [技术模型与输出保真复核](references/model-and-output-audit.md) 检查真实连接、测量端口、单位、极限工况、可辨识反例和输出转换误差。有公式、有算例不等于模型正确；静态限值不能直接替代动态安全判据。旧 schema 的未检查结果不能作为完成凭据；禁止空表、静默补空和按字符数截断核心依据。
 
 ## 交付层级
+
+G4 按 [engineering-correctness-contract.md](references/engineering-correctness-contract.md) 核对基准可比性与单位倍率。G3/G5 按 [engineering-diagram-authoring.md](references/engineering-diagram-authoring.md) 先确定端口、接触和作用路径，再生成原理图；完整报告启用关键事实绑定，图中文字尺寸从实际 DOCX 读取。
 
 | 层级 | 启动条件 | 停止位置 | 声称边界 |
 |---|---|---|---|

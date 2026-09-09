@@ -11,7 +11,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            python: '3.10'
+          - os: ubuntu-latest
+            python: '3.12'
+          - os: windows-latest
+            python: '3.12'
+          - os: macos-latest
+            python: '3.12'
     runs-on: ${{ matrix.os }}
     env:
       PYTHONUTF8: '1'
@@ -21,7 +29,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python }}
 
       - uses: actions/setup-node@v4
         with:
@@ -42,3 +50,27 @@ jobs:
       - name: Generated deliverables validator self-test
         run: python triz-worker-innovation-research/scripts/validate_deliverables.py --self-test
         shell: bash
+
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install renderer and Chinese fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libreoffice-writer fonts-noto-cjk
+          python -m pip install PyMuPDF
+      - name: Generate actual engineering example report
+        run: python triz-worker-innovation-research/scripts/run_engineering_examples.py --output render-example
+      - name: Render Word to PDF and pages
+        run: python triz-worker-innovation-research/scripts/render_smoke.py --docx render-example/engineering-examples.docx --output rendered-pages
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: engineering-render-pages
+          path: |
+            render-example
+            rendered-pages

@@ -41,6 +41,15 @@ if hasattr(sys.stderr, "reconfigure"):
 
 # 发布清单：必须存在
 REQUIRED = [
+    "scripts/engineering_checks.py",
+    "scripts/engineering_diagrams.py",
+    "scripts/figure_readability.py",
+    "scripts/test_engineering.py",
+    "scripts/run_engineering_examples.py",
+    "scripts/render_smoke.py",
+    "scripts/package_release.py",
+    "references/engineering-diagram-authoring.md",
+    "references/engineering-correctness-contract.md",
     "scripts/update_skill.py",
     "scripts/test_update_skill.py",
     "references/skill-update.md",
@@ -854,6 +863,11 @@ def main(argv: list[str]) -> int:
         "ResearchPipeline", errors, warnings, strict,
         marker="PIPELINE_SELF_TEST_PASS",
     )
+    engineering = run_self_test(
+        [sys.executable, "scripts/test_engineering.py"],
+        "Engineering", errors, warnings, strict,
+        marker="ENGINEERING_SELF_TEST_PASS",
+    )
     readme_golden = check_readme_golden(data, errors, warnings)
     check_readme_golden_negative(data, errors)
 
@@ -900,6 +914,7 @@ def main(argv: list[str]) -> int:
         "research_pipeline": pipeline,
         "report_quality": report_quality,
         "skill_updater": updater,
+        "engineering": engineering,
         "readme_golden": readme_golden,
         "generic_leak_hits": leak_hits,
         "warnings": warnings,

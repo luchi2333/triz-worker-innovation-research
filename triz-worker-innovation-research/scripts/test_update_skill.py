@@ -118,13 +118,31 @@ class Tests(unittest.TestCase):
 
     def test_commit_pinning(self):
         with patch.object(u, "fetch", side_effect=[json.dumps({"sha": "b" * 40}).encode(), skill("2.0.0").encode()]) as fetch:
-            self.assertEqual(u.upstream()["commit"], "b" * 40)
+            self.assertEqual(u.upstream('main')["commit"], "b" * 40)
             self.assertIn("/" + "b" * 40 + "/", fetch.call_args.args[0])
 
     def test_lock_exclusion(self):
         with u.lock(self.target):
             with self.assertRaises(FileExistsError):
                 with u.lock(self.target): pass
+
+    def test_interrupted_swap_recovery(self):
+        folder=self.root/('.'+u.NAME+'-backups')/'interrupted';folder.mkdir(parents=True)
+        before=u.inventory(self.target)
+        u.receipt_write(folder,dict(state='prepared',target=str(self.target),before=before,installed={}))
+        u.move_directory(self.target,folder/'skill')
+        self.assertFalse(self.target.exists())
+        self.assertEqual(u.recover(self.target,folder)['status'],'RECOVERED_ORIGINAL')
+        self.assertEqual(u.inventory(self.target),before)
+
+    def test_recovery_does_not_overwrite_existing_target(self):
+        folder=self.root/('.'+u.NAME+'-backups')/'interrupted';folder.mkdir(parents=True)
+        import shutil
+        shutil.copytree(self.target,folder/'skill')
+        u.receipt_write(folder,dict(state='prepared',target=str(self.target),before=u.inventory(self.target),installed={}))
+        (self.target/'user.txt').write_text('keep')
+        with self.assertRaisesRegex(ValueError,'preserve both'):u.recover(self.target,folder)
+        self.assertEqual((self.target/'user.txt').read_text(),'keep')
 
 
 if __name__ == "__main__":

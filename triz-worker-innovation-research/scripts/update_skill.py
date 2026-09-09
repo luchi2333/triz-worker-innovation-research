@@ -1,4 +1,4 @@
-"""Check/update the installed skill from the pinned GitHub main commit; retain rollback."""
+"""Update from a checksummed stable GitHub Release, or explicitly opt into main."""
 import sys
 sys.dont_write_bytecode = True
 import argparse
@@ -47,12 +47,44 @@ def fetch(url, limit):
     return data
 
 
-def upstream():
-    commit = json.loads(fetch(f"https://api.github.com/repos/{REPO}/commits/main", 1024 * 1024))["sha"]
+def upstream(channel='stable'):
+    release=None;ref='main'
+    if channel=='stable':
+        release=json.loads(fetch(f'https://api.github.com/repos/{REPO}/releases/latest',1024*1024))
+        ref=release.get('tag_name','')
+        if release.get('draft') or release.get('prerelease') or not re.fullmatch(r'v\d+\.\d+\.\d+',ref):
+            raise ValueError('Latest release is not a supported stable version')
+    elif channel!='main':raise ValueError('Unsupported update channel')
+    commit = json.loads(fetch(f"https://api.github.com/repos/{REPO}/commits/{ref}", 1024 * 1024))["sha"]
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("Invalid upstream commit")
     content = fetch(f"https://raw.githubusercontent.com/{REPO}/{commit}/{NAME}/SKILL.md", 256 * 1024)
-    return {"commit": commit, "version": metadata(content.decode("utf-8-sig"))}
+    result={"commit": commit, "version": metadata(content.decode("utf-8-sig")), 'channel':channel}
+    if release is not None:
+        if ref!='v'+result['version']:raise ValueError('Release tag/version mismatch')
+        archive=f'{NAME}-{ref}.zip'
+        assets={a.get('name'):a for a in release.get('assets',[]) if a.get('state')=='uploaded'}
+        result.update(tag=ref,release_ready=archive in assets and 'release-manifest.json' in assets)
+        if result['release_ready']:
+            base=f'https://github.com/{REPO}/releases/download/{ref}/'
+            for key,name in [('archive_url',archive),('manifest_url','release-manifest.json')]:
+                if assets[name].get('browser_download_url')!=base+name:raise ValueError('Unexpected release asset URL')
+                result[key]=base+name
+    return result
+
+
+def checked_archive(remote):
+    if remote.get('channel')!='stable':
+        return fetch(f"https://codeload.github.com/{REPO}/zip/{remote['commit']}",LIMIT), None
+    if not remote.get('release_ready'):raise ValueError('Stable release lacks archive/checksum manifest; no automatic main fallback')
+    manifest=json.loads(fetch(remote['manifest_url'],1024*1024))
+    if any(manifest.get(k)!=v for k,v in [('skill',NAME),('version',remote['version']),('commit',remote['commit'])]):
+        raise ValueError('Release manifest identity mismatch')
+    if manifest.get('archive')!=remote['archive_url'].rsplit('/',1)[-1]:raise ValueError('Release archive name mismatch')
+    payload=fetch(remote['archive_url'],LIMIT)
+    if hashlib.sha256(payload).hexdigest()!=manifest.get('archive_sha256'):raise ValueError('Release archive checksum mismatch')
+    if not isinstance(manifest.get('files'),dict) or not manifest['files']:raise ValueError('Release missing file hash inventory')
+    return payload,manifest
 
 
 def inventory(root):
@@ -133,8 +165,11 @@ def receipt_write(folder, record):
 @contextlib.contextmanager
 def lock(target):
     path = target.parent / ("." + target.name + ".update.lock")
-    with path.open("x", encoding="utf-8") as stream:
-        stream.write(str(os.getpid()))
+    try:
+        with path.open("x", encoding="utf-8") as stream:
+            stream.write(str(os.getpid()))
+    except FileExistsError as exc:
+        raise FileExistsError(f'Updater lock exists: {path}; PID={path.read_text(encoding="utf-8")}. Check the process before removing a stale lock.') from exc
     try:
         yield
     finally:
@@ -195,23 +230,51 @@ def in_git_checkout(target):
     return any((p / ".git").exists() for p in (target, *target.parents))
 
 
-def update(target, apply=False):
+def recover(target, folder):
+    """Explicit recovery of an interrupted swap; no files are overwritten."""
+    target=Path(target).absolute()
+    if target.name!=NAME:raise ValueError('Recovery target must use the skill directory name')
+    folder=Path(folder).resolve(strict=True)
+    expected=(target.parent/('.'+NAME+'-backups')).resolve()
+    if folder.parent!=expected:raise ValueError('Recovery backup outside target backup directory')
+    record=json.loads((folder/'receipt-prepared.json').read_text(encoding='utf-8'))
+    if Path(record['target']).resolve()!=target.resolve():raise ValueError('Recovery target mismatch')
+    backup=folder/'skill'
+    if not backup.is_dir() or inventory(backup)!=record['before']:raise ValueError('Recovery backup missing or changed')
+    if target.exists():
+        target=target_path(target)
+        current=inventory(target)
+        if current==record['installed']:
+            record['state']='installed';receipt_write(folder,record)
+            return {'status':'RECOVERED_INSTALLED','backup':str(folder)}
+        raise ValueError('Recovery target exists with different files; preserve both and inspect manually')
+    # Resolving the parent also rejects recovery through a relocated installation.
+    if target.parent.resolve()!=Path(record['target']).parent.resolve():raise ValueError('Recovery parent changed')
+    move_directory(backup,target)
+    record['state']='recovered_original';receipt_write(folder,record)
+    return {'status':'RECOVERED_ORIGINAL','target':str(target)}
+
+
+def update(target, apply=False, channel='stable'):
     local = metadata((target / "SKILL.md").read_text(encoding="utf-8-sig"))
-    remote = upstream()
+    remote = upstream(channel)
     status = "LOCAL_AHEAD" if version(local) > version(remote["version"]) else "UP_TO_DATE" if local == remote["version"] else "UPDATE_AVAILABLE"
     result = dict(status=status, local_version=local, remote_version=remote["version"], commit=remote["commit"], target=str(target))
+    result.update(channel=channel,release_ready=remote.get('release_ready'))
     if not apply or status != "UPDATE_AVAILABLE":
         return result
     if in_git_checkout(target):
         raise ValueError("Refusing to replace a Git checkout; use an installed skill target")
     before = inventory(target)
-    payload = fetch(f"https://codeload.github.com/{REPO}/zip/{remote['commit']}", LIMIT)
+    payload, release_manifest = checked_archive(remote)
     with tempfile.TemporaryDirectory(prefix=".triz-update-", dir=target.parent) as temporary:
         candidate = Path(temporary) / NAME
         candidate.mkdir()
         extract(payload, candidate)
         if metadata((candidate / "SKILL.md").read_text(encoding="utf-8-sig")) != remote["version"]:
             raise ValueError("Downloaded version differs from pinned metadata")
+        if release_manifest is not None and inventory(candidate)!=release_manifest['files']:
+            raise ValueError('Release file inventory mismatch')
         validate(candidate)
         remote["archive_sha256"] = hashlib.sha256(payload).hexdigest()
         return install(target, candidate, remote, before)
@@ -223,15 +286,21 @@ def main():
     mode.add_argument("--check", action="store_true")
     mode.add_argument("--apply", action="store_true")
     mode.add_argument("--rollback", metavar="BACKUP_DIRECTORY")
+    mode.add_argument('--recover',metavar='BACKUP_DIRECTORY')
     parser.add_argument("--target", default=str(Path(__file__).resolve().parent.parent))
+    parser.add_argument('--channel',choices=['stable','main'],default='stable')
     args = parser.parse_args()
     try:
+        if args.recover:
+            target=Path(args.target).absolute()
+            with lock(target):result=recover(target,args.recover)
+            print(json.dumps(result,ensure_ascii=False,indent=2));return 0
         target = target_path(args.target)
         if args.apply or args.rollback:
             with lock(target):
-                result = rollback(target, args.rollback) if args.rollback else update(target, True)
+                result = rollback(target, args.rollback) if args.rollback else update(target, True, args.channel)
         else:
-            result = update(target)
+            result = update(target, channel=args.channel)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     except Exception as error:

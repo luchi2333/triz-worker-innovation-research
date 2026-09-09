@@ -21,6 +21,7 @@ import tempfile
 sys.dont_write_bytecode=True
 from research_contract import digest, fill_text, number, scalar
 from build_report import FIGURE_TYPES
+from engineering_diagrams import render_semantic
 
 ROOT=Path(__file__).resolve().parent.parent
 COLORS={'structure':'#e4e4e4','active':'#bebebe','object':'#d4d4d4','hypothesis':'#f0f0f0','danger':'#4b4b4b','white':'#ffffff','ink':'#333333','motion':'#535353'}
@@ -133,7 +134,10 @@ def render_figure(spec, record, frame_id=None):
         x=(index%columns)*width;y=44+(index//columns)*height
         parts.append(f'<g transform="translate({x:g} {y:g})"><rect x="2" y="2" width="{width-4:g}" height="{height-4:g}" fill="#f6f6f6" stroke="#dbdbdb"/>')
         if frame.get('label'):parts.append(f'<text x="14" y="29" font-size="19" fill="#333333">{html.escape(frame["label"])}</text>')
-        if not frame.get('primitives',spec.get('primitives',[])):raise ValueError('each figure frame requires authored geometry')
+        semantic = frame.get('semantic_diagram',spec.get('semantic_diagram'))
+        if semantic:
+            parts.append(render_semantic(semantic,width,height,prefix,record))
+        elif not frame.get('primitives',spec.get('primitives',[])):raise ValueError('each figure frame requires authored geometry')
         for item in frame.get('primitives',spec.get('primitives',[])):
             parts.append(primitive_svg(item,local,record,prefix,components))
         parts.append('</g>')

@@ -1,5 +1,7 @@
 # 研究记录与图文生成契约
 
+v2.9 的比较协议、单位换算与完整正文要求见 [engineering-correctness-contract.md](engineering-correctness-contract.md)；领域图元见 [engineering-diagram-authoring.md](engineering-diagram-authoring.md)。下文 v2.6 接口继续读取，新版交付同时执行新增要求。
+
 本文件维护 v2.6 的新增数据与脚本接口。G0 开始读取；G3 建机制、G5 生成图文时按需回到对应小节。阶段仍为 G0—G5，技术成熟度仍为 V0—V3。
 
 ## 1. 从现场输入开始

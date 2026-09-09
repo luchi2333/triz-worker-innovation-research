@@ -1,5 +1,6 @@
 {
   "schema_version": "1.3",
+  "critical_facts_policy": "bound",
   "research_record_path": "research-record.json",
   "research_record_sha256": "填写生成时的记录散列",
   "figure_manifest_path": "figures/figure-manifest.json",
