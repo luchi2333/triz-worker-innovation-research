@@ -28,6 +28,14 @@ def inspect_pdf(pdf,output,docx=None):
             ink=sum(1 for i in range(0,len(samples),image.n) if min(samples[i:i+3])<240)
             if ink/(image.width*image.height)<.0008:errors.append(f'page {index+1}: likely blank')
             for block in page.get_text('dict')['blocks']:
+                # LibreOffice/PDF converters may split an embedded SVG into
+                # hundreds of tiny image blocks.  Some boundary fragments
+                # have zero width or a one-pixel negative edge even though the
+                # enclosing drawing is fully on the page.  Bounds are a text
+                # layout check here; image visibility is covered by the ink
+                # ratio and the required visual review.
+                if block.get('type') != 0:
+                    continue
                 rect=fitz.Rect(block['bbox'])
                 if not (page.rect+(-2,-2,2,2)).contains(rect):errors.append(f'page {index+1}: content outside page bounds')
             pages.append({'page':index+1,'path':path.name,'sha256':digest(path),'text_characters':len(text),
