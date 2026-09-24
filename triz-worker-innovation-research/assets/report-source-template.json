@@ -30,6 +30,46 @@
       ]
     },
     {
+      "title": "技术构成与创新归属",
+      "blocks": [
+        {
+          "type": "table",
+          "table_ref": "/routes",
+          "columns": [
+            {
+              "header": "路线",
+              "field": "id"
+            },
+            {
+              "header": "成熟已有技术",
+              "field": "innovation_attribution/mature_existing_technology"
+            },
+            {
+              "header": "成熟技术来源",
+              "field": "innovation_attribution/existing_technology_source_ids",
+              "join": "、"
+            },
+            {
+              "header": "本项目场景化集成",
+              "field": "innovation_attribution/scenario_integration"
+            },
+            {
+              "header": "候选创新",
+              "field": "innovation_attribution/candidate_innovation"
+            },
+            {
+              "header": "创新边界",
+              "field": "innovation_attribution/innovation_boundary"
+            },
+            {
+              "header": "待验证项",
+              "field": "innovation_attribution/validation_needed"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "title": "设计参数与证据",
       "blocks": [
         {
