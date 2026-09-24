@@ -1578,6 +1578,15 @@ def _self_test_v12() -> None:
                     "active_effects": [{"id": "ACT-01", "type": "mechanical", "source": f"M-{route_id}", "target": "目标对象"}],
                     "interactions": [], "interfaces": [{"from": "操作者", "to": f"M-{route_id}", "kind": "control", "status": "defined"}],
                     "capability_range": {"input": "代表对象", "output": "目标状态", "environment": "受控", "known_gaps": []},
+                    "innovation_attribution": {
+                        "mature_technology_status": "identified",
+                        "mature_existing_technology": "已有通用机械作用模块用于完成基础处理",
+                        "existing_technology_source_ids": ["SRC-001"],
+                        "scenario_integration": "按目标对象、现场空间和操作工序完成接口与动作顺序适配",
+                        "candidate_innovation": "R0 无新增创新主张；仅作为成熟基准" if route_id == "R0" else "在既有机械作用基础上增加面向目标工况的受控作用与退出协同",
+                        "innovation_boundary": "通用机械作用模块及其基础原理不属于本项目创新",
+                        "validation_needed": "通过代表性对象试验验证新增协同是否有效且不引入不可接受失效",
+                    },
                     "failure_fallback": "停止并回到基准方法", "identifiability": None, "claim_ids": [claim_id],
                 }
             )
@@ -1687,6 +1696,9 @@ def _self_test_v12() -> None:
             r["routes"][1]["mechanism_kind"] = "electrical_measurement"
             r["routes"][1]["identifiability"] = None
         expect_fail(missing_identifiability, "identifiability card")
+        expect_fail(lambda m, r: r["routes"][1].pop("innovation_attribution"), "missing innovation_attribution")
+        expect_fail(lambda m, r: r["routes"][1]["innovation_attribution"].update(existing_technology_source_ids=["NO-SUCH-SOURCE"]), "unresolved ID")
+        expect_fail(lambda m, r: r["routes"][1]["innovation_attribution"].update(candidate_innovation="优化集成智能化"), "candidate_innovation is only a slogan")
         expect_fail(lambda m, r: m["figures"][0].update(display_width_pt=200), "effective SVG font-size below 6pt")
 
         # T12: Word 内的实际图题顺序与清单相反，即使清单自身有序也必须失败。
@@ -1730,8 +1742,8 @@ def _self_test_v12() -> None:
         def false_absence_level(m, r):
             r["absence_assessments"] = [{"id": "N-01", "level": "N2", "databases": ["db"], "queries": ["q"]}]
         expect_fail(false_absence_level, "N2 lacks")
-        assert tests == 15, tests
-    print("DELIVERABLE_SELF_TEST_PASS tests=15")
+        assert tests == 18, tests
+    print("DELIVERABLE_SELF_TEST_PASS tests=18")
 
 
 def self_test() -> None:
