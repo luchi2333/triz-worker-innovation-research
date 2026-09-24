@@ -14,7 +14,7 @@ import zipfile
 
 sys.dont_write_bytecode = True
 from build_report import build_report
-from report_quality import audit_quality, docx_style, svg_style, SECTIONS
+from report_quality import audit_quality, docx_style, svg_style, SECTIONS, GLOBAL_SECTIONS
 from validate_deliverables import _check_svg
 import validate_deliverables as delivery
 from report_bindings import canonical_text, verify_docx_bindings
@@ -39,9 +39,19 @@ class QualityTests(unittest.TestCase):
             'validation': '离线回放两组 H 数列：[10,9,8,7]第二窗进入关注；[10,10,10,10]保持正常。缺失窗计数清零，逐窗保存 b、计数、状态。此为逻辑检验，不代表现场性能。',
             'innovation_attribution': '成熟部分是滚动窗口、最小二乘斜率和连续计数逻辑；本样例仅把这些已有方法组合成候选判定流程，不把通用算法本身声称为创新。候选差异仅限于面向目标场景的状态组合与退出规则，仍需检索和验证。',
         }
+        self.report_paragraphs = {
+            'problem_scope': '研究对象、目标指标和禁止外推边界已在本报告中明确，未取得的现场参数保持待验证。',
+            'triz_analysis': 'TRIZ 分析记录了变量方向、真实矛盾判定、候选原理和不使用矩阵的条件。',
+            'deep_research': '深度研究按预定义轨道记录检索、来源、纳入排除和反对证据，未覆盖轨道明确说明原因。',
+            'route_comparison': '候选路线包含成熟基准、工程后备和探索路线，比较结论保留退出条件与最强反对意见。',
+            'safety_fmea': '安全章节记录危险事件、原因、后果、控制、残余风险、验证协议和立即停止条件。',
+            'benefits': '效益章节区分经济模型、缺失输入和社会效益可测指标，不把假设数据写成已实现收益。',
+            'implementation_path': '实施路径列出下一项决定性试验、阶段闸门、采购或退出自研条件以及未解决未知。',
+        }
         source = {'schema_version': '1.2', 'research_record_path': 'research-record.json',
                   'research_record_sha256': self.sha('research-record.json'), 'title': 'H 算法逻辑样例',
                   'sections': [{'heading': '候选设计', 'blocks': [
+                      *[{'type': 'paragraph', 'text': text} for text in self.report_paragraphs.values()],
                       *[{'type': 'paragraph', 'text': text} for text in self.paragraphs.values()],
                       {'type': 'table', 'headers': ['输入', '斜率'], 'rows': [['H: 10,9,8', '-1/h']]}]}]}
         self.write('source.json', source)
@@ -52,6 +62,7 @@ class QualityTests(unittest.TestCase):
                          'artifacts': [{'role': 'main-report', 'path': 'report.docx'}],
                          'figures': [{'id': 'FIG1', 'source_svg': 'mechanism.svg', 'figure_type': 'F8-process-operation'}]}
         anchors = {key: self.anchor(value) for key, value in self.paragraphs.items()}
+        report_anchors = {key: self.anchor(value) for key, value in self.report_paragraphs.items()}
         self.dossier = {'route_id': 'R1', 'domain': 'software', 'protocol_id': 'P1', **anchors,
                         'diagram': {'figure_id': 'FIG1', 'kind': 'algorithm-state',
                                     'why_this_explains_mechanism': '阈值与连续计数对应实现公式；必须结合正文的例算阅读。',
@@ -60,7 +71,7 @@ class QualityTests(unittest.TestCase):
                                           'trace_example': {'answer': 'H -2/2=-1/h，第一次不关注。', 'evidence': anchors['worked_example']},
                                           'distinguish_failure': {'answer': '平坦序列不触发；缺失窗清零。', 'evidence': anchors['validation']},
                                           'reproduce_test': {'answer': '按两组给定数列逐窗保存三个字段。', 'evidence': anchors['validation']}, 'open_issues': []}}
-        self.receipt = {'technical_dossiers': [self.dossier]}
+        self.receipt = {'report_sections': report_anchors, 'technical_dossiers': [self.dossier]}
 
     def sha(self, name):
         return hashlib.sha256((self.root / name).read_bytes()).hexdigest()
@@ -132,6 +143,13 @@ class QualityTests(unittest.TestCase):
                 old = self.dossier.pop(section)
                 self.assertTrue(self.audit()['technical_errors'])
                 self.dossier[section] = old
+
+    def test_each_required_report_section_cannot_be_omitted(self):
+        for section in GLOBAL_SECTIONS:
+            with self.subTest(section=section):
+                old = self.receipt['report_sections'].pop(section)
+                self.assertTrue(self.audit()['technical_errors'])
+                self.receipt['report_sections'][section] = old
 
     def test_stale_review_hash_rejected(self):
         self.dossier['mechanism']['artifact_sha256'] = '0' * 64
