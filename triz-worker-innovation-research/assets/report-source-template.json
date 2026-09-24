@@ -212,6 +212,10 @@
               "field": "evidence_status"
             }
           ]
+        },
+        {
+          "type": "paragraph",
+          "text": "逐条路线写入 further_improvements[] 对应的具体提升方向，并与成熟基础、候选创新和验证缺口分开。"
         }
       ]
     },
@@ -220,7 +224,7 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "填写硬门槛、定性或结构化评分、最强反对意见、去掉最强支持证据后的稳健性以及退出条件。"
+          "text": "填写硬门槛、定性或结构化评分、challenge_review 中的最强反对意见、退出条件、去掉最强支持证据后的稳健性以及当前推荐边界。"
         }
       ]
     },
