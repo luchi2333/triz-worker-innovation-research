@@ -106,8 +106,12 @@ def compile_source(source, record, root):
                             if not isinstance(value,dict) or key not in value:raise ValueError('unresolved bound table column')
                             value=value[key]
                         if isinstance(value,list) and 'join' in col:
-                            if not value:raise ValueError('bound table list column cannot be empty')
-                            value=str(col['join']).join(scalar(item) for item in value)
+                            if value:
+                                value=str(col['join']).join(scalar(item) for item in value)
+                            elif col.get('empty_text'):
+                                value=str(col['empty_text'])
+                            else:
+                                raise ValueError('bound table list column cannot be empty')
                         values.append(col.get('unknown_text','待确定') if value is None else scalar(value))
                     block['rows'].append(values)
                 refs.append(ref);expected=block['headers']+[v for row in block['rows'] for v in row];bound=True
