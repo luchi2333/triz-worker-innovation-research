@@ -391,6 +391,78 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             if passed:passed_tests.add(tid)
             if not passed:warnings.append(f"test {tid} failed its predeclared criterion; it cannot support maturity")
     all_test_ids={t.get("id") for t in tests if isinstance(t,dict)} if isinstance(tests,list) else set()
+
+    if current and reached >= STAGES.index("G4"):
+        hazard_rows = record.get("hazards", [])
+        if not isinstance(hazard_rows, list):
+            errors.append("hazards must be an array")
+            hazard_rows = []
+        hazard_coverage = set()
+        hazard_ids = set()
+        for hazard in hazard_rows:
+            if not isinstance(hazard, dict) or not hazard.get("id"):
+                errors.append("hazard rows require unique IDs")
+                continue
+            hid = str(hazard["id"])
+            if hid in hazard_ids:
+                errors.append(f"duplicate hazard ID {hid}")
+            hazard_ids.add(hid)
+            route_refs = hazard.get("route_ids", [])
+            if not isinstance(route_refs, list) or not route_refs or any(rid not in routes for rid in route_refs):
+                errors.append(f"hazard {hid} requires valid route_ids")
+                route_refs = []
+            hazard_coverage.update(route_refs)
+            for field in ["event", "cause", "consequence", "residual_risk", "stop_condition"]:
+                if len(str(hazard.get(field, "")).strip()) < 4:
+                    errors.append(f"hazard {hid} missing {field}")
+            controls = hazard.get("controls")
+            if not isinstance(controls, list) or not controls or any(len(str(v).strip()) < 4 for v in controls):
+                errors.append(f"hazard {hid} requires concrete controls")
+            protocol_id = hazard.get("validation_protocol_id")
+            protocol = protocols.get(protocol_id)
+            if not isinstance(protocol, dict):
+                errors.append(f"hazard {hid} requires a valid validation protocol")
+            elif not set(route_refs).issubset(set(protocol.get("route_ids", []))):
+                errors.append(f"hazard {hid} validation protocol does not cover its routes")
+        required_hazard_routes = {
+            rid for rid, route in routes.items()
+            if route.get("role") not in {"baseline", "rejected"} and route.get("portfolio_role") != "mature_baseline"
+        }
+        missing_hazards = sorted(required_hazard_routes - hazard_coverage)
+        if missing_hazards:
+            errors.append(f"G4 requires FMEA hazard coverage for active routes: missing={missing_hazards}")
+
+        benefit_assessment = models.get("benefit_assessment")
+        if not isinstance(benefit_assessment, dict):
+            errors.append("G4 requires models_and_tests.benefit_assessment")
+            benefit_assessment = {}
+        economic_status = benefit_assessment.get("economic_status")
+        if economic_status not in {"modeled", "insufficient_data", "not_applicable"}:
+            errors.append("benefit_assessment.economic_status invalid")
+        if economic_status == "modeled" and not models.get("benefit_scenarios"):
+            errors.append("economic benefit marked modeled but benefit_scenarios is empty")
+        if economic_status == "insufficient_data":
+            if len(str(benefit_assessment.get("economic_formula_plan", "")).strip()) < 8:
+                errors.append("insufficient economic data requires an economic_formula_plan")
+            missing_inputs = benefit_assessment.get("missing_economic_inputs")
+            if not isinstance(missing_inputs, list) or not missing_inputs:
+                errors.append("insufficient economic data requires missing_economic_inputs")
+        if economic_status == "not_applicable" and len(str(benefit_assessment.get("economic_rationale", "")).strip()) < 8:
+            errors.append("not_applicable economic benefit requires rationale")
+        social_status = benefit_assessment.get("social_status")
+        if social_status not in {"defined", "not_applicable"}:
+            errors.append("benefit_assessment.social_status invalid")
+        if social_status == "defined":
+            social_metrics = benefit_assessment.get("social_metrics")
+            if not isinstance(social_metrics, list) or not social_metrics:
+                errors.append("defined social benefit requires measurable social_metrics")
+            else:
+                for index, metric in enumerate(social_metrics):
+                    if not isinstance(metric, dict) or any(len(str(metric.get(k, "")).strip()) < 4 for k in ["metric", "measurement", "interpretation"]):
+                        errors.append(f"social_metrics[{index}] is incomplete")
+        elif len(str(benefit_assessment.get("social_rationale", "")).strip()) < 8:
+            errors.append("not_applicable social benefit requires rationale")
+
     for test in list(valid_tests.values()):
         baseline=test.get("baseline_test_id")
         if baseline and (baseline==test['id'] or baseline not in valid_tests):
