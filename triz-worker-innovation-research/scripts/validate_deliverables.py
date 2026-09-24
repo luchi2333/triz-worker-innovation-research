@@ -1277,6 +1277,12 @@ def _validate_v12(root: Path, manifest: dict, strict: bool = False) -> dict[str,
         record_path = _safe_path(root, record_info.get("path"), v12_errors, "research_record")
         if record_info.get("schema_version") not in RECORD_SCHEMAS:
             _fail(v12_errors, "manifest research_record.schema_version must be 1.0 or 1.1")
+        if (
+            manifest.get("status") == "complete"
+            and manifest.get("delivery_level") in {"standard", "engineering"}
+            and record_info.get("schema_version") != "1.1"
+        ):
+            _fail(v12_errors, "complete standard/engineering delivery requires research record schema 1.1")
         if record_path is not None:
             try:
                 record = json.loads(record_path.read_text(encoding="utf-8"))
@@ -1654,6 +1660,7 @@ def _self_test_v12() -> None:
             assert any(needle in message for message in result["errors"]), (needle, result["errors"])
             record_path.write_text(json.dumps(record, ensure_ascii=False), encoding="utf-8")
 
+        expect_fail(lambda m, r: m.update(status="complete"), "complete standard/engineering delivery requires research record schema 1.1")
         expect_fail(lambda m, r: m["expected_counts"].update(query_records=999), "expected_counts.query_records")
         expect_fail(lambda m, r: m["expected_counts"].update(source_records=999), "expected_counts.source_records")
 
@@ -1770,8 +1777,8 @@ def _self_test_v12() -> None:
         def false_absence_level(m, r):
             r["absence_assessments"] = [{"id": "N-01", "level": "N2", "databases": ["db"], "queries": ["q"]}]
         expect_fail(false_absence_level, "N2 lacks")
-        assert tests == 20, tests
-    print("DELIVERABLE_SELF_TEST_PASS tests=20")
+        assert tests == 21, tests
+    print("DELIVERABLE_SELF_TEST_PASS tests=21")
 
 
 def self_test() -> None:
