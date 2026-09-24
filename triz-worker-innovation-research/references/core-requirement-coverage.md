@@ -9,7 +9,7 @@
 | CR-03 | 成熟技术、场景化集成、候选创新与创新边界分离 | final-report-blueprint §6 | `routes[].innovation_attribution` | 第6章 | `validate_deliverables.py` | deliverables negative tests |
 | CR-04 | 每条活跃路线有进一步提升状态 | final-report-blueprint §6 | `routes[].improvement_outlook` | 第6章 | `research_contract.py` | `test_complete_requires_further_improvement_outlook` |
 | CR-05 | 每条活跃路线有 FMEA/危险链与验证协议 | research-workflow §11 | `hazards[]` + protocols | 第8章 | `research_contract.py` | `test_complete_requires_fmea_per_active_route` |
-| CR-06 | 经济效益有模型或待数据公式/情景计划 | final-report-blueprint §9 | `models_and_tests.benefit_assessment.economic` + `benefit_scenarios` | 第9章 | `research_contract.py` | core contract positive/negative tests |
+| CR-06 | 经济效益有模型或待数据公式/情景计划 | final-report-blueprint §9 | `models_and_tests.benefit_assessment.economic` + `benefit_scenarios` | 第9章 | `research_contract.py` | `test_complete_requires_economic_plan_when_unmodeled` |
 | CR-07 | 社会效益用可测指标表达 | final-report-blueprint §9 | `models_and_tests.benefit_assessment.social.metrics` | 第9章 | `research_contract.py` | `test_complete_requires_social_benefit_metric` |
 | CR-08 | 最强反对意见、退出条件与移除最强证据后的稳健性 | final-report-blueprint §7 / deep-research §3.7 | `assessments.robustness_review` | 第7章 | `research_contract.py` | `test_complete_requires_strong_counterevidence_review` |
 | CR-09 | 实施路径包含决定性试验、阶段闸门、采购/退出条件、边界和未知 | final-report-blueprint §10 | `implementation_plan` | 第10章 | `research_contract.py` | `test_complete_requires_implementation_plan` |
