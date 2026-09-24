@@ -93,6 +93,20 @@ F：… M：… S：… H：… 下一步：只写一个动作
 
 只有逐条填完的记录才能计入“检索 N 组”。主题词清单或来源列表不能替代检索日志。
 
+### 4.0 七轨覆盖表
+
+| 轨道 | 状态 | 查询 ID | 来源 ID | 不适用/阻塞理由 |
+|---|---|---|---|---|
+| standard_regulation | completed / not_applicable / blocked |  |  |  |
+| object_structure_material |  |  |  |  |
+| mature_products_process |  |  |  |  |
+| patent |  |  |  |  |
+| mechanism_literature |  |  |  |  |
+| cross_industry_analogy |  |  |  |  |
+| opposition_supersystem |  |  |  |  |
+
+G2 完成时七轨都必须有记录；不能用一条综合搜索同时勾选多个轨道。
+
 ### 4.1 来源核验卡
 
 | 字段 | 内容 |
@@ -169,7 +183,22 @@ F：… M：… S：… H：… 下一步：只写一个动作
 | 决定性试验 | 最低成本、能改变路线决策的试验 |
 | 原理图 | 图号、对象/动作/保护/停止边界、概念非制造图说明 |
 
-### 6.2 Figure Plan 表
+### 6.2 候选组合、FMEA、效益与实施补充卡
+
+候选路线另填 `portfolio_roles`。完整交付至少有不同路线承担 baseline、backup、exploratory；supersystem 明确适用或不适用及理由。
+
+| 路线 | portfolio_roles | further improvement 状态 | 进一步提升项/理由 | 验证需要 |
+|---|---|---|---|---|
+
+| FMEA ID | 路线 | 危险/失效事件 | 原因 | 后果 | 控制 | 残余风险 | 验证协议 | 停止条件 |
+|---|---|---|---|---|---|---|---|---|
+
+| 社会效益指标 | 单位 | 目标方向 | 测量方法 | F/M/S/H | 待验证项 |
+|---|---|---|---|---|---|
+
+经济效益没有可靠数据时仍填写公式、所需输入和保守/基准/理想三种情景计划，不输出伪精确金额。最后填写最强反对意见、退出条件、移除最强支持证据后的结论，以及实施路径中的下一项决定性试验和阶段闸门。
+
+### 6.3 Figure Plan 表
 
 正式排版前先按 [engineering-figure-planning.md](engineering-figure-planning.md) 填写并冻结。Figure Plan 的机器可检字段放在 `deliverables-manifest.json`；报告或台账可显示精简表：
 
@@ -179,7 +208,7 @@ F：… M：… S：… H：… 下一步：只写一个动作
 
 每张图只能有一个 `decision_question` 和一个 `main_message`。按机械、电气/测量、控制/软件、热/流体、工艺/作业选择领域正确图组；没有相对运动时不伪造机械序列，电气方案不得用算法框图替代端口、参考点和回路。记录实际嵌入宽度 `display_width_pt`，按有效字号验收。
 
-### 6.3 核心原理图描述卡
+### 6.4 核心原理图描述卡
 
 先填卡，再画图：
 
