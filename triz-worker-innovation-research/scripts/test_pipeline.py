@@ -303,6 +303,12 @@ class PipelineTests(unittest.TestCase):
         errors = audit_record(record, manifest, root=self.root)['errors']
         self.assertTrue(any('social benefit' in e for e in errors), errors)
 
+    def test_complete_requires_economic_plan_when_unmodeled(self):
+        record, manifest = self.complete_core_case()
+        record['models_and_tests']['benefit_assessment']['economic']['formula'] = ''
+        errors = audit_record(record, manifest, root=self.root)['errors']
+        self.assertTrue(any('pending economic benefit requires formula' in e for e in errors), errors)
+
     def test_complete_requires_strong_counterevidence_review(self):
         record, manifest = self.complete_core_case()
         record['assessments']['robustness_review']['status'] = 'pending'
