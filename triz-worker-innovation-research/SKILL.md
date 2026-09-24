@@ -167,6 +167,7 @@ G0 按 [research-record-contract.md](references/research-record-contract.md) 连
 ## 资源路由
 
 - 大白话信息采集与补问策略：[intake-guide.md](references/intake-guide.md)
+- 核心要求防回退覆盖矩阵：[core-requirement-coverage.md](references/core-requirement-coverage.md)
 - 全流程与阶段闸门：[research-workflow.md](references/research-workflow.md)
 - 首次完整 TRIZ 输出和白话确认卡：[triz-analysis-output.md](references/triz-analysis-output.md)
 - 39 参数映射、查询命令和现场说法词汇：[matrix-usage.md](references/matrix-usage.md)、[parameter-guidance.json](references/parameter-guidance.json)
