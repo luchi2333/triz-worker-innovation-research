@@ -68,6 +68,7 @@ REQUIRED = [
     "assets/tutorial-report-source.json",
     "assets/report-explainer.html",
     "references/research-record-contract.md",
+    "references/core-requirement-coverage.md",
 
     "SKILL.md",
     "agents/openai.yaml",
