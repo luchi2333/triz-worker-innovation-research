@@ -113,6 +113,11 @@ class PipelineTests(unittest.TestCase):
             })
         r0, r1 = record['routes']
         r0['portfolio_roles'] = ['baseline']
+        r0['improvement_outlook'] = {
+            'status': 'not_applicable', 'items': [],
+            'rationale': '成熟基准仅用于对照，不声明本研究进一步提升。',
+            'validation_needed': '完成同边界基准节拍复核'
+        }
         r1['portfolio_roles'] = ['backup']
         r1['improvement_outlook'] = {
             'status': 'identified',
