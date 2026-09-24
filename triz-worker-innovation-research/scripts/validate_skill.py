@@ -68,6 +68,7 @@ REQUIRED = [
     "assets/tutorial-report-source.json",
     "assets/report-explainer.html",
     "references/research-record-contract.md",
+    "references/requirement-coverage.json",
 
     "SKILL.md",
     "agents/openai.yaml",
@@ -485,6 +486,39 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
     for key in ["variables", "contradictions", "queries", "sources", "claims", "routes", "assessments", "models_and_tests"]:
         if key not in research_template:
             fail(errors, f"Research record template missing: {key}")
+
+    try:
+        coverage = json.loads(files.get("references/requirement-coverage.json", "{}"))
+    except json.JSONDecodeError as exc:
+        fail(errors, f"Requirement coverage contract is invalid JSON: {exc}")
+        coverage = {}
+    if coverage.get("schema_version") != "1.0":
+        fail(errors, "Requirement coverage contract must use schema_version 1.0")
+    requirements = coverage.get("requirements", [])
+    if not isinstance(requirements, list) or not requirements:
+        fail(errors, "Requirement coverage contract must list core requirements")
+        requirements = []
+    seen_requirement_ids = set()
+    for item in requirements:
+        if not isinstance(item, dict) or not item.get("id"):
+            fail(errors, "Requirement coverage entries need IDs")
+            continue
+        rid = item["id"]
+        if rid in seen_requirement_ids:
+            fail(errors, f"Duplicate requirement coverage ID: {rid}")
+        seen_requirement_ids.add(rid)
+        if item.get("level") != "must":
+            fail(errors, f"Core requirement {rid} must be level=must")
+        for layer in ["spec", "record", "report", "validator", "regression"]:
+            file_key = layer + "_file"
+            token_key = layer + "_token"
+            target = item.get(file_key)
+            token = item.get(token_key)
+            if not isinstance(target, str) or target not in files:
+                fail(errors, f"Requirement {rid} has missing/unlisted {file_key}: {target}")
+                continue
+            if not isinstance(token, str) or not token or token not in files[target]:
+                fail(errors, f"Requirement {rid} lost {layer} coverage token: {token}")
 
     consistency = files.get("references/engineering-consistency-review.md", "")
     for required_phrase in ["变量方向与真实矛盾卡", "端到端能力与模块衔接卡", "最小可辨识性卡", "工程图语义卡", "三种状态必须分开"]:
