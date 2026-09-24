@@ -89,6 +89,7 @@
     "stage_gates": [],
     "procurement_or_exit_conditions": [],
     "current_boundary": "",
-    "open_unknowns": []
+    "open_unknowns": [],
+    "report_summary": ""
   }
 }
