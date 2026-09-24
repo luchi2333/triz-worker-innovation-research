@@ -37,6 +37,7 @@ class QualityTests(unittest.TestCase):
             'implementation': '每小时滚动一窗；b<-0.5/h 时连续计数加一，否则清零；两窗才关注。门槛为 H，需用独立健康集校准。',
             'worked_example': 'H 算例 t=[0,1,2]h，x=[10,9,8]，分子=-2，分母=2，b=-1/h；计数从0变1，还不能关注。',
             'validation': '离线回放两组 H 数列：[10,9,8,7]第二窗进入关注；[10,10,10,10]保持正常。缺失窗计数清零，逐窗保存 b、计数、状态。此为逻辑检验，不代表现场性能。',
+            'innovation_attribution': '成熟部分是滚动窗口、最小二乘斜率和连续计数逻辑；本样例仅把这些已有方法组合成候选判定流程，不把通用算法本身声称为创新。候选差异仅限于面向目标场景的状态组合与退出规则，仍需检索和验证。',
         }
         source = {'schema_version': '1.2', 'research_record_path': 'research-record.json',
                   'research_record_sha256': self.sha('research-record.json'), 'title': 'H 算法逻辑样例',
