@@ -369,6 +369,27 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             if passed:passed_tests.add(tid)
             if not passed:warnings.append(f"test {tid} failed its predeclared criterion; it cannot support maturity")
     all_test_ids={t.get("id") for t in tests if isinstance(t,dict)} if isinstance(tests,list) else set()
+    hazards = rows(record, "hazards")
+    if current:
+        for hazard in hazards:
+            hid = hazard.get("id", "?")
+            if not hazard.get("route_ids"):
+                errors.append(f"hazard {hid} requires route_ids")
+            for key in ["event", "residual_risk", "stop_condition"]:
+                if len(str(hazard.get(key, "")).strip()) < 4:
+                    errors.append(f"hazard {hid} requires {key}")
+            for key in ["causes", "consequences", "controls"]:
+                value = hazard.get(key)
+                if not isinstance(value, list) or not value:
+                    errors.append(f"hazard {hid} requires nonempty {key}")
+            if not hazard.get("protocol_id"):
+                errors.append(f"hazard {hid} requires validation protocol")
+        if full_contract:
+            covered_hazards = {rid for hazard in hazards for rid in hazard.get("route_ids", []) if isinstance(rid, str)}
+            for rid in shortlisted:
+                route = routes.get(rid, {})
+                if "baseline" not in route.get("portfolio_roles", []) and rid not in covered_hazards:
+                    errors.append(f"shortlisted route {rid} requires at least one FMEA/hazard record")
     for test in list(valid_tests.values()):
         baseline=test.get("baseline_test_id")
         if baseline and (baseline==test['id'] or baseline not in valid_tests):
@@ -412,6 +433,54 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
         if not weights or sum(weights)<=0:errors.append("scorecard requires a positive total weight")
         if card.get("normalized") is True and not math.isclose(sum(weights),1,abs_tol=1e-9):
             errors.append("normalized scorecard weights must sum to 1")
+
+    benefit_assessment = models.get("benefit_assessment")
+    if current and full_contract:
+        if not isinstance(benefit_assessment, dict):
+            errors.append("complete delivery requires models_and_tests.benefit_assessment")
+            benefit_assessment = {}
+        economic = benefit_assessment.get("economic", {}) if isinstance(benefit_assessment, dict) else {}
+        social = benefit_assessment.get("social", {}) if isinstance(benefit_assessment, dict) else {}
+        if not isinstance(economic, dict):
+            economic = {}
+            errors.append("benefit_assessment.economic must be an object")
+        if not isinstance(social, dict):
+            social = {}
+            errors.append("benefit_assessment.social must be an object")
+        economic_status = economic.get("status")
+        if economic_status not in {"modeled", "pending-data", "not-applicable"}:
+            errors.append("benefit_assessment.economic.status invalid")
+        elif economic_status == "modeled" and not models.get("benefit_scenarios"):
+            errors.append("modeled economic benefit requires benefit_scenarios")
+        elif economic_status == "pending-data":
+            if len(str(economic.get("formula", "")).strip()) < 4:
+                errors.append("pending economic benefit requires formula")
+            if not isinstance(economic.get("inputs_needed"), list) or not economic.get("inputs_needed"):
+                errors.append("pending economic benefit requires inputs_needed")
+            if len(str(economic.get("scenario_plan", "")).strip()) < 6:
+                errors.append("pending economic benefit requires scenario_plan")
+        elif economic_status == "not-applicable" and len(str(economic.get("rationale", "")).strip()) < 6:
+            errors.append("not-applicable economic benefit requires rationale")
+
+        social_status = social.get("status")
+        metrics = social.get("metrics", [])
+        if social_status not in {"defined", "pending-data", "not-applicable"}:
+            errors.append("benefit_assessment.social.status invalid")
+        elif social_status in {"defined", "pending-data"}:
+            if not isinstance(metrics, list) or not metrics:
+                errors.append("social benefit assessment requires at least one measurable metric")
+            else:
+                for index, metric in enumerate(metrics):
+                    if not isinstance(metric, dict):
+                        errors.append(f"social benefit metric[{index}] must be an object")
+                        continue
+                    for key in ["id", "name", "unit", "target_direction", "measurement", "validation_needed"]:
+                        if len(str(metric.get(key, "")).strip()) < 2:
+                            errors.append(f"social benefit metric[{index}] requires {key}")
+                    if metric.get("evidence_status") not in {"F", "M", "S", "H"}:
+                        errors.append(f"social benefit metric[{index}] evidence_status must be F/M/S/H")
+        elif social_status == "not-applicable" and len(str(social.get("rationale", "")).strip()) < 6:
+            errors.append("not-applicable social benefit requires rationale")
 
     for model in models.get("benefit_scenarios",[]):
         if not isinstance(model,dict):continue
