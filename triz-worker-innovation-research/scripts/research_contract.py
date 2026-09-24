@@ -220,6 +220,63 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             if reason not in eligibility[rid]["reasons"]: eligibility[rid]["reasons"].append(reason)
     assessments = record.get("assessments", {})
     assessments = assessments if isinstance(assessments, dict) else {}
+
+    if current and reached >= STAGES.index("G3"):
+        active_routes = {rid:r for rid,r in routes.items() if r.get("role") != "rejected"}
+        roles = {}
+        for rid, route in active_routes.items():
+            portfolio_role = route.get("portfolio_role")
+            if portfolio_role not in PORTFOLIO_ROLES:
+                errors.append(f"route {rid} requires a portfolio_role")
+                continue
+            roles.setdefault(portfolio_role, []).append(rid)
+            if portfolio_role != "mature_baseline":
+                improvements = route.get("further_improvements")
+                if not isinstance(improvements, list) or not improvements or any(len(str(v).strip()) < 4 for v in improvements):
+                    errors.append(f"route {rid} requires concrete further_improvements")
+        for required_role in {"mature_baseline", "engineering_backup", "high_potential_exploratory"}:
+            if not roles.get(required_role):
+                errors.append(f"G3 candidate portfolio missing {required_role}")
+        portfolio = assessments.get("candidate_portfolio", {})
+        if not isinstance(portfolio, dict):
+            errors.append("assessments.candidate_portfolio must be an object")
+            portfolio = {}
+        supersystem_present = bool(roles.get("supersystem_alternative"))
+        supersystem_status = portfolio.get("supersystem_status")
+        if supersystem_present and supersystem_status != "covered":
+            errors.append("supersystem alternative exists but candidate_portfolio.supersystem_status is not covered")
+        if not supersystem_present:
+            if supersystem_status != "not_applicable":
+                errors.append("G3 requires a supersystem alternative or explicit not_applicable decision")
+            if len(str(portfolio.get("supersystem_rationale", "")).strip()) < 8:
+                errors.append("supersystem not_applicable decision requires rationale")
+
+        evidence_ids = {str(v.get("id")) for name in ["inputs", "claims", "sources"] for v in rows(record, name) if v.get("id")}
+        for rid in selected:
+            review = routes.get(rid, {}).get("challenge_review")
+            if not isinstance(review, dict):
+                errors.append(f"primary route {rid} requires challenge_review")
+                continue
+            for field in ["strongest_objection", "exit_condition", "rationale"]:
+                if len(str(review.get(field, "")).strip()) < 8:
+                    errors.append(f"primary route {rid} challenge_review.{field} is missing")
+            support_id = review.get("strongest_support_evidence_id")
+            if support_id not in evidence_ids:
+                errors.append(f"primary route {rid} challenge_review has unresolved strongest support evidence")
+            if review.get("without_strongest_support") not in {"holds", "changes", "unknown"}:
+                errors.append(f"primary route {rid} challenge_review.without_strongest_support invalid")
+            opposition_status = review.get("opposition_search_status")
+            opposition_ids = review.get("opposition_evidence_ids", [])
+            if opposition_status not in {"evidence_found", "no_external_evidence_found"}:
+                errors.append(f"primary route {rid} challenge_review.opposition_search_status invalid")
+            if not isinstance(opposition_ids, list):
+                errors.append(f"primary route {rid} challenge_review.opposition_evidence_ids must be an array")
+                opposition_ids = []
+            if opposition_status == "evidence_found" and not opposition_ids:
+                errors.append(f"primary route {rid} challenge_review requires opposing evidence IDs")
+            if any(value not in evidence_ids for value in opposition_ids):
+                errors.append(f"primary route {rid} challenge_review has unresolved opposing evidence")
+
     gates = assessments.get("gates", [])
     for gate in gates if isinstance(gates, list) else []:
         if not isinstance(gate, dict): continue
