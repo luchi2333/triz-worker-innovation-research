@@ -22,9 +22,18 @@ def migrate(record):
     if result.get("schema_version") not in {"1.0","1.1"}:raise ValueError("unsupported record schema")
     previous=result["schema_version"];result["schema_version"]="1.1"
     for name in TRACE_COLLECTIONS:result.setdefault(name,[])
+    result.setdefault("research_tracks",[])
+    result.setdefault("hazards",[])
     result.setdefault("workflow",{"current_stage":"G0","completed_stage":None,"next_actions":[],"pending_questions":[],"authorization":"needs-recording"})
-    result.setdefault("models_and_tests",{}).setdefault("protocols",[])
-    if previous=="1.0":result.setdefault("migration_notes",[]).append("1.0 to 1.1: original values preserved; input/requirement/mechanism links and authorization must be populated from original evidence.")
+    assessments=result.setdefault("assessments",{})
+    assessments.setdefault("candidate_portfolio",{"supersystem_status":"not-assessed","supersystem_rationale":""})
+    models=result.setdefault("models_and_tests",{})
+    models.setdefault("protocols",[])
+    models.setdefault("benefit_assessment",{
+        "economic_status":"not-assessed","economic_formula_plan":"","missing_economic_inputs":[],
+        "economic_rationale":"","social_status":"not-assessed","social_metrics":[],"social_rationale":""
+    })
+    if previous=="1.0":result.setdefault("migration_notes",[]).append("1.0 to 1.1: original values preserved; new research-track, candidate-portfolio, hazard, benefit, input/requirement/mechanism and authorization fields remain empty/not-assessed until supported by evidence.")
     return result
 
 

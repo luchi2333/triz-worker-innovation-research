@@ -16,6 +16,21 @@ RECORD_SCHEMAS = {"1.0", "1.1"}
 STAGES = ["G0", "G1", "G1.5", "G2", "G3", "G4", "G5"]
 MATURITY = {"V0": 0, "V1": 1, "V2": 2, "V3": 3}
 TRACE_COLLECTIONS = ["inputs", "problems", "requirements", "mechanisms", "parameters", "decisions", "figure_specs"]
+RESEARCH_TRACKS = {
+    "standards_process",
+    "object_structure_material",
+    "mature_products_processes",
+    "patents",
+    "literature_mechanism",
+    "cross_industry_analogy",
+    "opposition_supersystem",
+}
+PORTFOLIO_ROLES = {
+    "mature_baseline",
+    "engineering_backup",
+    "high_potential_exploratory",
+    "supersystem_alternative",
+}
 
 
 def number(value):
@@ -146,8 +161,53 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             if not isinstance(exclusion, dict) or not exclusion.get("item") or not exclusion.get("reason"):
                 errors.append(f"query {qid} exclusion requires item and reason")
     queries = rows(record, "queries")
-    if reached >= STAGES.index("G2") and not queries:
-        errors.append("G2 completion requires executed query records; retain an earlier stage for offline plans")
+    query_ids = {str(q.get("id")) for q in queries if q.get("id")}
+    if current:
+        for q in queries:
+            if q.get("track") not in RESEARCH_TRACKS:
+                errors.append(f"query {q.get('id','?')} requires one of the seven research tracks")
+    if reached >= STAGES.index("G2"):
+        if not queries:
+            errors.append("G2 completion requires executed query records; retain an earlier stage for offline plans")
+        if current:
+            track_rows = record.get("research_tracks", [])
+            if not isinstance(track_rows, list):
+                errors.append("research_tracks must be an array")
+                track_rows = []
+            by_track = {}
+            for item in track_rows:
+                if not isinstance(item, dict) or item.get("track") not in RESEARCH_TRACKS:
+                    errors.append("research_tracks contains an invalid track")
+                    continue
+                track = item["track"]
+                if track in by_track:
+                    errors.append(f"research track {track} is duplicated")
+                    continue
+                by_track[track] = item
+                status = item.get("status")
+                if status not in {"covered", "not_applicable"}:
+                    errors.append(f"research track {track} requires covered/not_applicable status")
+                rationale = str(item.get("rationale", "")).strip()
+                if len(rationale) < 8:
+                    errors.append(f"research track {track} requires a substantive rationale")
+                refs = item.get("query_ids", [])
+                if not isinstance(refs, list):
+                    errors.append(f"research track {track}.query_ids must be an array")
+                    refs = []
+                if status == "covered" and not refs:
+                    errors.append(f"research track {track} is covered but has no query IDs")
+                if status == "not_applicable" and refs:
+                    errors.append(f"research track {track} is not_applicable but still has query IDs")
+                for qid in refs:
+                    if qid not in query_ids:
+                        errors.append(f"research track {track} has unresolved query ID {qid}")
+                    else:
+                        q = next((row for row in queries if row.get("id") == qid), {})
+                        if q.get("track") != track:
+                            errors.append(f"research track {track} references query {qid} from another track")
+            missing_tracks = sorted(RESEARCH_TRACKS - set(by_track))
+            if missing_tracks:
+                errors.append(f"G2 completion requires all seven research tracks to be assessed: missing={missing_tracks}")
     progress = complete_stage or ("working" if current else "legacy-unknown")
 
     routes = {str(r.get("id")): r for r in rows(record, "routes")}
@@ -160,6 +220,63 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             if reason not in eligibility[rid]["reasons"]: eligibility[rid]["reasons"].append(reason)
     assessments = record.get("assessments", {})
     assessments = assessments if isinstance(assessments, dict) else {}
+
+    if current and reached >= STAGES.index("G3"):
+        active_routes = {rid:r for rid,r in routes.items() if r.get("role") != "rejected"}
+        roles = {}
+        for rid, route in active_routes.items():
+            portfolio_role = route.get("portfolio_role")
+            if portfolio_role not in PORTFOLIO_ROLES:
+                errors.append(f"route {rid} requires a portfolio_role")
+                continue
+            roles.setdefault(portfolio_role, []).append(rid)
+            if portfolio_role != "mature_baseline":
+                improvements = route.get("further_improvements")
+                if not isinstance(improvements, list) or not improvements or any(len(str(v).strip()) < 4 for v in improvements):
+                    errors.append(f"route {rid} requires concrete further_improvements")
+        for required_role in {"mature_baseline", "engineering_backup", "high_potential_exploratory"}:
+            if not roles.get(required_role):
+                errors.append(f"G3 candidate portfolio missing {required_role}")
+        portfolio = assessments.get("candidate_portfolio", {})
+        if not isinstance(portfolio, dict):
+            errors.append("assessments.candidate_portfolio must be an object")
+            portfolio = {}
+        supersystem_present = bool(roles.get("supersystem_alternative"))
+        supersystem_status = portfolio.get("supersystem_status")
+        if supersystem_present and supersystem_status != "covered":
+            errors.append("supersystem alternative exists but candidate_portfolio.supersystem_status is not covered")
+        if not supersystem_present:
+            if supersystem_status != "not_applicable":
+                errors.append("G3 requires a supersystem alternative or explicit not_applicable decision")
+            if len(str(portfolio.get("supersystem_rationale", "")).strip()) < 8:
+                errors.append("supersystem not_applicable decision requires rationale")
+
+        evidence_ids = {str(v.get("id")) for name in ["inputs", "claims", "sources"] for v in rows(record, name) if v.get("id")}
+        for rid in selected:
+            review = routes.get(rid, {}).get("challenge_review")
+            if not isinstance(review, dict):
+                errors.append(f"primary route {rid} requires challenge_review")
+                continue
+            for field in ["strongest_objection", "exit_condition", "rationale"]:
+                if len(str(review.get(field, "")).strip()) < 8:
+                    errors.append(f"primary route {rid} challenge_review.{field} is missing")
+            support_id = review.get("strongest_support_evidence_id")
+            if support_id not in evidence_ids:
+                errors.append(f"primary route {rid} challenge_review has unresolved strongest support evidence")
+            if review.get("without_strongest_support") not in {"holds", "changes", "unknown"}:
+                errors.append(f"primary route {rid} challenge_review.without_strongest_support invalid")
+            opposition_status = review.get("opposition_search_status")
+            opposition_ids = review.get("opposition_evidence_ids", [])
+            if opposition_status not in {"evidence_found", "no_external_evidence_found"}:
+                errors.append(f"primary route {rid} challenge_review.opposition_search_status invalid")
+            if not isinstance(opposition_ids, list):
+                errors.append(f"primary route {rid} challenge_review.opposition_evidence_ids must be an array")
+                opposition_ids = []
+            if opposition_status == "evidence_found" and not opposition_ids:
+                errors.append(f"primary route {rid} challenge_review requires opposing evidence IDs")
+            if any(value not in evidence_ids for value in opposition_ids):
+                errors.append(f"primary route {rid} challenge_review has unresolved opposing evidence")
+
     gates = assessments.get("gates", [])
     for gate in gates if isinstance(gates, list) else []:
         if not isinstance(gate, dict): continue
@@ -274,6 +391,78 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             if passed:passed_tests.add(tid)
             if not passed:warnings.append(f"test {tid} failed its predeclared criterion; it cannot support maturity")
     all_test_ids={t.get("id") for t in tests if isinstance(t,dict)} if isinstance(tests,list) else set()
+
+    if current and reached >= STAGES.index("G4"):
+        hazard_rows = record.get("hazards", [])
+        if not isinstance(hazard_rows, list):
+            errors.append("hazards must be an array")
+            hazard_rows = []
+        hazard_coverage = set()
+        hazard_ids = set()
+        for hazard in hazard_rows:
+            if not isinstance(hazard, dict) or not hazard.get("id"):
+                errors.append("hazard rows require unique IDs")
+                continue
+            hid = str(hazard["id"])
+            if hid in hazard_ids:
+                errors.append(f"duplicate hazard ID {hid}")
+            hazard_ids.add(hid)
+            route_refs = hazard.get("route_ids", [])
+            if not isinstance(route_refs, list) or not route_refs or any(rid not in routes for rid in route_refs):
+                errors.append(f"hazard {hid} requires valid route_ids")
+                route_refs = []
+            hazard_coverage.update(route_refs)
+            for field in ["event", "cause", "consequence", "residual_risk", "stop_condition"]:
+                if len(str(hazard.get(field, "")).strip()) < 4:
+                    errors.append(f"hazard {hid} missing {field}")
+            controls = hazard.get("controls")
+            if not isinstance(controls, list) or not controls or any(len(str(v).strip()) < 4 for v in controls):
+                errors.append(f"hazard {hid} requires concrete controls")
+            protocol_id = hazard.get("validation_protocol_id")
+            protocol = protocols.get(protocol_id)
+            if not isinstance(protocol, dict):
+                errors.append(f"hazard {hid} requires a valid validation protocol")
+            elif not set(route_refs).issubset(set(protocol.get("route_ids", []))):
+                errors.append(f"hazard {hid} validation protocol does not cover its routes")
+        required_hazard_routes = {
+            rid for rid, route in routes.items()
+            if route.get("role") not in {"baseline", "rejected"} and route.get("portfolio_role") != "mature_baseline"
+        }
+        missing_hazards = sorted(required_hazard_routes - hazard_coverage)
+        if missing_hazards:
+            errors.append(f"G4 requires FMEA hazard coverage for active routes: missing={missing_hazards}")
+
+        benefit_assessment = models.get("benefit_assessment")
+        if not isinstance(benefit_assessment, dict):
+            errors.append("G4 requires models_and_tests.benefit_assessment")
+            benefit_assessment = {}
+        economic_status = benefit_assessment.get("economic_status")
+        if economic_status not in {"modeled", "insufficient_data", "not_applicable"}:
+            errors.append("benefit_assessment.economic_status invalid")
+        if economic_status == "modeled" and not models.get("benefit_scenarios"):
+            errors.append("economic benefit marked modeled but benefit_scenarios is empty")
+        if economic_status == "insufficient_data":
+            if len(str(benefit_assessment.get("economic_formula_plan", "")).strip()) < 8:
+                errors.append("insufficient economic data requires an economic_formula_plan")
+            missing_inputs = benefit_assessment.get("missing_economic_inputs")
+            if not isinstance(missing_inputs, list) or not missing_inputs:
+                errors.append("insufficient economic data requires missing_economic_inputs")
+        if economic_status == "not_applicable" and len(str(benefit_assessment.get("economic_rationale", "")).strip()) < 8:
+            errors.append("not_applicable economic benefit requires rationale")
+        social_status = benefit_assessment.get("social_status")
+        if social_status not in {"defined", "not_applicable"}:
+            errors.append("benefit_assessment.social_status invalid")
+        if social_status == "defined":
+            social_metrics = benefit_assessment.get("social_metrics")
+            if not isinstance(social_metrics, list) or not social_metrics:
+                errors.append("defined social benefit requires measurable social_metrics")
+            else:
+                for index, metric in enumerate(social_metrics):
+                    if not isinstance(metric, dict) or any(len(str(metric.get(k, "")).strip()) < 4 for k in ["metric", "measurement", "interpretation"]):
+                        errors.append(f"social_metrics[{index}] is incomplete")
+        elif len(str(benefit_assessment.get("social_rationale", "")).strip()) < 8:
+            errors.append("not_applicable social benefit requires rationale")
+
     for test in list(valid_tests.values()):
         baseline=test.get("baseline_test_id")
         if baseline and (baseline==test['id'] or baseline not in valid_tests):

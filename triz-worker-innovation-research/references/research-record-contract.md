@@ -35,6 +35,14 @@ python scripts/validate_research.py --record old-record.json --migrate research-
 
 方向决定使用 `kind=direction_confirmation` 或 `delegated_direction`，`status=confirmed`，保留 `user_text/scope/route_ids`。用户明确要求先看方向再继续时必须等待。研究授权不扩展到真实现场实施；现场动作的批准单独记录为 `field_authorization`。
 
+### 2.1 G2 七轨覆盖必须结构化
+
+G2 不是“有过搜索”即可完成。每条 `queries[]` 增加 `track`，只能取以下七类之一：
+
+`standards_process / object_structure_material / mature_products_processes / patents / literature_mechanism / cross_industry_analogy / opposition_supersystem`
+
+同时用根级 `research_tracks[]` 对七类逐项结案。每项包含 `track/status/query_ids/rationale`；`status=covered` 时必须绑定本轨道真实查询，`not_applicable` 时不得挂查询且必须解释为何对当前问题不适用。G2 完成前七类都必须被显式评估，不能用一条普通网页搜索代替多轨研究。
+
 ## 3. 原理怎样形成机制
 
 每个推荐路线的 `mechanisms` 必须指向 `requirement_ids` 和 `route_ids`，写清 `method/input/action_path/output/conditions/falsification`。按需要记录 `component_ids/interface_ids/claim_ids/evidence_ids`。作用路径描述实际接触、力/能量/信号或工序变化；不要停在“智能化”“动态化”等词。
@@ -59,6 +67,19 @@ python scripts/validate_research.py --record old-record.json --migrate research-
 
 当 `mature_technology_status=identified` 时，`existing_technology_source_ids` 必须非空并解析到真实来源；`none_identified` 或 `unknown` 可以为空，但正文必须保留这一判定，不能把空白误读成原创。不能用“优化、改进、智能化、集成化”等口号代替 `candidate_innovation`。成熟模块本身不因被组合进方案就自动成为本项目创新，场景化集成也应与候选创新分别陈述。该归属卡进入主报告正文，不只留在研究记录或附件。
 
+### 3.1 候选组合、进一步提升与强反证
+
+`role` 继续表示当前决策状态；新增 `portfolio_role` 表示路线在候选组合中的技术角色，二者不要混用。G3 至少要有：
+
+- `mature_baseline`：成熟/现行最佳基准；
+- `engineering_backup`：低风险、可回退工程后备；
+- `high_potential_exploratory`：高潜力探索路线；
+- `supersystem_alternative`：采购、预制、工序前移等超系统替代；若确实不适用，在 `assessments.candidate_portfolio` 明确 `supersystem_status=not_applicable` 和理由。
+
+非成熟基准路线填写 `further_improvements[]`，记录在质量、安全、稳定性、标准化、维护或资源方面还能继续提升什么，不能只写“进一步优化”。
+
+主推荐路线填写 `challenge_review`：`strongest_objection/exit_condition/strongest_support_evidence_id/without_strongest_support/opposition_search_status/opposition_evidence_ids/rationale`。这样“最强反对意见”和“去掉最强支持证据后结论是否仍成立”成为事实记录，不只是一段报告文案。
+
 ## 4. 实测、试验与成熟度
 
 计划放在 `models_and_tests.protocols`，结果放在 `tests`。协议包含 `id/route_ids/scope/sampling_plan/metrics/stop_rule`；`metrics` 每项有 `id/unit/criterion`，判据为 `{operator: <= 或 >= 或 ==, value: 数值}`。脚本只支持这类明确数值判据；复杂判据需扩展实现并加回归，不使用任意表达式执行。
@@ -70,6 +91,11 @@ V1 协议范围为 `short_sample`；V2 为 `full_process` 并记录基准比较�
 算法检查记录、单位、判据、引用和文件是否一致，不证明测量真实或工程安全。专业复核与现实动作授权仍需单独记录。
 
 效益支持 `linear_difference_rate` 与 `net_benefit`。前者提供各输入单位；后者按同一结果单位分别列收益与成本。未知公式返回 `NOT_CHECKED`，完整交付不能把未检查计算写成通过。节省工时与现金节约需分开解释，计入新增实施/维护成本，避免重复计算收益。
+
+G4 增加两组不可省略的事实记录：
+
+1. 根级 `hazards[]`：每个活动路线至少覆盖一个危险链，字段包括 `id/route_ids/event/cause/consequence/controls/residual_risk/validation_protocol_id/stop_condition`。F7 安全边界图只能辅助解释，不能替代 FMEA。
+2. `models_and_tests.benefit_assessment`：经济效益可为 `modeled / insufficient_data / not_applicable`。没有数据时必须留下 `economic_formula_plan` 和 `missing_economic_inputs`，不能用虚构数字补齐；社会效益用 `social_status=defined` + `social_metrics[]` 记录指标、测量方法和解释边界，不写宣传口号。确实不适用时保留理由。
 
 ## 5. 参数与工程图
 

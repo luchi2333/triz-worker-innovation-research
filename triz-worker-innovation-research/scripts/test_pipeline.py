@@ -66,6 +66,90 @@ class PipelineTests(unittest.TestCase):
     def audit(self):
         return audit_record(self.record, root=self.root)
 
+    def promote_to_g2(self):
+        tracks = [
+            'standards_process', 'object_structure_material', 'mature_products_processes',
+            'patents', 'literature_mechanism', 'cross_industry_analogy', 'opposition_supersystem'
+        ]
+        self.record['workflow'].update(current_stage='G3', completed_stage='G2')
+        self.record['decisions'] = [{
+            'id': 'DEC-G2', 'kind': 'direction_confirmation', 'status': 'confirmed',
+            'user_text': '按当前方向继续深研', 'scope': '教学路线的研究边界'
+        }]
+        self.record['queries'] = []
+        self.record['research_tracks'] = []
+        for index, track in enumerate(tracks, 1):
+            qid = f'Q-T{index}'
+            self.record['queries'].append({
+                'id': qid, 'date': '2026-09-06', 'entry': 'synthetic regression search',
+                'query': f'{track} synthetic query', 'filters': 'none', 'excluded': [],
+                'attempt_count': 1, 'track': track
+            })
+            self.record['research_tracks'].append({
+                'track': track, 'status': 'covered', 'query_ids': [qid],
+                'rationale': '回归夹具显式覆盖该研究轨道，不代表真实检索完成。'
+            })
+
+    def promote_to_g3(self):
+        self.promote_to_g2()
+        self.record['workflow'].update(current_stage='G4', completed_stage='G3')
+        self.record['routes'][0]['portfolio_role'] = 'mature_baseline'
+        self.record['routes'][1]['portfolio_role'] = 'engineering_backup'
+        self.record['routes'][1]['further_improvements'] = ['降低操作波动并提高维护可达性']
+        self.record['routes'][1]['challenge_review'] = {
+            'strongest_objection': '夹紧状态可能在真实载荷下发生不可接受滑移。',
+            'exit_condition': '若代表载荷下滑移超过预定义判据则退出该路线。',
+            'strongest_support_evidence_id': 'IN-01',
+            'without_strongest_support': 'unknown',
+            'opposition_search_status': 'no_external_evidence_found',
+            'opposition_evidence_ids': [],
+            'rationale': '去掉当前最强输入依据后仍缺独立证据，因此保持未知。'
+        }
+        self.record['routes'].append({
+            'id': 'R2', 'role': 'alternative', 'portfolio_role': 'high_potential_exploratory',
+            'maturity': 'V0', 'active_effects': [], 'interactions': [],
+            'steps': [], 'further_improvements': ['探索降低接触应力的替代作用链']
+        })
+        self.record['assessments']['candidate_portfolio'] = {
+            'supersystem_status': 'not_applicable',
+            'supersystem_rationale': '该教学夹具不模拟采购或工序前移条件，仅测试组合门禁。'
+        }
+
+    def promote_to_g4(self):
+        self.promote_to_g3()
+        self.record['workflow'].update(current_stage='G5', completed_stage='G4')
+        self.record['models_and_tests']['protocols'] = [
+            {'id': 'P-R1', 'route_ids': ['R1'], 'scope': 'short_sample',
+             'sampling_plan': '代表性短样逐项记录', 'metrics': [{'id': 'M1', 'unit': 'mm', 'criterion': {'operator': '<=', 'value': 0.5}}],
+             'stop_rule': '任一结果超过判据立即停止'},
+            {'id': 'P-R2', 'route_ids': ['R2'], 'scope': 'short_sample',
+             'sampling_plan': '探索路线短样否证', 'metrics': [{'id': 'M2', 'unit': 'mm', 'criterion': {'operator': '<=', 'value': 0.5}}],
+             'stop_rule': '出现不可逆损伤立即停止'}
+        ]
+        self.record['hazards'] = [
+            {'id': 'HZ-R1', 'route_ids': ['R1'], 'event': '夹紧失效导致对象滑移',
+             'cause': '接触作用不足或装配偏差', 'consequence': '定位偏差或对象受损',
+             'controls': ['限制载荷并设置机械回退'], 'residual_risk': '短样验证前仍为未知风险',
+             'validation_protocol_id': 'P-R1', 'stop_condition': '滑移超过预定义判据立即停止'},
+            {'id': 'HZ-R2', 'route_ids': ['R2'], 'event': '探索作用造成局部损伤',
+             'cause': '接触应力分布未经验证', 'consequence': '对象表面出现不可逆损伤',
+             'controls': ['低能量短样并设置保护层'], 'residual_risk': '机理未验证前保持高不确定性',
+             'validation_protocol_id': 'P-R2', 'stop_condition': '出现损伤迹象立即停止'}
+        ]
+        self.record['models_and_tests']['benefit_assessment'] = {
+            'economic_status': 'insufficient_data',
+            'economic_formula_plan': '取得完整人工时、投入和运维数据后计算净节省与回收期。',
+            'missing_economic_inputs': ['现行完整人工时', '候选完整人工时', '投入与运维成本'],
+            'economic_rationale': '',
+            'social_status': 'defined',
+            'social_metrics': [{
+                'metric': '完整操作时间分布',
+                'measurement': '记录每次完整流程并计算中位数和P90',
+                'interpretation': '仅比较相同边界下的操作稳定性，不外推项目工期'
+            }],
+            'social_rationale': ''
+        }
+
     def delivery_case(self, mutate=None, text=None):
         root = self.root / 'delivery'
         shutil.copytree(self.base / 'delivery', root)
@@ -198,6 +282,51 @@ class PipelineTests(unittest.TestCase):
         def dimensions(m, r):
             r['queries'][0]['query'] = '4×4 mm2 电缆 原厂规格'
         self.assertEqual(self.delivery_case(dimensions)['status'], 'PASS')
+
+    def test_g2_requires_all_research_tracks(self):
+        self.promote_to_g2()
+        self.assertEqual(self.audit()['errors'], [])
+        self.record['research_tracks'].pop()
+        self.assertTrue(any('all seven research tracks' in e for e in self.audit()['errors']))
+
+    def test_g3_requires_candidate_portfolio(self):
+        self.promote_to_g3()
+        self.assertEqual(self.audit()['errors'], [])
+        self.record['routes'] = [r for r in self.record['routes'] if r.get('id') != 'R2']
+        self.assertTrue(any('high_potential_exploratory' in e for e in self.audit()['errors']))
+
+    def test_g3_requires_challenge_review_and_further_improvement(self):
+        baseline = copy.deepcopy(self.record)
+        self.promote_to_g3()
+        self.assertEqual(self.audit()['errors'], [])
+        self.record['routes'][1].pop('challenge_review')
+        self.assertTrue(any('requires challenge_review' in e for e in self.audit()['errors']))
+        self.record = baseline
+        self.promote_to_g3()
+        self.record['routes'][1]['further_improvements'] = []
+        self.assertTrue(any('further_improvements' in e for e in self.audit()['errors']))
+
+    def test_g4_requires_fmea_and_benefit_assessment(self):
+        baseline = copy.deepcopy(self.record)
+        self.promote_to_g4()
+        self.assertEqual(self.audit()['errors'], [])
+        self.record['hazards'] = []
+        self.assertTrue(any('FMEA hazard coverage' in e for e in self.audit()['errors']))
+
+        self.record = copy.deepcopy(baseline)
+        self.promote_to_g4()
+        self.record['models_and_tests'].pop('benefit_assessment')
+        self.assertTrue(any('benefit_assessment' in e for e in self.audit()['errors']))
+
+        self.record = copy.deepcopy(baseline)
+        self.promote_to_g4()
+        self.record['models_and_tests']['benefit_assessment']['economic_formula_plan'] = ''
+        self.assertTrue(any('economic_formula_plan' in e for e in self.audit()['errors']))
+
+        self.record = copy.deepcopy(baseline)
+        self.promote_to_g4()
+        self.record['models_and_tests']['benefit_assessment']['social_metrics'] = []
+        self.assertTrue(any('measurable social_metrics' in e for e in self.audit()['errors']))
 
     def test_unknown_formula_is_unchecked(self):
         self.record['models_and_tests']['benefit_scenarios'] = [{'id': 'BEN-1', 'formula_type': 'custom', 'expected_result': 999}]

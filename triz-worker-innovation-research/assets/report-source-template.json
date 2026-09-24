@@ -7,16 +7,130 @@
   "title": "职工创新技术方案研究报告",
   "sections": [
     {
-      "title": "现场问题与推荐",
+      "title": "第 1 章 研究对象与任务边界",
       "blocks": [
         {
           "type": "paragraph",
-          "claim_ref": "/claims/CLM-001"
+          "text": "填写研究对象、任务边界、目标与禁止外推范围；关键事实通过 claim_ref 或记录表绑定。"
+        },
+        {
+          "type": "table",
+          "table_ref": "/requirements",
+          "columns": [
+            {
+              "header": "需求",
+              "field": "id"
+            },
+            {
+              "header": "成功判据",
+              "field": "criterion"
+            },
+            {
+              "header": "证据状态",
+              "field": "evidence_status"
+            }
+          ]
         }
       ]
     },
     {
-      "title": "核心作用机理",
+      "title": "第 2 章 现场问题的具体分析",
+      "blocks": [
+        {
+          "type": "table",
+          "table_ref": "/problems",
+          "columns": [
+            {
+              "header": "问题",
+              "field": "id"
+            },
+            {
+              "header": "现场问题",
+              "field": "text"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "第 3 章 TRIZ 完整分析",
+      "blocks": [
+        {
+          "type": "table",
+          "table_ref": "/contradictions",
+          "columns": [
+            {
+              "header": "矛盾",
+              "field": "id"
+            },
+            {
+              "header": "改善结果",
+              "field": "useful_result"
+            },
+            {
+              "header": "恶化结果",
+              "field": "worsened_result"
+            },
+            {
+              "header": "因果依据",
+              "field": "causality_basis"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "第 4 章 深度查新与技术空间",
+      "blocks": [
+        {
+          "type": "table",
+          "table_ref": "/research_tracks",
+          "columns": [
+            {
+              "header": "研究轨道",
+              "field": "track"
+            },
+            {
+              "header": "状态",
+              "field": "status"
+            },
+            {
+              "header": "结论/不适用理由",
+              "field": "rationale"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "第 5 章 候选方案与推荐系统架构",
+      "blocks": [
+        {
+          "type": "table",
+          "table_ref": "/routes",
+          "columns": [
+            {
+              "header": "路线",
+              "field": "id"
+            },
+            {
+              "header": "决策角色",
+              "field": "role"
+            },
+            {
+              "header": "候选组合角色",
+              "field": "portfolio_role"
+            },
+            {
+              "header": "失败回退",
+              "field": "failure_fallback"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "第 6 章 各备选方案的技术原理与创新归属",
       "blocks": [
         {
           "type": "figure",
@@ -26,12 +140,7 @@
           "design_status": "V0",
           "main_message": "按真实领域填写并从图示记录取值",
           "claim_limit": "按实际证据填写当前边界，不使用教学尺寸代替现场数据"
-        }
-      ]
-    },
-    {
-      "title": "技术构成与创新归属",
-      "blocks": [
+        },
         {
           "type": "table",
           "table_ref": "/routes",
@@ -81,12 +190,7 @@
               "field": "innovation_attribution/validation_needed"
             }
           ]
-        }
-      ]
-    },
-    {
-      "title": "设计参数与证据",
-      "blocks": [
+        },
         {
           "type": "table",
           "table_ref": "/parameters",
@@ -108,6 +212,90 @@
               "field": "evidence_status"
             }
           ]
+        },
+        {
+          "type": "paragraph",
+          "text": "逐条路线写入 further_improvements[] 对应的具体提升方向，并与成熟基础、候选创新和验证缺口分开。"
+        }
+      ]
+    },
+    {
+      "title": "第 7 章 方案比较与选择",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "填写硬门槛、定性或结构化评分、challenge_review 中的最强反对意见、退出条件、去掉最强支持证据后的稳健性以及当前推荐边界。"
+        }
+      ]
+    },
+    {
+      "title": "第 8 章 安全、FMEA 与验证",
+      "blocks": [
+        {
+          "type": "table",
+          "table_ref": "/hazards",
+          "columns": [
+            {
+              "header": "危险",
+              "field": "id"
+            },
+            {
+              "header": "危险事件",
+              "field": "event"
+            },
+            {
+              "header": "原因",
+              "field": "cause"
+            },
+            {
+              "header": "后果",
+              "field": "consequence"
+            },
+            {
+              "header": "残余风险",
+              "field": "residual_risk"
+            },
+            {
+              "header": "停止条件",
+              "field": "stop_condition"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "第 9 章 社会效益与经济效益",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text_template": "经济效益状态：{{/models_and_tests/benefit_assessment/economic_status}}。数据不足时的计算计划：{{/models_and_tests/benefit_assessment/economic_formula_plan}}。"
+        },
+        {
+          "type": "table",
+          "table_ref": "/models_and_tests/benefit_assessment/social_metrics",
+          "columns": [
+            {
+              "header": "社会效益指标",
+              "field": "metric"
+            },
+            {
+              "header": "测量方法",
+              "field": "measurement"
+            },
+            {
+              "header": "解释边界",
+              "field": "interpretation"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "第 10 章 实施路径与结论",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "填写下一项最低成本决定性试验、阶段闸门、采购/许可/预制或退出自研条件、当前适用边界和关键未知。"
         }
       ]
     }
