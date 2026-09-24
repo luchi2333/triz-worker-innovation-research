@@ -15,7 +15,7 @@ from engineering_checks import comparable, benefit_with_units
 RECORD_SCHEMAS = {"1.0", "1.1"}
 STAGES = ["G0", "G1", "G1.5", "G2", "G3", "G4", "G5"]
 MATURITY = {"V0": 0, "V1": 1, "V2": 2, "V3": 3}
-TRACE_COLLECTIONS = ["inputs", "problems", "requirements", "mechanisms", "parameters", "decisions", "figure_specs", "research_tracks", "hazards"]
+TRACE_COLLECTIONS = ["inputs", "problems", "requirements", "mechanisms", "parameters", "decisions", "figure_specs"]
 DEEP_RESEARCH_TRACKS = {"standard_regulation", "object_structure_material", "mature_products_process", "patent", "mechanism_literature", "cross_industry_analogy", "opposition_supersystem"}
 PORTFOLIO_ROLES = {"baseline", "backup", "exploratory", "supersystem"}
 
@@ -153,6 +153,9 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
         errors.append("G2 completion requires executed query records; retain an earlier stage for offline plans")
     tracks = rows(record, "research_tracks")
     if current and reached >= STAGES.index("G2"):
+        track_ids = [item.get("id") for item in tracks]
+        if any(not isinstance(i, str) or not i.strip() for i in track_ids) or len(set(track_ids)) != len(track_ids):
+            errors.append("research_tracks requires unique nonempty IDs")
         by_track = {}
         for item in tracks:
             track = item.get("track")
@@ -389,6 +392,9 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
     all_test_ids={t.get("id") for t in tests if isinstance(t,dict)} if isinstance(tests,list) else set()
     hazards = rows(record, "hazards")
     if current:
+        hazard_ids = [item.get("id") for item in hazards]
+        if any(not isinstance(i, str) or not i.strip() for i in hazard_ids) or len(set(hazard_ids)) != len(hazard_ids):
+            errors.append("hazards requires unique nonempty IDs")
         for hazard in hazards:
             hid = hazard.get("id", "?")
             if not hazard.get("route_ids"):
