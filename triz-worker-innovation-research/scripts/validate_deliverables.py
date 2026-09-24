@@ -926,6 +926,44 @@ def _validate_record(
         if len(str(route.get("failure_fallback", "")).strip()) < 4:
             _fail(errors, f"route {route_id} lacks failure fallback")
         _check_reference_ids(route.get("claim_ids", []), claim_ids, f"route {route_id}.claim_ids", errors, allow_empty=False)
+        if route_id in primary_routes | shortlisted_routes:
+            attribution = route.get("innovation_attribution")
+            if not isinstance(attribution, dict):
+                _fail(errors, f"route {route_id} missing innovation_attribution")
+                attribution = {}
+            status = attribution.get("mature_technology_status")
+            if status not in {"identified", "none_identified", "unknown"}:
+                _fail(errors, f"route {route_id} innovation_attribution.mature_technology_status invalid")
+            for field in [
+                "mature_existing_technology",
+                "scenario_integration",
+                "candidate_innovation",
+                "innovation_boundary",
+                "validation_needed",
+            ]:
+                if len(str(attribution.get(field, "")).strip()) < 6:
+                    _fail(errors, f"route {route_id} innovation_attribution.{field} is missing")
+            source_refs = attribution.get("existing_technology_source_ids", [])
+            if not isinstance(source_refs, list):
+                _fail(errors, f"route {route_id} innovation_attribution.existing_technology_source_ids must be an array")
+                source_refs = []
+            if status == "identified" and not source_refs:
+                _fail(errors, f"route {route_id} identified mature technology requires source IDs")
+            _check_reference_ids(
+                source_refs,
+                source_ids,
+                f"route {route_id}.innovation_attribution.existing_technology_source_ids",
+                errors,
+                allow_empty=True,
+            )
+            candidate = re.sub(r"[、，,。.;；/+s]+", "", str(attribution.get("candidate_innovation", "")))
+            vague = {"优化", "改进", "创新", "智能化", "集成化", "自动化", "数字化", "升级", "提升", "集成", "组合"}
+            if candidate and candidate not in {"无新增创新主张", "无新增创新主张仅作为成熟基准"}:
+                stripped = candidate
+                for token in sorted(vague, key=len, reverse=True):
+                    stripped = stripped.replace(token, "")
+                if not stripped:
+                    _fail(errors, f"route {route_id} candidate_innovation is only a slogan")
         mechanism = route.get("mechanism_kind")
         if mechanism in {"electrical_measurement", "measurement", "diagnosis"}:
             card = route.get("identifiability")
