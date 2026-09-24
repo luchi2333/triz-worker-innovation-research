@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
-SECTIONS = ('input_output', 'mechanism', 'implementation', 'worked_example', 'validation', 'innovation_attribution')
+SECTIONS = ('input_output', 'mechanism', 'implementation', 'worked_example', 'validation', 'innovation_attribution', 'further_improvement', 'challenge_review')
 GLOBAL_SECTIONS = ('problem_scope', 'triz_analysis', 'deep_research', 'route_comparison', 'safety_fmea', 'benefits', 'implementation_path')
 
 
