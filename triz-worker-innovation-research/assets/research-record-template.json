@@ -82,5 +82,13 @@
     "proxy_scenarios": []
   },
   "research_tracks": [],
-  "hazards": []
+  "hazards": [],
+  "implementation_plan": {
+    "status": "pending",
+    "next_decisive_test": "",
+    "stage_gates": [],
+    "procurement_or_exit_conditions": [],
+    "current_boundary": "",
+    "open_unknowns": []
+  }
 }
