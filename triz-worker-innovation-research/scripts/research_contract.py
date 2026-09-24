@@ -222,20 +222,19 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             covered_roles.update(valid_roles)
             for role in valid_roles:
                 role_routes[role].add(rid)
-            if "baseline" not in roles:
-                outlook = route.get("improvement_outlook")
-                if not isinstance(outlook, dict):
-                    errors.append(f"shortlisted route {rid} requires improvement_outlook")
-                else:
-                    status = outlook.get("status")
-                    if status not in {"identified", "none_identified", "unknown"}:
-                        errors.append(f"route {rid} improvement_outlook.status invalid")
-                    if status == "identified" and (not isinstance(outlook.get("items"), list) or not outlook.get("items")):
-                        errors.append(f"route {rid} identified improvement_outlook requires at least one item")
-                    if status in {"none_identified", "unknown"} and len(str(outlook.get("rationale", "")).strip()) < 6:
-                        errors.append(f"route {rid} {status} improvement_outlook requires rationale")
-                    if len(str(outlook.get("validation_needed", "")).strip()) < 4:
-                        errors.append(f"route {rid} improvement_outlook requires validation_needed")
+            outlook = route.get("improvement_outlook")
+            if not isinstance(outlook, dict):
+                errors.append(f"shortlisted route {rid} requires improvement_outlook")
+            else:
+                status = outlook.get("status")
+                if status not in {"identified", "none_identified", "unknown", "not_applicable"}:
+                    errors.append(f"route {rid} improvement_outlook.status invalid")
+                if status == "identified" and (not isinstance(outlook.get("items"), list) or not outlook.get("items")):
+                    errors.append(f"route {rid} identified improvement_outlook requires at least one item")
+                if status in {"none_identified", "unknown", "not_applicable"} and len(str(outlook.get("rationale", "")).strip()) < 6:
+                    errors.append(f"route {rid} {status} improvement_outlook requires rationale")
+                if len(str(outlook.get("validation_needed", "")).strip()) < 4:
+                    errors.append(f"route {rid} improvement_outlook requires validation_needed")
         missing_roles = {"baseline", "backup", "exploratory"} - covered_roles
         if missing_roles:
             errors.append("complete route portfolio missing required roles: " + ", ".join(sorted(missing_roles)))
