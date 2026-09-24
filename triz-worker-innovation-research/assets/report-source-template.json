@@ -41,13 +41,18 @@
               "field": "id"
             },
             {
+              "header": "成熟技术判定",
+              "field": "innovation_attribution/mature_technology_status"
+            },
+            {
               "header": "成熟已有技术",
               "field": "innovation_attribution/mature_existing_technology"
             },
             {
               "header": "成熟技术来源",
               "field": "innovation_attribution/existing_technology_source_ids",
-              "join": "、"
+              "join": "、",
+              "empty_text": "未列出；以成熟技术判定为准"
             },
             {
               "header": "本项目场景化集成",
