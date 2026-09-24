@@ -67,7 +67,7 @@ G2 使用 `research_tracks[]` 显式记录七轨：`standard_regulation`、`obje
 
 完整 standard/engineering 交付的 shortlisted 路线用 `portfolio_roles[]` 标记 `baseline / backup / exploratory / supersystem`。至少存在成熟基准、工程后备和高潜力探索，且 backup 与 exploratory 必须是不同路线；超系统是否适用由 `assessments.route_portfolio.supersystem_applicable` 明确判定并写理由。
 
-非 baseline 的保留路线填写 `improvement_outlook`：状态 `identified / none_identified / unknown`、提升项、理由和待验证项。没有发现提升点或尚未知时可如实写明，不为凑报告制造“智能化/标准化”等口号。
+每条 shortlisted 路线填写 `improvement_outlook`：状态 `identified / none_identified / unknown / not_applicable`、提升项、理由和待验证项。成熟基准可用 `not_applicable` 明确“仅作对照”；没有发现提升点或尚未知时可如实写明，不为凑报告制造“智能化/标准化”等口号。
 
 `assessments.robustness_review` 记录最强反对意见、证据等级、反对来源、退出条件、最强支持命题，以及移除最强支持证据后的结论 `holds / changes / unknown`。完整交付必须完成这一复核，不能只收集支持材料。
 
