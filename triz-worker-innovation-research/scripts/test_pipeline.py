@@ -296,22 +296,37 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(any('high_potential_exploratory' in e for e in self.audit()['errors']))
 
     def test_g3_requires_challenge_review_and_further_improvement(self):
+        baseline = copy.deepcopy(self.record)
         self.promote_to_g3()
         self.assertEqual(self.audit()['errors'], [])
         self.record['routes'][1].pop('challenge_review')
         self.assertTrue(any('requires challenge_review' in e for e in self.audit()['errors']))
+        self.record = baseline
         self.promote_to_g3()
         self.record['routes'][1]['further_improvements'] = []
         self.assertTrue(any('further_improvements' in e for e in self.audit()['errors']))
 
     def test_g4_requires_fmea_and_benefit_assessment(self):
+        baseline = copy.deepcopy(self.record)
         self.promote_to_g4()
         self.assertEqual(self.audit()['errors'], [])
         self.record['hazards'] = []
         self.assertTrue(any('FMEA hazard coverage' in e for e in self.audit()['errors']))
+
+        self.record = copy.deepcopy(baseline)
         self.promote_to_g4()
         self.record['models_and_tests'].pop('benefit_assessment')
         self.assertTrue(any('benefit_assessment' in e for e in self.audit()['errors']))
+
+        self.record = copy.deepcopy(baseline)
+        self.promote_to_g4()
+        self.record['models_and_tests']['benefit_assessment']['economic_formula_plan'] = ''
+        self.assertTrue(any('economic_formula_plan' in e for e in self.audit()['errors']))
+
+        self.record = copy.deepcopy(baseline)
+        self.promote_to_g4()
+        self.record['models_and_tests']['benefit_assessment']['social_metrics'] = []
+        self.assertTrue(any('measurable social_metrics' in e for e in self.audit()['errors']))
 
     def test_unknown_formula_is_unchecked(self):
         self.record['models_and_tests']['benefit_scenarios'] = [{'id': 'BEN-1', 'formula_type': 'custom', 'expected_result': 999}]
