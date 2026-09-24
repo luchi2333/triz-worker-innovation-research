@@ -255,6 +255,18 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
                 errors.append("robustness_review requires strongest_support_claim_id")
             if robustness.get("objection_evidence_status") == "S" and not robustness.get("opposing_source_ids"):
                 errors.append("source-based strongest objection requires opposing_source_ids")
+    if current and full_contract:
+        implementation = record.get("implementation_plan")
+        if not isinstance(implementation, dict) or implementation.get("status") != "ready":
+            errors.append("complete delivery requires implementation_plan.status=ready")
+        else:
+            for key in ["next_decisive_test", "current_boundary"]:
+                if len(str(implementation.get(key, "")).strip()) < 6:
+                    errors.append(f"implementation_plan requires {key}")
+            for key in ["stage_gates", "procurement_or_exit_conditions", "open_unknowns"]:
+                value = implementation.get(key)
+                if not isinstance(value, list) or not value:
+                    errors.append(f"implementation_plan requires nonempty {key}")
     gates = assessments.get("gates", [])
     for gate in gates if isinstance(gates, list) else []:
         if not isinstance(gate, dict): continue
