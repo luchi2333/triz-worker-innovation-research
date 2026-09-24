@@ -483,9 +483,13 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         research_template = {}
     if research_template.get("schema_version") != "1.1":
         fail(errors, "Research record template must use schema_version 1.1")
-    for key in ["variables", "contradictions", "queries", "sources", "claims", "routes", "assessments", "models_and_tests"]:
+    for key in ["variables", "contradictions", "queries", "research_tracks", "sources", "claims", "routes", "hazards", "assessments", "models_and_tests"]:
         if key not in research_template:
             fail(errors, f"Research record template missing: {key}")
+    if "candidate_portfolio" not in research_template.get("assessments", {}):
+        fail(errors, "Research record template missing assessments.candidate_portfolio")
+    if "benefit_assessment" not in research_template.get("models_and_tests", {}):
+        fail(errors, "Research record template missing models_and_tests.benefit_assessment")
 
     try:
         coverage = json.loads(files.get("references/requirement-coverage.json", "{}"))
@@ -535,6 +539,28 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
     for key in ["research_record_path", "research_record_sha256"]:
         if key not in report_template:
             fail(errors, f"Report source template missing provenance field: {key}")
+    section_titles = [str(section.get("title", "")) for section in report_template.get("sections", []) if isinstance(section, dict)]
+    for required_title in [
+        "第 1 章 研究对象与任务边界",
+        "第 2 章 现场问题的具体分析",
+        "第 3 章 TRIZ 完整分析",
+        "第 4 章 深度查新与技术空间",
+        "第 5 章 候选方案与推荐系统架构",
+        "第 6 章 各备选方案的技术原理与创新归属",
+        "第 7 章 方案比较与选择",
+        "第 8 章 安全、FMEA 与验证",
+        "第 9 章 社会效益与经济效益",
+        "第 10 章 实施路径与结论",
+    ]:
+        if required_title not in section_titles:
+            fail(errors, f"Report source template missing required section: {required_title}")
+    try:
+        quality_template = json.loads(files.get("assets/report-quality-review-template.json", "{}"))
+    except json.JSONDecodeError as exc:
+        fail(errors, f"Report quality review template is invalid JSON: {exc}")
+        quality_template = {}
+    if not isinstance(quality_template.get("report_sections"), dict):
+        fail(errors, "Report quality review template missing report_sections")
     figure_blocks = [
         block
         for section in report_template.get("sections", [])
