@@ -345,6 +345,7 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         "test_complete_requires_fmea_per_active_route",
         "test_complete_requires_further_improvement_outlook",
         "test_complete_requires_social_benefit_metric",
+        "test_complete_requires_economic_plan_when_unmodeled",
         "test_complete_requires_strong_counterevidence_review",
         "test_complete_requires_implementation_plan",
         "test_each_complete_report_section_cannot_be_omitted",
