@@ -23,7 +23,7 @@ python scripts/validate_research.py --record research-record.json --complete-sta
 
 `check_scope` 报告实际检查的查询、已完成试验与效益模型数量。PASS 仅表示未发现已记录的一致性错误；模型数量为零时没有执行效益计算。
 
-普通检查允许工作中记录；`--complete-stage` 要求该阶段应具备的输入。没有联网记录可保存分析与待执行计划，但不能宣布 G2 查新完成。旧 1.0 记录可读取；迁移复制到新文件，保留原始内容，不自动补事实或授权：
+普通检查允许工作中记录；`--complete-stage` 要求该阶段应具备的输入。没有联网记录可保存分析与待执行计划，但不能宣布 G2 查新完成。旧 1.0 记录可读取并用于阶段稿，但完整 `standard/engineering` 交付必须使用 1.1，不能借旧 schema 绕过七轨、FMEA、效益等当前门槛。迁移复制到新文件，保留原始内容，不自动补事实或授权：
 
 ```bash
 python scripts/validate_research.py --record old-record.json --migrate research-record.json
