@@ -235,6 +235,8 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
                     errors.append(f"route {rid} improvement_outlook.status invalid")
                 if status == "identified" and (not isinstance(outlook.get("items"), list) or not outlook.get("items")):
                     errors.append(f"route {rid} identified improvement_outlook requires at least one item")
+                elif isinstance(outlook.get("items"), list) and any(not isinstance(item, str) or not item.strip() for item in outlook.get("items", [])):
+                    errors.append(f"route {rid} improvement_outlook.items must contain nonempty text")
                 if status in {"none_identified", "unknown", "not_applicable"} and len(str(outlook.get("rationale", "")).strip()) < 6:
                     errors.append(f"route {rid} {status} improvement_outlook requires rationale")
                 if len(str(outlook.get("validation_needed", "")).strip()) < 4:
@@ -279,6 +281,17 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
                 value = implementation.get(key)
                 if not isinstance(value, list) or not value:
                     errors.append(f"implementation_plan requires nonempty {key}")
+            for index, gate in enumerate(implementation.get("stage_gates", []) if isinstance(implementation.get("stage_gates"), list) else []):
+                if not isinstance(gate, dict):
+                    errors.append(f"implementation_plan.stage_gates[{index}] must be an object")
+                    continue
+                for key in ["stage", "entry_condition", "pass_condition", "exit_condition"]:
+                    if len(str(gate.get(key, "")).strip()) < 3:
+                        errors.append(f"implementation_plan.stage_gates[{index}] requires {key}")
+            for key in ["procurement_or_exit_conditions", "open_unknowns"]:
+                value = implementation.get(key, [])
+                if isinstance(value, list) and any(not isinstance(item, str) or not item.strip() for item in value):
+                    errors.append(f"implementation_plan.{key} must contain nonempty text")
     gates = assessments.get("gates", [])
     for gate in gates if isinstance(gates, list) else []:
         if not isinstance(gate, dict): continue
@@ -409,6 +422,8 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
                 value = hazard.get(key)
                 if not isinstance(value, list) or not value:
                     errors.append(f"hazard {hid} requires nonempty {key}")
+                elif any(not isinstance(item, str) or not item.strip() for item in value):
+                    errors.append(f"hazard {hid} {key} must contain nonempty text")
             if not hazard.get("protocol_id"):
                 errors.append(f"hazard {hid} requires validation protocol")
         if full_contract:
@@ -484,6 +499,8 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
                 errors.append("pending economic benefit requires formula")
             if not isinstance(economic.get("inputs_needed"), list) or not economic.get("inputs_needed"):
                 errors.append("pending economic benefit requires inputs_needed")
+            elif any(not isinstance(item, str) or not item.strip() for item in economic.get("inputs_needed", [])):
+                errors.append("pending economic benefit inputs_needed must contain nonempty text")
             if len(str(economic.get("scenario_plan", "")).strip()) < 6:
                 errors.append("pending economic benefit requires scenario_plan")
         elif economic_status == "not-applicable" and len(str(economic.get("rationale", "")).strip()) < 6:
