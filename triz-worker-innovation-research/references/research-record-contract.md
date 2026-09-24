@@ -43,6 +43,22 @@ python scripts/validate_research.py --record old-record.json --migrate research-
 
 已有作用冲突、接口缺口或硬门槛失败必须回写路线状态。失败路线可以保留研究记录，改为 `rejected/exploratory` 等真实角色；不能继续标成主推荐路线。多个主动作用检查每一对共存关系，不能用几个 ID 出现在表里冒充所有组合已经复核。
 
+进入最终比较或主推荐的每条 `routes[]` 必须填写 `innovation_attribution`，把“技术本身已经存在”与“本项目做了什么”分开记录：
+
+```json
+{
+  "mature_technology_status": "identified | none_identified | unknown",
+  "mature_existing_technology": "可直接复用的成熟产品、工艺、机构、算法或标准做法；若没有或未知则明确写明",
+  "existing_technology_source_ids": ["SRC-..."],
+  "scenario_integration": "为目标现场做的接口、空间、工序、人员或参数适配与组合",
+  "candidate_innovation": "相对已检得现有技术新增或改变的作用链、接口或协同关系；没有则明确写无新增创新主张",
+  "innovation_boundary": "明确哪些成熟模块、通用原理和已有做法不属于本项目创新",
+  "validation_needed": "验证候选创新成立或推翻所需的最低成本证据"
+}
+```
+
+当 `mature_technology_status=identified` 时，`existing_technology_source_ids` 必须非空并解析到真实来源；`none_identified` 或 `unknown` 可以为空，但正文必须保留这一判定，不能把空白误读成原创。不能用“优化、改进、智能化、集成化”等口号代替 `candidate_innovation`。成熟模块本身不因被组合进方案就自动成为本项目创新，场景化集成也应与候选创新分别陈述。该归属卡进入主报告正文，不只留在研究记录或附件。
+
 ## 4. 实测、试验与成熟度
 
 计划放在 `models_and_tests.protocols`，结果放在 `tests`。协议包含 `id/route_ids/scope/sampling_plan/metrics/stop_rule`；`metrics` 每项有 `id/unit/criterion`，判据为 `{operator: <= 或 >= 或 ==, value: 数值}`。脚本只支持这类明确数值判据；复杂判据需扩展实现并加回归，不使用任意表达式执行。

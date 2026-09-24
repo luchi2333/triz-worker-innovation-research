@@ -36,6 +36,12 @@
         "location": "",
         "quote": ""
       },
+      "innovation_attribution": {
+        "artifact_path": "report.docx",
+        "artifact_sha256": "",
+        "location": "",
+        "quote": ""
+      },
       "diagram": {
         "figure_id": "",
         "kind": "",

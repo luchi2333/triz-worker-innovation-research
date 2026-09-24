@@ -926,6 +926,49 @@ def _validate_record(
         if len(str(route.get("failure_fallback", "")).strip()) < 4:
             _fail(errors, f"route {route_id} lacks failure fallback")
         _check_reference_ids(route.get("claim_ids", []), claim_ids, f"route {route_id}.claim_ids", errors, allow_empty=False)
+        if route_id in primary_routes | shortlisted_routes:
+            attribution = route.get("innovation_attribution")
+            if not isinstance(attribution, dict):
+                _fail(errors, f"route {route_id} missing innovation_attribution")
+                attribution = {}
+            status = attribution.get("mature_technology_status")
+            if status not in {"identified", "none_identified", "unknown"}:
+                _fail(errors, f"route {route_id} innovation_attribution.mature_technology_status invalid")
+            for field in [
+                "mature_existing_technology",
+                "scenario_integration",
+                "candidate_innovation",
+                "innovation_boundary",
+                "validation_needed",
+            ]:
+                if len(str(attribution.get(field, "")).strip()) < 6:
+                    _fail(errors, f"route {route_id} innovation_attribution.{field} is missing")
+            source_refs = attribution.get("existing_technology_source_ids", [])
+            if not isinstance(source_refs, list):
+                _fail(errors, f"route {route_id} innovation_attribution.existing_technology_source_ids must be an array")
+                source_refs = []
+            mature_text = str(attribution.get("mature_existing_technology", "")).strip()
+            if status == "identified" and not source_refs:
+                _fail(errors, f"route {route_id} identified mature technology requires source IDs")
+            if status == "none_identified" and not re.search(r"无|未识别|未发现|没有|不涉及", mature_text):
+                _fail(errors, f"route {route_id} none_identified mature technology must be explicit in wording")
+            if status == "unknown" and not re.search(r"未知|待|尚未|未确定|需确认", mature_text):
+                _fail(errors, f"route {route_id} unknown mature technology must be explicit in wording")
+            _check_reference_ids(
+                source_refs,
+                source_ids,
+                f"route {route_id}.innovation_attribution.existing_technology_source_ids",
+                errors,
+                allow_empty=True,
+            )
+            candidate = re.sub(r"[、，,。.;；/+\s]+", "", str(attribution.get("candidate_innovation", "")))
+            vague = {"优化", "改进", "创新", "智能化", "集成化", "自动化", "数字化", "升级", "提升", "集成", "组合"}
+            if candidate and candidate not in {"无新增创新主张", "无新增创新主张仅作为成熟基准"}:
+                stripped = candidate
+                for token in sorted(vague, key=len, reverse=True):
+                    stripped = stripped.replace(token, "")
+                if not stripped:
+                    _fail(errors, f"route {route_id} candidate_innovation is only a slogan")
         mechanism = route.get("mechanism_kind")
         if mechanism in {"electrical_measurement", "measurement", "diagnosis"}:
             card = route.get("identifiability")
@@ -1540,6 +1583,15 @@ def _self_test_v12() -> None:
                     "active_effects": [{"id": "ACT-01", "type": "mechanical", "source": f"M-{route_id}", "target": "目标对象"}],
                     "interactions": [], "interfaces": [{"from": "操作者", "to": f"M-{route_id}", "kind": "control", "status": "defined"}],
                     "capability_range": {"input": "代表对象", "output": "目标状态", "environment": "受控", "known_gaps": []},
+                    "innovation_attribution": {
+                        "mature_technology_status": "identified",
+                        "mature_existing_technology": "已有通用机械作用模块用于完成基础处理",
+                        "existing_technology_source_ids": ["SRC-001"],
+                        "scenario_integration": "按目标对象、现场空间和操作工序完成接口与动作顺序适配",
+                        "candidate_innovation": "R0 无新增创新主张；仅作为成熟基准" if route_id == "R0" else "在既有机械作用基础上增加面向目标工况的受控作用与退出协同",
+                        "innovation_boundary": "通用机械作用模块及其基础原理不属于本项目创新",
+                        "validation_needed": "通过代表性对象试验验证新增协同是否有效且不引入不可接受失效",
+                    },
                     "failure_fallback": "停止并回到基准方法", "identifiability": None, "claim_ids": [claim_id],
                 }
             )
@@ -1649,6 +1701,32 @@ def _self_test_v12() -> None:
             r["routes"][1]["mechanism_kind"] = "electrical_measurement"
             r["routes"][1]["identifiability"] = None
         expect_fail(missing_identifiability, "identifiability card")
+        expect_fail(lambda m, r: r["routes"][1].pop("innovation_attribution"), "missing innovation_attribution")
+        expect_fail(lambda m, r: r["routes"][1]["innovation_attribution"].update(existing_technology_source_ids=["NO-SUCH-SOURCE"]), "unresolved ID")
+        expect_fail(lambda m, r: r["routes"][1]["innovation_attribution"].update(existing_technology_source_ids=[]), "identified mature technology requires source IDs")
+        def vague_innovation(m, r):
+            r["routes"][1]["innovation_attribution"]["candidate_innovation"] = " 优化 / 集成 + 智能化 "
+        expect_fail(vague_innovation, "candidate_innovation is only a slogan")
+        def ambiguous_none(m, r):
+            r["routes"][1]["innovation_attribution"].update(
+                mature_technology_status="none_identified",
+                mature_existing_technology="采用候选技术路线",
+                existing_technology_source_ids=[],
+            )
+        expect_fail(ambiguous_none, "none_identified mature technology must be explicit")
+
+        allowed_manifest = json.loads(json.dumps(manifest))
+        allowed_record = json.loads(json.dumps(record))
+        allowed_record["routes"][1]["innovation_attribution"].update(
+            mature_technology_status="none_identified",
+            mature_existing_technology="本次检索范围内未识别可直接集成的成熟技术",
+            existing_technology_source_ids=[],
+        )
+        record_path.write_text(json.dumps(allowed_record, ensure_ascii=False), encoding="utf-8")
+        allowed = validate(root, allowed_manifest, strict=True)
+        assert allowed["status"] == "PASS", allowed["errors"]
+        record_path.write_text(json.dumps(record, ensure_ascii=False), encoding="utf-8")
+
         expect_fail(lambda m, r: m["figures"][0].update(display_width_pt=200), "effective SVG font-size below 6pt")
 
         # T12: Word 内的实际图题顺序与清单相反，即使清单自身有序也必须失败。
@@ -1692,8 +1770,8 @@ def _self_test_v12() -> None:
         def false_absence_level(m, r):
             r["absence_assessments"] = [{"id": "N-01", "level": "N2", "databases": ["db"], "queries": ["q"]}]
         expect_fail(false_absence_level, "N2 lacks")
-        assert tests == 15, tests
-    print("DELIVERABLE_SELF_TEST_PASS tests=15")
+        assert tests == 20, tests
+    print("DELIVERABLE_SELF_TEST_PASS tests=20")
 
 
 def self_test() -> None:

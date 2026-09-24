@@ -37,6 +37,7 @@ class QualityTests(unittest.TestCase):
             'implementation': '每小时滚动一窗；b<-0.5/h 时连续计数加一，否则清零；两窗才关注。门槛为 H，需用独立健康集校准。',
             'worked_example': 'H 算例 t=[0,1,2]h，x=[10,9,8]，分子=-2，分母=2，b=-1/h；计数从0变1，还不能关注。',
             'validation': '离线回放两组 H 数列：[10,9,8,7]第二窗进入关注；[10,10,10,10]保持正常。缺失窗计数清零，逐窗保存 b、计数、状态。此为逻辑检验，不代表现场性能。',
+            'innovation_attribution': '成熟部分是滚动窗口、最小二乘斜率和连续计数逻辑；本样例仅把这些已有方法组合成候选判定流程，不把通用算法本身声称为创新。候选差异仅限于面向目标场景的状态组合与退出规则，仍需检索和验证。',
         }
         source = {'schema_version': '1.2', 'research_record_path': 'research-record.json',
                   'research_record_sha256': self.sha('research-record.json'), 'title': 'H 算法逻辑样例',
@@ -202,6 +203,42 @@ class QualityTests(unittest.TestCase):
             for name, payload in parts.items():
                 archive.writestr(name, payload)
         self.assertTrue(any('grid' in e for e in docx_style(path)))
+
+    def test_bound_table_renders_explicit_empty_list_text(self):
+        record = copy.deepcopy(self.record)
+        record['routes'][0]['innovation_attribution'] = {
+            'mature_technology_status': 'none_identified',
+            'mature_existing_technology': '本次未识别可直接集成的成熟技术',
+            'existing_technology_source_ids': [],
+            'scenario_integration': '按目标场景保留候选接口适配',
+            'candidate_innovation': '无新增创新主张',
+            'innovation_boundary': '通用原理不属于本项目创新',
+            'validation_needed': '继续检索并验证候选路线',
+        }
+        self.write('bound-record.json', record)
+        source = {
+            'schema_version': '1.3',
+            'research_record_path': 'bound-record.json',
+            'research_record_sha256': self.sha('bound-record.json'),
+            'title': '创新归属空来源渲染',
+            'sections': [{
+                'title': '技术构成与创新归属',
+                'blocks': [{
+                    'type': 'table',
+                    'table_ref': '/routes',
+                    'columns': [
+                        {'header': '路线', 'field': 'id'},
+                        {'header': '成熟技术来源', 'field': 'innovation_attribution/existing_technology_source_ids',
+                         'join': '、', 'empty_text': '未列出；以成熟技术判定为准'},
+                    ],
+                }],
+            }],
+        }
+        self.write('bound-source.json', source)
+        build_report(self.root / 'bound-source.json', self.root / 'bound-report.docx')
+        with zipfile.ZipFile(self.root / 'bound-report.docx') as archive:
+            xml = archive.read('word/document.xml').decode('utf-8')
+        self.assertIn('未列出；以成熟技术判定为准', xml)
 
     def test_generator_rejects_empty_cells_instead_of_empty_table(self):
         source = json.loads((self.root / 'source.json').read_text(encoding='utf-8'))

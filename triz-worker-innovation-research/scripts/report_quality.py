@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
-SECTIONS = ('input_output', 'mechanism', 'implementation', 'worked_example', 'validation')
+SECTIONS = ('input_output', 'mechanism', 'implementation', 'worked_example', 'validation', 'innovation_attribution')
 
 
 def mono(color):
