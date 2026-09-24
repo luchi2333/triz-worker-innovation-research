@@ -53,6 +53,16 @@
               "field": "innovation_attribution/existing_technology_source_ids",
               "join": "、",
               "empty_text": "未列出；以成熟技术判定为准"
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "table_ref": "/routes",
+          "columns": [
+            {
+              "header": "路线",
+              "field": "id"
             },
             {
               "header": "本项目场景化集成",
