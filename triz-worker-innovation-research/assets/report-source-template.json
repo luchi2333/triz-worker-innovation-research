@@ -164,7 +164,8 @@
               "header": "组合角色",
               "field": "portfolio_roles",
               "join": "、",
-              "empty_text": "待确定"
+              "empty_text": "待确定",
+              "missing_text": "未纳入候选组合"
             },
             {
               "header": "成熟度",
@@ -204,17 +205,20 @@
             },
             {
               "header": "成熟技术判定",
-              "field": "innovation_attribution/mature_technology_status"
+              "field": "innovation_attribution/mature_technology_status",
+              "missing_text": "未进入最终比较"
             },
             {
               "header": "成熟已有技术",
-              "field": "innovation_attribution/mature_existing_technology"
+              "field": "innovation_attribution/mature_existing_technology",
+              "missing_text": "未进入最终比较"
             },
             {
               "header": "成熟技术来源",
               "field": "innovation_attribution/existing_technology_source_ids",
               "join": "、",
-              "empty_text": "未列出；以成熟技术判定为准"
+              "empty_text": "未列出；以成熟技术判定为准",
+              "missing_text": "未进入最终比较"
             }
           ]
         },
@@ -228,19 +232,23 @@
             },
             {
               "header": "场景化集成",
-              "field": "innovation_attribution/scenario_integration"
+              "field": "innovation_attribution/scenario_integration",
+              "missing_text": "未进入最终比较"
             },
             {
               "header": "候选创新",
-              "field": "innovation_attribution/candidate_innovation"
+              "field": "innovation_attribution/candidate_innovation",
+              "missing_text": "未进入最终比较"
             },
             {
               "header": "创新边界",
-              "field": "innovation_attribution/innovation_boundary"
+              "field": "innovation_attribution/innovation_boundary",
+              "missing_text": "未进入最终比较"
             },
             {
               "header": "待验证项",
-              "field": "innovation_attribution/validation_needed"
+              "field": "innovation_attribution/validation_needed",
+              "missing_text": "未进入最终比较"
             }
           ]
         },
@@ -254,21 +262,25 @@
             },
             {
               "header": "提升状态",
-              "field": "improvement_outlook/status"
+              "field": "improvement_outlook/status",
+              "missing_text": "未进入最终比较"
             },
             {
               "header": "进一步提升",
               "field": "improvement_outlook/items",
               "join": "；",
-              "empty_text": "无新增提升项"
+              "empty_text": "无新增提升项",
+              "missing_text": "未进入最终比较"
             },
             {
               "header": "说明",
-              "field": "improvement_outlook/rationale"
+              "field": "improvement_outlook/rationale",
+              "missing_text": "未进入最终比较"
             },
             {
               "header": "验证需要",
-              "field": "improvement_outlook/validation_needed"
+              "field": "improvement_outlook/validation_needed",
+              "missing_text": "未进入最终比较"
             }
           ]
         }
