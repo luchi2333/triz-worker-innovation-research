@@ -203,6 +203,7 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             errors.append("complete standard/engineering delivery requires assessments.route_portfolio")
             portfolio = {}
         covered_roles = set()
+        role_routes = {role: set() for role in PORTFOLIO_ROLES}
         for rid in shortlisted:
             route = routes.get(rid)
             if not isinstance(route, dict):
@@ -214,7 +215,10 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             invalid = set(map(str, roles)) - PORTFOLIO_ROLES
             if invalid:
                 errors.append(f"route {rid} has invalid portfolio_roles: {sorted(invalid)}")
-            covered_roles.update(set(map(str, roles)) & PORTFOLIO_ROLES)
+            valid_roles = set(map(str, roles)) & PORTFOLIO_ROLES
+            covered_roles.update(valid_roles)
+            for role in valid_roles:
+                role_routes[role].add(rid)
             if "baseline" not in roles:
                 outlook = route.get("improvement_outlook")
                 if not isinstance(outlook, dict):
@@ -232,6 +236,8 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
         missing_roles = {"baseline", "backup", "exploratory"} - covered_roles
         if missing_roles:
             errors.append("complete route portfolio missing required roles: " + ", ".join(sorted(missing_roles)))
+        if role_routes["backup"] & role_routes["exploratory"]:
+            errors.append("engineering backup and exploratory roles must be carried by distinct routes")
         supersystem = portfolio.get("supersystem_applicable")
         if not isinstance(supersystem, bool):
             errors.append("route_portfolio.supersystem_applicable must be true/false for complete delivery")
