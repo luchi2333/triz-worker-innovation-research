@@ -260,6 +260,34 @@ class QualityTests(unittest.TestCase):
             xml = archive.read('word/document.xml').decode('utf-8')
         self.assertIn('未列出；以成熟技术判定为准', xml)
 
+    def test_bound_table_renders_explicit_missing_field_text(self):
+        record = copy.deepcopy(self.record)
+        record['routes'].append({'id': 'R-X', 'role': 'rejected'})
+        self.write('missing-record.json', record)
+        source = {
+            'schema_version': '1.3',
+            'research_record_path': 'missing-record.json',
+            'research_record_sha256': self.sha('missing-record.json'),
+            'title': '缺字段显式渲染',
+            'sections': [{
+                'title': '候选组合',
+                'blocks': [{
+                    'type': 'table',
+                    'table_ref': '/routes',
+                    'columns': [
+                        {'header': '路线', 'field': 'id'},
+                        {'header': '创新边界', 'field': 'innovation_attribution/innovation_boundary',
+                         'missing_text': '未进入最终比较'},
+                    ],
+                }],
+            }],
+        }
+        self.write('missing-source.json', source)
+        build_report(self.root / 'missing-source.json', self.root / 'missing-report.docx')
+        with zipfile.ZipFile(self.root / 'missing-report.docx') as archive:
+            xml = archive.read('word/document.xml').decode('utf-8')
+        self.assertIn('未进入最终比较', xml)
+
     def test_generator_rejects_empty_cells_instead_of_empty_table(self):
         source = json.loads((self.root / 'source.json').read_text(encoding='utf-8'))
         source['sections'][0]['blocks'][-1]['rows'] = [['R1', '']]
