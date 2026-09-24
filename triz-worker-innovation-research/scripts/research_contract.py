@@ -538,8 +538,9 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
         component_ids={c.get('id') for route in routes.values() for c in route.get('components',[]) if isinstance(c,dict)}
         allowed={name:set(index) for name,index in indexes.items()}
         allowed.update(routes=set(routes),claims={c.get('id') for c in rows(record,'claims')},
-                       sources={s.get('id') for s in rows(record,'sources')},components=component_ids,
-                       tests=all_test_ids,protocols=set(protocols))
+                       sources={s.get('id') for s in rows(record,'sources')},
+                       queries={q.get('id') for q in rows(record,'queries')},
+                       components=component_ids, tests=all_test_ids, protocols=set(protocols))
         allowed['evidence']=allowed['inputs']|allowed['claims']|allowed['sources']|all_test_ids
         reference_fields={'input_ids':'inputs','problem_ids':'problems','requirement_ids':'requirements','route_ids':'routes',
                           'parameter_ids':'parameters','claim_ids':'claims','component_ids':'components','test_ids':'tests',
