@@ -47,7 +47,8 @@ python scripts/validate_research.py --record old-record.json --migrate research-
 
 ```json
 {
-  "mature_existing_technology": "可直接复用的成熟产品、工艺、机构、算法或标准做法",
+  "mature_technology_status": "identified | none_identified | unknown",
+  "mature_existing_technology": "可直接复用的成熟产品、工艺、机构、算法或标准做法；若没有或未知则明确写明",
   "existing_technology_source_ids": ["SRC-..."],
   "scenario_integration": "为目标现场做的接口、空间、工序、人员或参数适配与组合",
   "candidate_innovation": "相对已检得现有技术新增或改变的作用链、接口或协同关系；没有则明确写无新增创新主张",
@@ -56,7 +57,7 @@ python scripts/validate_research.py --record old-record.json --migrate research-
 }
 ```
 
-`existing_technology_source_ids` 必须解析到真实来源；不能用“优化、改进、智能化、集成化”等口号代替 `candidate_innovation`。成熟模块本身不因被组合进方案就自动成为本项目创新，场景化集成也应与候选创新分别陈述。该归属卡进入主报告正文，不只留在研究记录或附件。
+当 `mature_technology_status=identified` 时，`existing_technology_source_ids` 必须非空并解析到真实来源；`none_identified` 或 `unknown` 可以为空，但正文必须保留这一判定，不能把空白误读成原创。不能用“优化、改进、智能化、集成化”等口号代替 `candidate_innovation`。成熟模块本身不因被组合进方案就自动成为本项目创新，场景化集成也应与候选创新分别陈述。该归属卡进入主报告正文，不只留在研究记录或附件。
 
 ## 4. 实测、试验与成熟度
 
