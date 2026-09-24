@@ -20,6 +20,7 @@
   "variables": [],
   "contradictions": [],
   "queries": [],
+  "research_tracks": [],
   "sources": [],
   "claims": [],
   "routes": [],
@@ -27,6 +28,7 @@
   "parameters": [],
   "decisions": [],
   "figure_specs": [],
+  "hazards": [],
   "absence_assessments": [],
   "assessments": {
     "scorecard": {
@@ -38,13 +40,26 @@
     "engineering_review": {
       "status": "pending",
       "findings": []
+    },
+    "candidate_portfolio": {
+      "supersystem_status": "not-assessed",
+      "supersystem_rationale": ""
     }
   },
   "models_and_tests": {
     "models": [],
     "protocols": [],
     "tests": [],
-    "benefit_scenarios": []
+    "benefit_scenarios": [],
+    "benefit_assessment": {
+      "economic_status": "not-assessed",
+      "economic_formula_plan": "",
+      "missing_economic_inputs": [],
+      "economic_rationale": "",
+      "social_status": "not-assessed",
+      "social_metrics": [],
+      "social_rationale": ""
+    }
   },
   "context": {
     "object_identity": null,
