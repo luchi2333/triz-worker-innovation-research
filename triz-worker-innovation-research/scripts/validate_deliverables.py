@@ -961,7 +961,7 @@ def _validate_record(
                 errors,
                 allow_empty=True,
             )
-            candidate = re.sub(r"[、，,。.;；/+\\s]+", "", str(attribution.get("candidate_innovation", "")))
+            candidate = re.sub(r"[、，,。.;；/+\s]+", "", str(attribution.get("candidate_innovation", "")))
             vague = {"优化", "改进", "创新", "智能化", "集成化", "自动化", "数字化", "升级", "提升", "集成", "组合"}
             if candidate and candidate not in {"无新增创新主张", "无新增创新主张仅作为成熟基准"}:
                 stripped = candidate
