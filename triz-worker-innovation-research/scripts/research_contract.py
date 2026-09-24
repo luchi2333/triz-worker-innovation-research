@@ -16,6 +16,21 @@ RECORD_SCHEMAS = {"1.0", "1.1"}
 STAGES = ["G0", "G1", "G1.5", "G2", "G3", "G4", "G5"]
 MATURITY = {"V0": 0, "V1": 1, "V2": 2, "V3": 3}
 TRACE_COLLECTIONS = ["inputs", "problems", "requirements", "mechanisms", "parameters", "decisions", "figure_specs"]
+RESEARCH_TRACKS = {
+    "standards_process",
+    "object_structure_material",
+    "mature_products_processes",
+    "patents",
+    "literature_mechanism",
+    "cross_industry_analogy",
+    "opposition_supersystem",
+}
+PORTFOLIO_ROLES = {
+    "mature_baseline",
+    "engineering_backup",
+    "high_potential_exploratory",
+    "supersystem_alternative",
+}
 
 
 def number(value):
@@ -146,8 +161,53 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             if not isinstance(exclusion, dict) or not exclusion.get("item") or not exclusion.get("reason"):
                 errors.append(f"query {qid} exclusion requires item and reason")
     queries = rows(record, "queries")
-    if reached >= STAGES.index("G2") and not queries:
-        errors.append("G2 completion requires executed query records; retain an earlier stage for offline plans")
+    query_ids = {str(q.get("id")) for q in queries if q.get("id")}
+    if current:
+        for q in queries:
+            if q.get("track") not in RESEARCH_TRACKS:
+                errors.append(f"query {q.get('id','?')} requires one of the seven research tracks")
+    if reached >= STAGES.index("G2"):
+        if not queries:
+            errors.append("G2 completion requires executed query records; retain an earlier stage for offline plans")
+        if current:
+            track_rows = record.get("research_tracks", [])
+            if not isinstance(track_rows, list):
+                errors.append("research_tracks must be an array")
+                track_rows = []
+            by_track = {}
+            for item in track_rows:
+                if not isinstance(item, dict) or item.get("track") not in RESEARCH_TRACKS:
+                    errors.append("research_tracks contains an invalid track")
+                    continue
+                track = item["track"]
+                if track in by_track:
+                    errors.append(f"research track {track} is duplicated")
+                    continue
+                by_track[track] = item
+                status = item.get("status")
+                if status not in {"covered", "not_applicable"}:
+                    errors.append(f"research track {track} requires covered/not_applicable status")
+                rationale = str(item.get("rationale", "")).strip()
+                if len(rationale) < 8:
+                    errors.append(f"research track {track} requires a substantive rationale")
+                refs = item.get("query_ids", [])
+                if not isinstance(refs, list):
+                    errors.append(f"research track {track}.query_ids must be an array")
+                    refs = []
+                if status == "covered" and not refs:
+                    errors.append(f"research track {track} is covered but has no query IDs")
+                if status == "not_applicable" and refs:
+                    errors.append(f"research track {track} is not_applicable but still has query IDs")
+                for qid in refs:
+                    if qid not in query_ids:
+                        errors.append(f"research track {track} has unresolved query ID {qid}")
+                    else:
+                        q = next((row for row in queries if row.get("id") == qid), {})
+                        if q.get("track") != track:
+                            errors.append(f"research track {track} references query {qid} from another track")
+            missing_tracks = sorted(RESEARCH_TRACKS - set(by_track))
+            if missing_tracks:
+                errors.append(f"G2 completion requires all seven research tracks to be assessed: missing={missing_tracks}")
     progress = complete_stage or ("working" if current else "legacy-unknown")
 
     routes = {str(r.get("id")): r for r in rows(record, "routes")}
