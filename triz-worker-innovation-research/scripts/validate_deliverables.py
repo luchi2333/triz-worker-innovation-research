@@ -1714,6 +1714,19 @@ def _self_test_v12() -> None:
                 existing_technology_source_ids=[],
             )
         expect_fail(ambiguous_none, "none_identified mature technology must be explicit")
+
+        allowed_manifest = json.loads(json.dumps(manifest))
+        allowed_record = json.loads(json.dumps(record))
+        allowed_record["routes"][1]["innovation_attribution"].update(
+            mature_technology_status="none_identified",
+            mature_existing_technology="本次检索范围内未识别可直接集成的成熟技术",
+            existing_technology_source_ids=[],
+        )
+        record_path.write_text(json.dumps(allowed_record, ensure_ascii=False), encoding="utf-8")
+        allowed = validate(root, allowed_manifest, strict=True)
+        assert allowed["status"] == "PASS", allowed["errors"]
+        record_path.write_text(json.dumps(record, ensure_ascii=False), encoding="utf-8")
+
         expect_fail(lambda m, r: m["figures"][0].update(display_width_pt=200), "effective SVG font-size below 6pt")
 
         # T12: Word 内的实际图题顺序与清单相反，即使清单自身有序也必须失败。
