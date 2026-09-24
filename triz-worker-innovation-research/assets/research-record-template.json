@@ -38,18 +38,49 @@
     "engineering_review": {
       "status": "pending",
       "findings": []
+    },
+    "route_portfolio": {
+      "supersystem_applicable": "unknown",
+      "supersystem_rationale": "",
+      "notes": "完整交付至少覆盖成熟基准、工程后备和高潜力探索；超系统路线按适用性明确处理。"
+    },
+    "robustness_review": {
+      "status": "pending",
+      "strongest_objection": "",
+      "objection_evidence_status": "H",
+      "opposing_source_ids": [],
+      "exit_condition": "",
+      "strongest_support_claim_id": null,
+      "without_strongest_support": "unknown",
+      "rationale": ""
     }
   },
   "models_and_tests": {
     "models": [],
     "protocols": [],
     "tests": [],
-    "benefit_scenarios": []
+    "benefit_scenarios": [],
+    "benefit_assessment": {
+      "economic": {
+        "status": "pending-data",
+        "formula": "",
+        "inputs_needed": [],
+        "scenario_plan": "",
+        "rationale": ""
+      },
+      "social": {
+        "status": "pending-data",
+        "metrics": [],
+        "rationale": ""
+      }
+    }
   },
   "context": {
     "object_identity": null,
     "operating_boundary": null,
     "measurement_basis": null,
     "proxy_scenarios": []
-  }
+  },
+  "research_tracks": [],
+  "hazards": []
 }
