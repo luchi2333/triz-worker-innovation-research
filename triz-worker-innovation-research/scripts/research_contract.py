@@ -285,7 +285,9 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
                 if not isinstance(gate, dict):
                     errors.append(f"implementation_plan.stage_gates[{index}] must be an object")
                     continue
-                for key in ["stage", "entry_condition", "pass_condition", "exit_condition"]:
+                if len(str(gate.get("stage", "")).strip()) < 2:
+                    errors.append(f"implementation_plan.stage_gates[{index}] requires stage")
+                for key in ["entry_condition", "pass_condition", "exit_condition"]:
                     if len(str(gate.get(key, "")).strip()) < 3:
                         errors.append(f"implementation_plan.stage_gates[{index}] requires {key}")
             for key in ["procurement_or_exit_conditions", "open_unknowns"]:
