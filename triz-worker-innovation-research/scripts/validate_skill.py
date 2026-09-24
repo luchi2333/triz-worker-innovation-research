@@ -335,6 +335,23 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         if required_phrase not in deep:
             fail(errors, f"Deep-research protocol missing: {required_phrase}")
 
+    coverage = files.get("references/core-requirement-coverage.md", "")
+    for required_phrase in [
+        "CR-01", "CR-02", "CR-03", "CR-04", "CR-05",
+        "CR-06", "CR-07", "CR-08", "CR-09", "CR-10",
+        "research_contract.py", "validate_deliverables.py", "report_quality.py",
+        "test_complete_requires_all_deep_research_tracks",
+        "test_complete_requires_distinct_portfolio_roles",
+        "test_complete_requires_fmea_per_active_route",
+        "test_complete_requires_further_improvement_outlook",
+        "test_complete_requires_social_benefit_metric",
+        "test_complete_requires_strong_counterevidence_review",
+        "test_complete_requires_implementation_plan",
+        "test_each_complete_report_section_cannot_be_omitted",
+    ]:
+        if required_phrase not in coverage:
+            fail(errors, f"Core requirement coverage contract missing: {required_phrase}")
+
     weak = files.get("references/weak-model-playbook.md", "")
     for required_phrase in [
         "进度卡",
