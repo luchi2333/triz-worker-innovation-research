@@ -33,7 +33,7 @@ from report_bindings import verify_docx_bindings
 CAPABILITY_STATES = {"available", "unavailable", "not-checked"}
 SCHEMA_VERSION = "1.1"
 CURRENT_SCHEMA_VERSION = "1.2"
-RESEARCH_RECORD_SCHEMA = "1.0"
+RESEARCH_RECORD_SCHEMA = "1.1"
 DELIVERY_LEVELS = {"direction", "standard", "engineering"}
 DELIVERY_STATUS = {"complete", "degraded", "blocked"}
 MATURITY_RANK = {"V0": 0, "V1": 1, "V2": 2, "V3": 3}
@@ -1280,7 +1280,7 @@ def _validate_v12(root: Path, manifest: dict, strict: bool = False) -> dict[str,
         if (
             manifest.get("status") == "complete"
             and manifest.get("delivery_level") in {"standard", "engineering"}
-            and record_info.get("schema_version") != "1.1"
+            and record_info.get("schema_version") != RESEARCH_RECORD_SCHEMA
         ):
             _fail(v12_errors, "complete standard/engineering delivery requires research record schema 1.1")
         if record_path is not None:
