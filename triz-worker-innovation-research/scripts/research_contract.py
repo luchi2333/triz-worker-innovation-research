@@ -15,7 +15,9 @@ from engineering_checks import comparable, benefit_with_units
 RECORD_SCHEMAS = {"1.0", "1.1"}
 STAGES = ["G0", "G1", "G1.5", "G2", "G3", "G4", "G5"]
 MATURITY = {"V0": 0, "V1": 1, "V2": 2, "V3": 3}
-TRACE_COLLECTIONS = ["inputs", "problems", "requirements", "mechanisms", "parameters", "decisions", "figure_specs"]
+TRACE_COLLECTIONS = ["inputs", "problems", "requirements", "mechanisms", "parameters", "decisions", "figure_specs", "research_tracks", "hazards"]
+DEEP_RESEARCH_TRACKS = {"standard_regulation", "object_structure_material", "mature_products_process", "patent", "mechanism_literature", "cross_industry_analogy", "opposition_supersystem"}
+PORTFOLIO_ROLES = {"baseline", "backup", "exploratory", "supersystem"}
 
 
 def number(value):
@@ -148,6 +150,39 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
     queries = rows(record, "queries")
     if reached >= STAGES.index("G2") and not queries:
         errors.append("G2 completion requires executed query records; retain an earlier stage for offline plans")
+    tracks = rows(record, "research_tracks")
+    if current and reached >= STAGES.index("G2"):
+        by_track = {}
+        for item in tracks:
+            track = item.get("track")
+            if track not in DEEP_RESEARCH_TRACKS:
+                errors.append(f"research track {item.get('id')} has invalid track")
+                continue
+            if track in by_track:
+                errors.append(f"deep research track duplicated: {track}")
+            by_track[track] = item
+            status = item.get("status")
+            if status not in {"completed", "not_applicable", "blocked"}:
+                errors.append(f"research track {track} has invalid status")
+            if status == "completed" and not item.get("query_ids"):
+                errors.append(f"completed research track {track} requires query_ids")
+            if status in {"not_applicable", "blocked"} and len(str(item.get("rationale", "")).strip()) < 6:
+                errors.append(f"research track {track} {status} requires rationale")
+            if status == "blocked" and reached >= STAGES.index("G2"):
+                errors.append(f"G2 cannot be completed with blocked research track: {track}")
+        missing_tracks = DEEP_RESEARCH_TRACKS - set(by_track)
+        if missing_tracks:
+            errors.append("G2 requires seven-track coverage or explicit not_applicable records: " + ", ".join(sorted(missing_tracks)))
+        for q in queries:
+            track = q.get("track")
+            if track not in DEEP_RESEARCH_TRACKS:
+                errors.append(f"query {q.get('id')} requires a valid deep-research track")
+        for track, item in by_track.items():
+            if item.get("status") == "completed":
+                linked = set(item.get("query_ids", []))
+                wrong = [q.get("id") for q in queries if q.get("id") in linked and q.get("track") != track]
+                if wrong:
+                    errors.append(f"research track {track} links queries assigned to another track: {wrong}")
     progress = complete_stage or ("working" if current else "legacy-unknown")
 
     routes = {str(r.get("id")): r for r in rows(record, "routes")}
@@ -363,7 +398,8 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
                           'parameter_ids':'parameters','claim_ids':'claims','component_ids':'components','test_ids':'tests',
                           'supporting_source_ids':'sources','opposing_source_ids':'sources','evidence_ids':'evidence',
                           'protocol_id':'protocols','authorization_decision_id':'decisions','baseline_test_id':'tests',
-                          'mechanism_id':'mechanisms'}
+                          'mechanism_id':'mechanisms','query_ids':'queries','source_ids':'sources',
+                          'strongest_support_claim_id':'claims'}
         def check_refs(value,location='record'):
             if isinstance(value,dict):
                 for key,item in value.items():
