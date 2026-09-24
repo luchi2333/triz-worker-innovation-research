@@ -59,6 +59,26 @@ python scripts/validate_research.py --record old-record.json --migrate research-
 
 当 `mature_technology_status=identified` 时，`existing_technology_source_ids` 必须非空并解析到真实来源；`none_identified` 或 `unknown` 可以为空，但正文必须保留这一判定，不能把空白误读成原创。不能用“优化、改进、智能化、集成化”等口号代替 `candidate_innovation`。成熟模块本身不因被组合进方案就自动成为本项目创新，场景化集成也应与候选创新分别陈述。该归属卡进入主报告正文，不只留在研究记录或附件。
 
+### 3.1 七轨深研覆盖
+
+G2 使用 `research_tracks[]` 显式记录七轨：`standard_regulation`、`object_structure_material`、`mature_products_process`、`patent`、`mechanism_literature`、`cross_industry_analogy`、`opposition_supersystem`。每轨状态为 `completed / not_applicable / blocked`。完成轨必须绑定实际 `query_ids`；不适用或阻塞必须给理由。G2 宣告完成时七轨必须全部有记录，且不能残留 blocked。查询记录同时填写对应 `track`，避免“一条普通搜索冒充七轨深研”。
+
+### 3.2 候选组合、进一步提升与强反证
+
+完整 standard/engineering 交付的 shortlisted 路线用 `portfolio_roles[]` 标记 `baseline / backup / exploratory / supersystem`。至少存在成熟基准、工程后备和高潜力探索，且 backup 与 exploratory 必须是不同路线；超系统是否适用由 `assessments.route_portfolio.supersystem_applicable` 明确判定并写理由。
+
+非 baseline 的保留路线填写 `improvement_outlook`：状态 `identified / none_identified / unknown`、提升项、理由和待验证项。没有发现提升点或尚未知时可如实写明，不为凑报告制造“智能化/标准化”等口号。
+
+`assessments.robustness_review` 记录最强反对意见、证据等级、反对来源、退出条件、最强支持命题，以及移除最强支持证据后的结论 `holds / changes / unknown`。完整交付必须完成这一复核，不能只收集支持材料。
+
+### 3.3 FMEA、效益与实施路径
+
+`hazards[]` 一行一个危险/失效事件，至少包含 `route_ids/event/causes/consequences/controls/residual_risk/protocol_id/stop_condition/evidence_ids`。完整交付的每条非 baseline shortlisted 路线至少有一条 FMEA/hazard 记录，并绑定验证协议。
+
+`models_and_tests.benefit_assessment` 把“有没有数据”与“有没有分析”分开。经济效益状态为 `modeled / pending-data / not-applicable`；pending-data 仍需公式、所需输入和保守/基准/理想情景计划。社会效益状态为 `defined / pending-data / not-applicable`；只要适用，就至少定义一个可测指标、单位、目标方向、测量方法、证据状态和待验证项。
+
+`implementation_plan` 在完整交付中必须为 `status=ready`，并记录下一项决定性试验、阶段闸门、采购/退出自研条件、当前适用边界、关键未知和正文摘要。
+
 ## 4. 实测、试验与成熟度
 
 计划放在 `models_and_tests.protocols`，结果放在 `tests`。协议包含 `id/route_ids/scope/sampling_plan/metrics/stop_rule`；`metrics` 每项有 `id/unit/criterion`，判据为 `{operator: <= 或 >= 或 ==, value: 数值}`。脚本只支持这类明确数值判据；复杂判据需扩展实现并加回归，不使用任意表达式执行。
