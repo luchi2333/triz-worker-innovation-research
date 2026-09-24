@@ -947,8 +947,13 @@ def _validate_record(
             if not isinstance(source_refs, list):
                 _fail(errors, f"route {route_id} innovation_attribution.existing_technology_source_ids must be an array")
                 source_refs = []
+            mature_text = str(attribution.get("mature_existing_technology", "")).strip()
             if status == "identified" and not source_refs:
                 _fail(errors, f"route {route_id} identified mature technology requires source IDs")
+            if status == "none_identified" and not re.search(r"无|未识别|未发现|没有|不涉及", mature_text):
+                _fail(errors, f"route {route_id} none_identified mature technology must be explicit in wording")
+            if status == "unknown" and not re.search(r"未知|待|尚未|未确定|需确认", mature_text):
+                _fail(errors, f"route {route_id} unknown mature technology must be explicit in wording")
             _check_reference_ids(
                 source_refs,
                 source_ids,
@@ -956,7 +961,7 @@ def _validate_record(
                 errors,
                 allow_empty=True,
             )
-            candidate = re.sub(r"[、，,。.;；/+s]+", "", str(attribution.get("candidate_innovation", "")))
+            candidate = re.sub(r"[、，,。.;；/+\\s]+", "", str(attribution.get("candidate_innovation", "")))
             vague = {"优化", "改进", "创新", "智能化", "集成化", "自动化", "数字化", "升级", "提升", "集成", "组合"}
             if candidate and candidate not in {"无新增创新主张", "无新增创新主张仅作为成熟基准"}:
                 stripped = candidate
@@ -1698,7 +1703,17 @@ def _self_test_v12() -> None:
         expect_fail(missing_identifiability, "identifiability card")
         expect_fail(lambda m, r: r["routes"][1].pop("innovation_attribution"), "missing innovation_attribution")
         expect_fail(lambda m, r: r["routes"][1]["innovation_attribution"].update(existing_technology_source_ids=["NO-SUCH-SOURCE"]), "unresolved ID")
-        expect_fail(lambda m, r: r["routes"][1]["innovation_attribution"].update(candidate_innovation="优化集成智能化"), "candidate_innovation is only a slogan")
+        expect_fail(lambda m, r: r["routes"][1]["innovation_attribution"].update(existing_technology_source_ids=[]), "identified mature technology requires source IDs")
+        def vague_innovation(m, r):
+            r["routes"][1]["innovation_attribution"]["candidate_innovation"] = " 优化 / 集成 + 智能化 "
+        expect_fail(vague_innovation, "candidate_innovation is only a slogan")
+        def ambiguous_none(m, r):
+            r["routes"][1]["innovation_attribution"].update(
+                mature_technology_status="none_identified",
+                mature_existing_technology="采用候选技术路线",
+                existing_technology_source_ids=[],
+            )
+        expect_fail(ambiguous_none, "none_identified mature technology must be explicit")
         expect_fail(lambda m, r: m["figures"][0].update(display_width_pt=200), "effective SVG font-size below 6pt")
 
         # T12: Word 内的实际图题顺序与清单相反，即使清单自身有序也必须失败。
@@ -1742,8 +1757,8 @@ def _self_test_v12() -> None:
         def false_absence_level(m, r):
             r["absence_assessments"] = [{"id": "N-01", "level": "N2", "databases": ["db"], "queries": ["q"]}]
         expect_fail(false_absence_level, "N2 lacks")
-        assert tests == 18, tests
-    print("DELIVERABLE_SELF_TEST_PASS tests=18")
+        assert tests == 20, tests
+    print("DELIVERABLE_SELF_TEST_PASS tests=20")
 
 
 def self_test() -> None:
