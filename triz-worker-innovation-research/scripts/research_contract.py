@@ -145,6 +145,8 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             errors.append(f"query {qid} requires excluded records (empty is allowed)")
         if q.get("attempt_count", 1) != 1 or isinstance(q.get("attempt_count", 1), bool):
             errors.append(f"query {qid} must represent one attempt")
+        if q.get("status") not in {"completed", "failed", "no-result"}:
+            errors.append(f"query {qid} has invalid status")
         for exclusion in q.get("excluded", []) if isinstance(q.get("excluded"), list) else []:
             if not isinstance(exclusion, dict) or not exclusion.get("item") or not exclusion.get("reason"):
                 errors.append(f"query {qid} exclusion requires item and reason")
