@@ -14,7 +14,7 @@ import zipfile
 
 sys.dont_write_bytecode = True
 from build_report import build_report
-from report_quality import audit_quality, docx_style, svg_style, SECTIONS
+from report_quality import audit_quality, docx_style, svg_style, SECTIONS, REPORT_SECTIONS
 from validate_deliverables import _check_svg
 import validate_deliverables as delivery
 from report_bindings import canonical_text, verify_docx_bindings
@@ -39,10 +39,20 @@ class QualityTests(unittest.TestCase):
             'validation': '离线回放两组 H 数列：[10,9,8,7]第二窗进入关注；[10,10,10,10]保持正常。缺失窗计数清零，逐窗保存 b、计数、状态。此为逻辑检验，不代表现场性能。',
             'innovation_attribution': '成熟部分是滚动窗口、最小二乘斜率和连续计数逻辑；本样例仅把这些已有方法组合成候选判定流程，不把通用算法本身声称为创新。候选差异仅限于面向目标场景的状态组合与退出规则，仍需检索和验证。',
         }
+        self.report_paragraphs = {
+            'scope_and_problem': '研究对象、任务边界、输入来源和当前未知已经明确区分，报告只讨论该教学逻辑范围。',
+            'triz_analysis': 'TRIZ 分析记录改善与恶化方向、矛盾资格和候选作用机制，未满足真实矛盾时不强行套用矩阵。',
+            'deep_research': '深度研究按标准、对象、成熟产品、专利、机理文献、跨行业类比和反对证据七轨记录，缺口显式保留。',
+            'route_portfolio': '候选组合同时保留现实基准、低风险工程后备、高潜力探索，并对超系统替代的适用性给出说明。',
+            'decision_and_robustness': '方案选择记录最强反对意见、退出条件，并检查移除最强支持证据后结论是否仍能成立。',
+            'fmea_and_validation': '安全与验证把危险事件、原因、后果、控制、残余风险、停止条件和验证协议绑定到具体路线。',
+            'benefits': '效益部分区分经济模型与社会指标；数据不足时只给公式、所需输入和验证计划，不把假设写成实测收益。',
+            'implementation_path': '实施路径给出下一项决定性试验、阶段闸门、采购或退出条件、当前边界和仍未解决的关键未知。',
+        }
         source = {'schema_version': '1.2', 'research_record_path': 'research-record.json',
                   'research_record_sha256': self.sha('research-record.json'), 'title': 'H 算法逻辑样例',
                   'sections': [{'heading': '候选设计', 'blocks': [
-                      *[{'type': 'paragraph', 'text': text} for text in self.paragraphs.values()],
+                      *[{'type': 'paragraph', 'text': text} for text in list(self.report_paragraphs.values()) + list(self.paragraphs.values())],
                       {'type': 'table', 'headers': ['输入', '斜率'], 'rows': [['H: 10,9,8', '-1/h']]}]}]}
         self.write('source.json', source)
         build_report(self.root / 'source.json', self.root / 'report.docx')
@@ -60,7 +70,10 @@ class QualityTests(unittest.TestCase):
                                           'trace_example': {'answer': 'H -2/2=-1/h，第一次不关注。', 'evidence': anchors['worked_example']},
                                           'distinguish_failure': {'answer': '平坦序列不触发；缺失窗清零。', 'evidence': anchors['validation']},
                                           'reproduce_test': {'answer': '按两组给定数列逐窗保存三个字段。', 'evidence': anchors['validation']}, 'open_issues': []}}
-        self.receipt = {'technical_dossiers': [self.dossier]}
+        self.receipt = {
+            'report_sections': {key: self.anchor(value) for key, value in self.report_paragraphs.items()},
+            'technical_dossiers': [self.dossier],
+        }
 
     def sha(self, name):
         return hashlib.sha256((self.root / name).read_bytes()).hexdigest()
@@ -132,6 +145,13 @@ class QualityTests(unittest.TestCase):
                 old = self.dossier.pop(section)
                 self.assertTrue(self.audit()['technical_errors'])
                 self.dossier[section] = old
+
+    def test_each_complete_report_section_cannot_be_omitted(self):
+        for section in REPORT_SECTIONS:
+            with self.subTest(section=section):
+                old = self.receipt['report_sections'].pop(section)
+                self.assertTrue(self.audit()['technical_errors'])
+                self.receipt['report_sections'][section] = old
 
     def test_stale_review_hash_rejected(self):
         self.dossier['mechanism']['artifact_sha256'] = '0' * 64
