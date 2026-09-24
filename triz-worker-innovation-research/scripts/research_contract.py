@@ -260,7 +260,7 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
         if not isinstance(implementation, dict) or implementation.get("status") != "ready":
             errors.append("complete delivery requires implementation_plan.status=ready")
         else:
-            for key in ["next_decisive_test", "current_boundary"]:
+            for key in ["next_decisive_test", "current_boundary", "report_summary"]:
                 if len(str(implementation.get(key, "")).strip()) < 6:
                     errors.append(f"implementation_plan requires {key}")
             for key in ["stage_gates", "procurement_or_exit_conditions", "open_unknowns"]:
