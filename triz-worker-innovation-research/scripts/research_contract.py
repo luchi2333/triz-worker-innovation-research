@@ -16,6 +16,8 @@ RECORD_SCHEMAS = {"1.0", "1.1"}
 STAGES = ["G0", "G1", "G1.5", "G2", "G3", "G4", "G5"]
 MATURITY = {"V0": 0, "V1": 1, "V2": 2, "V3": 3}
 TRACE_COLLECTIONS = ["inputs", "problems", "requirements", "mechanisms", "parameters", "decisions", "figure_specs"]
+DEEP_RESEARCH_TRACKS = {"standard_regulation", "object_structure_material", "mature_products_process", "patent", "mechanism_literature", "cross_industry_analogy", "opposition_supersystem"}
+PORTFOLIO_ROLES = {"baseline", "backup", "exploratory", "supersystem"}
 
 
 def number(value):
@@ -120,6 +122,7 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
     workflow = workflow if isinstance(workflow, dict) else {}
     complete_stage = workflow.get("completed_stage")
     complete = complete_stage == "G5" or manifest.get("status") == "complete"
+    full_contract = complete and manifest.get("delivery_level", "standard") in {"standard", "engineering"}
     if complete_stage is not None and complete_stage not in STAGES:
         errors.append("workflow.completed_stage must be G0..G5 or null")
     if workflow.get("current_stage", "G0") not in STAGES:
@@ -142,16 +145,57 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             errors.append(f"query {qid} requires excluded records (empty is allowed)")
         if q.get("attempt_count", 1) != 1 or isinstance(q.get("attempt_count", 1), bool):
             errors.append(f"query {qid} must represent one attempt")
+        if q.get("status") not in {"completed", "failed", "no-result"}:
+            errors.append(f"query {qid} has invalid status")
         for exclusion in q.get("excluded", []) if isinstance(q.get("excluded"), list) else []:
             if not isinstance(exclusion, dict) or not exclusion.get("item") or not exclusion.get("reason"):
                 errors.append(f"query {qid} exclusion requires item and reason")
     queries = rows(record, "queries")
     if reached >= STAGES.index("G2") and not queries:
         errors.append("G2 completion requires executed query records; retain an earlier stage for offline plans")
+    tracks = rows(record, "research_tracks")
+    if current and reached >= STAGES.index("G2"):
+        track_ids = [item.get("id") for item in tracks]
+        if any(not isinstance(i, str) or not i.strip() for i in track_ids) or len(set(track_ids)) != len(track_ids):
+            errors.append("research_tracks requires unique nonempty IDs")
+        by_track = {}
+        for item in tracks:
+            track = item.get("track")
+            if track not in DEEP_RESEARCH_TRACKS:
+                errors.append(f"research track {item.get('id')} has invalid track")
+                continue
+            if track in by_track:
+                errors.append(f"deep research track duplicated: {track}")
+            by_track[track] = item
+            status = item.get("status")
+            if status not in {"completed", "not_applicable", "blocked"}:
+                errors.append(f"research track {track} has invalid status")
+            if status == "completed" and not item.get("query_ids"):
+                errors.append(f"completed research track {track} requires query_ids")
+            if status in {"not_applicable", "blocked"} and len(str(item.get("rationale", "")).strip()) < 6:
+                errors.append(f"research track {track} {status} requires rationale")
+            if status == "blocked" and reached >= STAGES.index("G2"):
+                errors.append(f"G2 cannot be completed with blocked research track: {track}")
+        missing_tracks = DEEP_RESEARCH_TRACKS - set(by_track)
+        if missing_tracks:
+            errors.append("G2 requires seven-track coverage or explicit not_applicable records: " + ", ".join(sorted(missing_tracks)))
+        for q in queries:
+            track = q.get("track")
+            if track not in DEEP_RESEARCH_TRACKS:
+                errors.append(f"query {q.get('id')} requires a valid deep-research track")
+        for track, item in by_track.items():
+            if item.get("status") == "completed":
+                linked = set(item.get("query_ids", []))
+                wrong = [q.get("id") for q in queries if q.get("id") in linked and q.get("track") != track]
+                if wrong:
+                    errors.append(f"research track {track} links queries assigned to another track: {wrong}")
     progress = complete_stage or ("working" if current else "legacy-unknown")
 
     routes = {str(r.get("id")): r for r in rows(record, "routes")}
     primary = set(map(str, manifest.get("primary_routes", [])))
+    shortlisted = set(map(str, manifest.get("shortlisted_routes", [])))
+    if not shortlisted and current:
+        shortlisted = {rid for rid, route in routes.items() if route.get("role") != "rejected"}
     selected = primary | {rid for rid, r in routes.items() if r.get("role") == "primary"}
     eligibility = {rid: {"status": "pending", "reasons": []} for rid in routes}
     def block(rid, reason):
@@ -160,6 +204,96 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             if reason not in eligibility[rid]["reasons"]: eligibility[rid]["reasons"].append(reason)
     assessments = record.get("assessments", {})
     assessments = assessments if isinstance(assessments, dict) else {}
+    if current and full_contract:
+        portfolio = assessments.get("route_portfolio")
+        if not isinstance(portfolio, dict):
+            errors.append("complete standard/engineering delivery requires assessments.route_portfolio")
+            portfolio = {}
+        covered_roles = set()
+        role_routes = {role: set() for role in PORTFOLIO_ROLES}
+        for rid in shortlisted:
+            route = routes.get(rid)
+            if not isinstance(route, dict):
+                continue
+            roles = route.get("portfolio_roles")
+            if not isinstance(roles, list) or not roles:
+                errors.append(f"shortlisted route {rid} requires portfolio_roles")
+                roles = []
+            invalid = set(map(str, roles)) - PORTFOLIO_ROLES
+            if invalid:
+                errors.append(f"route {rid} has invalid portfolio_roles: {sorted(invalid)}")
+            valid_roles = set(map(str, roles)) & PORTFOLIO_ROLES
+            covered_roles.update(valid_roles)
+            for role in valid_roles:
+                role_routes[role].add(rid)
+            outlook = route.get("improvement_outlook")
+            if not isinstance(outlook, dict):
+                errors.append(f"shortlisted route {rid} requires improvement_outlook")
+            else:
+                status = outlook.get("status")
+                if status not in {"identified", "none_identified", "unknown", "not_applicable"}:
+                    errors.append(f"route {rid} improvement_outlook.status invalid")
+                if status == "identified" and (not isinstance(outlook.get("items"), list) or not outlook.get("items")):
+                    errors.append(f"route {rid} identified improvement_outlook requires at least one item")
+                elif isinstance(outlook.get("items"), list) and any(not isinstance(item, str) or not item.strip() for item in outlook.get("items", [])):
+                    errors.append(f"route {rid} improvement_outlook.items must contain nonempty text")
+                if status in {"none_identified", "unknown", "not_applicable"} and len(str(outlook.get("rationale", "")).strip()) < 6:
+                    errors.append(f"route {rid} {status} improvement_outlook requires rationale")
+                if len(str(outlook.get("validation_needed", "")).strip()) < 4:
+                    errors.append(f"route {rid} improvement_outlook requires validation_needed")
+        missing_roles = {"baseline", "backup", "exploratory"} - covered_roles
+        if missing_roles:
+            errors.append("complete route portfolio missing required roles: " + ", ".join(sorted(missing_roles)))
+        if role_routes["backup"] & role_routes["exploratory"]:
+            errors.append("engineering backup and exploratory roles must be carried by distinct routes")
+        supersystem = portfolio.get("supersystem_applicable")
+        if not isinstance(supersystem, bool):
+            errors.append("route_portfolio.supersystem_applicable must be true/false for complete delivery")
+        elif supersystem and "supersystem" not in covered_roles:
+            errors.append("supersystem is applicable but no shortlisted route carries portfolio role supersystem")
+        elif not supersystem and len(str(portfolio.get("supersystem_rationale", "")).strip()) < 6:
+            errors.append("non-applicable supersystem route requires rationale")
+
+        robustness = assessments.get("robustness_review")
+        if not isinstance(robustness, dict) or robustness.get("status") != "reviewed":
+            errors.append("complete delivery requires reviewed robustness_review")
+        else:
+            for key in ["strongest_objection", "exit_condition", "rationale"]:
+                if len(str(robustness.get(key, "")).strip()) < 6:
+                    errors.append(f"robustness_review requires {key}")
+            if robustness.get("objection_evidence_status") not in {"F", "M", "S", "H"}:
+                errors.append("robustness_review objection_evidence_status must be F/M/S/H")
+            if robustness.get("without_strongest_support") not in {"holds", "changes", "unknown"}:
+                errors.append("robustness_review without_strongest_support invalid")
+            if not robustness.get("strongest_support_claim_id"):
+                errors.append("robustness_review requires strongest_support_claim_id")
+            if robustness.get("objection_evidence_status") == "S" and not robustness.get("opposing_source_ids"):
+                errors.append("source-based strongest objection requires opposing_source_ids")
+    if current and full_contract:
+        implementation = record.get("implementation_plan")
+        if not isinstance(implementation, dict) or implementation.get("status") != "ready":
+            errors.append("complete delivery requires implementation_plan.status=ready")
+        else:
+            for key in ["next_decisive_test", "current_boundary", "report_summary"]:
+                if len(str(implementation.get(key, "")).strip()) < 6:
+                    errors.append(f"implementation_plan requires {key}")
+            for key in ["stage_gates", "procurement_or_exit_conditions", "open_unknowns"]:
+                value = implementation.get(key)
+                if not isinstance(value, list) or not value:
+                    errors.append(f"implementation_plan requires nonempty {key}")
+            for index, gate in enumerate(implementation.get("stage_gates", []) if isinstance(implementation.get("stage_gates"), list) else []):
+                if not isinstance(gate, dict):
+                    errors.append(f"implementation_plan.stage_gates[{index}] must be an object")
+                    continue
+                if len(str(gate.get("stage", "")).strip()) < 2:
+                    errors.append(f"implementation_plan.stage_gates[{index}] requires stage")
+                for key in ["entry_condition", "pass_condition", "exit_condition"]:
+                    if len(str(gate.get(key, "")).strip()) < 3:
+                        errors.append(f"implementation_plan.stage_gates[{index}] requires {key}")
+            for key in ["procurement_or_exit_conditions", "open_unknowns"]:
+                value = implementation.get(key, [])
+                if isinstance(value, list) and any(not isinstance(item, str) or not item.strip() for item in value):
+                    errors.append(f"implementation_plan.{key} must contain nonempty text")
     gates = assessments.get("gates", [])
     for gate in gates if isinstance(gates, list) else []:
         if not isinstance(gate, dict): continue
@@ -274,6 +408,32 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             if passed:passed_tests.add(tid)
             if not passed:warnings.append(f"test {tid} failed its predeclared criterion; it cannot support maturity")
     all_test_ids={t.get("id") for t in tests if isinstance(t,dict)} if isinstance(tests,list) else set()
+    hazards = rows(record, "hazards")
+    if current:
+        hazard_ids = [item.get("id") for item in hazards]
+        if any(not isinstance(i, str) or not i.strip() for i in hazard_ids) or len(set(hazard_ids)) != len(hazard_ids):
+            errors.append("hazards requires unique nonempty IDs")
+        for hazard in hazards:
+            hid = hazard.get("id", "?")
+            if not hazard.get("route_ids"):
+                errors.append(f"hazard {hid} requires route_ids")
+            for key in ["event", "residual_risk", "stop_condition"]:
+                if len(str(hazard.get(key, "")).strip()) < 4:
+                    errors.append(f"hazard {hid} requires {key}")
+            for key in ["causes", "consequences", "controls"]:
+                value = hazard.get(key)
+                if not isinstance(value, list) or not value:
+                    errors.append(f"hazard {hid} requires nonempty {key}")
+                elif any(not isinstance(item, str) or not item.strip() for item in value):
+                    errors.append(f"hazard {hid} {key} must contain nonempty text")
+            if not hazard.get("protocol_id"):
+                errors.append(f"hazard {hid} requires validation protocol")
+        if full_contract:
+            covered_hazards = {rid for hazard in hazards for rid in hazard.get("route_ids", []) if isinstance(rid, str)}
+            for rid in shortlisted:
+                route = routes.get(rid, {})
+                if "baseline" not in route.get("portfolio_roles", []) and rid not in covered_hazards:
+                    errors.append(f"shortlisted route {rid} requires at least one FMEA/hazard record")
     for test in list(valid_tests.values()):
         baseline=test.get("baseline_test_id")
         if baseline and (baseline==test['id'] or baseline not in valid_tests):
@@ -318,6 +478,56 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
         if card.get("normalized") is True and not math.isclose(sum(weights),1,abs_tol=1e-9):
             errors.append("normalized scorecard weights must sum to 1")
 
+    benefit_assessment = models.get("benefit_assessment")
+    if current and full_contract:
+        if not isinstance(benefit_assessment, dict):
+            errors.append("complete delivery requires models_and_tests.benefit_assessment")
+            benefit_assessment = {}
+        economic = benefit_assessment.get("economic", {}) if isinstance(benefit_assessment, dict) else {}
+        social = benefit_assessment.get("social", {}) if isinstance(benefit_assessment, dict) else {}
+        if not isinstance(economic, dict):
+            economic = {}
+            errors.append("benefit_assessment.economic must be an object")
+        if not isinstance(social, dict):
+            social = {}
+            errors.append("benefit_assessment.social must be an object")
+        economic_status = economic.get("status")
+        if economic_status not in {"modeled", "pending-data", "not-applicable"}:
+            errors.append("benefit_assessment.economic.status invalid")
+        elif economic_status == "modeled" and not models.get("benefit_scenarios"):
+            errors.append("modeled economic benefit requires benefit_scenarios")
+        elif economic_status == "pending-data":
+            if len(str(economic.get("formula", "")).strip()) < 4:
+                errors.append("pending economic benefit requires formula")
+            if not isinstance(economic.get("inputs_needed"), list) or not economic.get("inputs_needed"):
+                errors.append("pending economic benefit requires inputs_needed")
+            elif any(not isinstance(item, str) or not item.strip() for item in economic.get("inputs_needed", [])):
+                errors.append("pending economic benefit inputs_needed must contain nonempty text")
+            if len(str(economic.get("scenario_plan", "")).strip()) < 6:
+                errors.append("pending economic benefit requires scenario_plan")
+        elif economic_status == "not-applicable" and len(str(economic.get("rationale", "")).strip()) < 6:
+            errors.append("not-applicable economic benefit requires rationale")
+
+        social_status = social.get("status")
+        metrics = social.get("metrics", [])
+        if social_status not in {"defined", "pending-data", "not-applicable"}:
+            errors.append("benefit_assessment.social.status invalid")
+        elif social_status in {"defined", "pending-data"}:
+            if not isinstance(metrics, list) or not metrics:
+                errors.append("social benefit assessment requires at least one measurable metric")
+            else:
+                for index, metric in enumerate(metrics):
+                    if not isinstance(metric, dict):
+                        errors.append(f"social benefit metric[{index}] must be an object")
+                        continue
+                    for key in ["id", "name", "unit", "target_direction", "measurement", "validation_needed"]:
+                        if len(str(metric.get(key, "")).strip()) < 2:
+                            errors.append(f"social benefit metric[{index}] requires {key}")
+                    if metric.get("evidence_status") not in {"F", "M", "S", "H"}:
+                        errors.append(f"social benefit metric[{index}] evidence_status must be F/M/S/H")
+        elif social_status == "not-applicable" and len(str(social.get("rationale", "")).strip()) < 6:
+            errors.append("not-applicable social benefit requires rationale")
+
     for model in models.get("benefit_scenarios",[]):
         if not isinstance(model,dict):continue
         mid=str(model.get("id","?"));unit=str(model.get("unit",""))
@@ -356,14 +566,16 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
         component_ids={c.get('id') for route in routes.values() for c in route.get('components',[]) if isinstance(c,dict)}
         allowed={name:set(index) for name,index in indexes.items()}
         allowed.update(routes=set(routes),claims={c.get('id') for c in rows(record,'claims')},
-                       sources={s.get('id') for s in rows(record,'sources')},components=component_ids,
-                       tests=all_test_ids,protocols=set(protocols))
+                       sources={s.get('id') for s in rows(record,'sources')},
+                       queries={q.get('id') for q in rows(record,'queries')},
+                       components=component_ids, tests=all_test_ids, protocols=set(protocols))
         allowed['evidence']=allowed['inputs']|allowed['claims']|allowed['sources']|all_test_ids
         reference_fields={'input_ids':'inputs','problem_ids':'problems','requirement_ids':'requirements','route_ids':'routes',
                           'parameter_ids':'parameters','claim_ids':'claims','component_ids':'components','test_ids':'tests',
                           'supporting_source_ids':'sources','opposing_source_ids':'sources','evidence_ids':'evidence',
                           'protocol_id':'protocols','authorization_decision_id':'decisions','baseline_test_id':'tests',
-                          'mechanism_id':'mechanisms'}
+                          'mechanism_id':'mechanisms','query_ids':'queries','source_ids':'sources',
+                          'strongest_support_claim_id':'claims'}
         def check_refs(value,location='record'):
             if isinstance(value,dict):
                 for key,item in value.items():

@@ -13,6 +13,7 @@ import zipfile
 
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 SECTIONS = ('input_output', 'mechanism', 'implementation', 'worked_example', 'validation', 'innovation_attribution')
+REPORT_SECTIONS = ('scope_and_problem', 'triz_analysis', 'deep_research', 'route_portfolio', 'decision_and_robustness', 'fmea_and_validation', 'benefits', 'implementation_path')
 
 
 def mono(color):
@@ -206,6 +207,13 @@ def audit_quality(root, manifest):
                 technical.append(label + ': evidence must bind to current main-report DOCX hash')
             if not doc or not quote or quote not in doc[1] or not value.get('location'):
                 technical.append(label + ': full-paragraph evidence quote/location not found in main report')
+        if manifest.get('status') == 'complete':
+            report_sections = receipt.get('report_sections', {})
+            if not isinstance(report_sections, dict):
+                technical.append('complete report requires report_sections evidence anchors')
+                report_sections = {}
+            for section in REPORT_SECTIONS:
+                anchor(report_sections.get(section), 'report.' + section)
         for rid in sorted(required):
             matching_protocols = [p for p in protocols.values() if rid in p.get('route_ids', [])]
             if not matching_protocols:
