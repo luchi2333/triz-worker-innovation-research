@@ -192,6 +192,8 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
     routes = {str(r.get("id")): r for r in rows(record, "routes")}
     primary = set(map(str, manifest.get("primary_routes", [])))
     shortlisted = set(map(str, manifest.get("shortlisted_routes", [])))
+    if not shortlisted and current:
+        shortlisted = {rid for rid, route in routes.items() if route.get("role") != "rejected"}
     selected = primary | {rid for rid, r in routes.items() if r.get("role") == "primary"}
     eligibility = {rid: {"status": "pending", "reasons": []} for rid in routes}
     def block(rid, reason):
