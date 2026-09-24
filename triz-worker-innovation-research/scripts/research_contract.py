@@ -122,6 +122,7 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
     workflow = workflow if isinstance(workflow, dict) else {}
     complete_stage = workflow.get("completed_stage")
     complete = complete_stage == "G5" or manifest.get("status") == "complete"
+    full_contract = complete and manifest.get("delivery_level", "standard") in {"standard", "engineering"}
     if complete_stage is not None and complete_stage not in STAGES:
         errors.append("workflow.completed_stage must be G0..G5 or null")
     if workflow.get("current_stage", "G0") not in STAGES:
@@ -187,6 +188,7 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
 
     routes = {str(r.get("id")): r for r in rows(record, "routes")}
     primary = set(map(str, manifest.get("primary_routes", [])))
+    shortlisted = set(map(str, manifest.get("shortlisted_routes", [])))
     selected = primary | {rid for rid, r in routes.items() if r.get("role") == "primary"}
     eligibility = {rid: {"status": "pending", "reasons": []} for rid in routes}
     def block(rid, reason):
@@ -195,6 +197,64 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
             if reason not in eligibility[rid]["reasons"]: eligibility[rid]["reasons"].append(reason)
     assessments = record.get("assessments", {})
     assessments = assessments if isinstance(assessments, dict) else {}
+    if current and full_contract:
+        portfolio = assessments.get("route_portfolio")
+        if not isinstance(portfolio, dict):
+            errors.append("complete standard/engineering delivery requires assessments.route_portfolio")
+            portfolio = {}
+        covered_roles = set()
+        for rid in shortlisted:
+            route = routes.get(rid)
+            if not isinstance(route, dict):
+                continue
+            roles = route.get("portfolio_roles")
+            if not isinstance(roles, list) or not roles:
+                errors.append(f"shortlisted route {rid} requires portfolio_roles")
+                roles = []
+            invalid = set(map(str, roles)) - PORTFOLIO_ROLES
+            if invalid:
+                errors.append(f"route {rid} has invalid portfolio_roles: {sorted(invalid)}")
+            covered_roles.update(set(map(str, roles)) & PORTFOLIO_ROLES)
+            if "baseline" not in roles:
+                outlook = route.get("improvement_outlook")
+                if not isinstance(outlook, dict):
+                    errors.append(f"shortlisted route {rid} requires improvement_outlook")
+                else:
+                    status = outlook.get("status")
+                    if status not in {"identified", "none_identified", "unknown"}:
+                        errors.append(f"route {rid} improvement_outlook.status invalid")
+                    if status == "identified" and (not isinstance(outlook.get("items"), list) or not outlook.get("items")):
+                        errors.append(f"route {rid} identified improvement_outlook requires at least one item")
+                    if status in {"none_identified", "unknown"} and len(str(outlook.get("rationale", "")).strip()) < 6:
+                        errors.append(f"route {rid} {status} improvement_outlook requires rationale")
+                    if len(str(outlook.get("validation_needed", "")).strip()) < 4:
+                        errors.append(f"route {rid} improvement_outlook requires validation_needed")
+        missing_roles = {"baseline", "backup", "exploratory"} - covered_roles
+        if missing_roles:
+            errors.append("complete route portfolio missing required roles: " + ", ".join(sorted(missing_roles)))
+        supersystem = portfolio.get("supersystem_applicable")
+        if not isinstance(supersystem, bool):
+            errors.append("route_portfolio.supersystem_applicable must be true/false for complete delivery")
+        elif supersystem and "supersystem" not in covered_roles:
+            errors.append("supersystem is applicable but no shortlisted route carries portfolio role supersystem")
+        elif not supersystem and len(str(portfolio.get("supersystem_rationale", "")).strip()) < 6:
+            errors.append("non-applicable supersystem route requires rationale")
+
+        robustness = assessments.get("robustness_review")
+        if not isinstance(robustness, dict) or robustness.get("status") != "reviewed":
+            errors.append("complete delivery requires reviewed robustness_review")
+        else:
+            for key in ["strongest_objection", "exit_condition", "rationale"]:
+                if len(str(robustness.get(key, "")).strip()) < 6:
+                    errors.append(f"robustness_review requires {key}")
+            if robustness.get("objection_evidence_status") not in {"F", "M", "S", "H"}:
+                errors.append("robustness_review objection_evidence_status must be F/M/S/H")
+            if robustness.get("without_strongest_support") not in {"holds", "changes", "unknown"}:
+                errors.append("robustness_review without_strongest_support invalid")
+            if not robustness.get("strongest_support_claim_id"):
+                errors.append("robustness_review requires strongest_support_claim_id")
+            if robustness.get("objection_evidence_status") == "S" and not robustness.get("opposing_source_ids"):
+                errors.append("source-based strongest objection requires opposing_source_ids")
     gates = assessments.get("gates", [])
     for gate in gates if isinstance(gates, list) else []:
         if not isinstance(gate, dict): continue
