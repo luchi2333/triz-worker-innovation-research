@@ -16,16 +16,26 @@
 
 Built for tool improvement, equipment optimization, maintenance processes and frontline Engineering Innovation. OpenAI Codex has a documented installation path. The package also uses a portable `SKILL.md` structure that can be adapted by Agent platforms able to load Skill folders or persistent task context.
 
-## v2.6: linked field records and illustrated reports
+## Highlights
 
-Stable IDs connect raw inputs, requirements, mechanisms, parameters and tests. Bound Word text, tables and SVG/PNG diagrams share one record; checks detect changed document content and stale figures after parameter edits. A fully hypothetical tutorial produces DOCX, editable SVG and a step-by-step HTML explainer using the standard library, with optional Chromium PNG rendering. See [upgrade and migration notes](docs/v2.6-upgrade.md).
+This Skill is built for real engineering innovation work. It does not stop at matrix lookup, principle lists or brainstorming; it connects problem framing, technical research, concept development, risk control, validation and formal reporting into one auditable workflow.
 
-```bash
-cd triz-worker-innovation-research
-python scripts/run_tutorial.py --output tutorial-output
-```
+| Capability | What stands out |
+|---|---|
+| Engineering problem framing | Preserves original identifiers and field wording, separates `F/M/S/H` evidence states, and freezes system boundaries and hard constraints before concept generation |
+| TRIZ analysis | Bundles the classical 39×39 contradiction matrix with deterministic Python, Node and human-readable lookup paths, plus cause/function, resources, technical/physical contradictions, substance-field and evolution analysis |
+| Deep Research | Uses reproducible searches across products, patents, standards, papers, manufacturer documentation, cross-industry analogies and counter-evidence, with source identity and applicability checks |
+| Multi-route decisions | Keeps a mature baseline, engineering fallback, exploratory route and supersystem alternative instead of optimizing one attractive idea in isolation |
+| Engineering correctness | Requires explicit inputs/outputs, action chains, interfaces, parameters, fallback behavior and mechanism explanations, while separating mature technology, scenario integration and candidate innovation |
+| Safety and validation | Applies hard gates and FMEA before benefit claims, designs decisive experiments, and constrains conclusions with V0–V3 evidence maturity |
+| Benefit assessment | Models labor, rework, quality and economic/social benefits when data exists; otherwise records formulas, missing inputs and measurement plans instead of inventing numbers |
+| Engineering figures and reports | Can produce mechanism figures, motion sequences, safety-boundary diagrams, DOCX reports, SVG/PNG, HTML explainers, evidence appendices and delivery manifests |
+| Auditable delivery | Uses one structured research record as the source of truth and can verify report bindings, calculations, package structure, cross-platform execution and rendering |
+| Human-in-the-loop control | Keeps explicit checkpoints for direction, authorization and field-action boundaries, with resumable staged work rather than silent autonomous escalation |
 
-The preliminary design is a two-dimensional concept, not a manufacturing release or an automatic CAD/STEP export.
+In one sentence: **this is not a TRIZ prompt; it is a reproducible engineering-research workflow that takes AI from problem → research → concepts → counter-evidence → validation → report.**
+
+Release history, migration notes and implementation changes belong in the [CHANGELOG](triz-worker-innovation-research/CHANGELOG.md) and [Releases](https://github.com/luchi2333/triz-worker-innovation-research/releases).
 
 ## Quick Start
 
