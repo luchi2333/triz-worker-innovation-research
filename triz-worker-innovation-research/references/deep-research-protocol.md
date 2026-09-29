@@ -67,6 +67,19 @@
 
 ## 3. 七轨检索
 
+机器记录使用以下稳定轨道 ID，并写入 `research_tracks[]` 与每条 `queries[].track`：
+
+- `standard_regulation`：标准、监管与现场工艺；
+- `object_structure_material`：型号、结构与材料；
+- `mature_products_process`：现成产品与成熟工艺；
+- `patent`：专利；
+- `mechanism_literature`：论文、手册与工程机理；
+- `cross_industry_analogy`：跨行业功能类比；
+- `opposition_supersystem`：反对证据和超系统替代。
+
+每轨状态只能是 `completed / not_applicable / blocked`。完成轨至少绑定一条真实查询；不适用或阻塞必须说明理由。G2 不能在存在 blocked 轨时标记完成。七轨覆盖是研究方法覆盖，不意味着每轨都必须找到正面来源；“无结果”仍保留查询日志和范围边界。
+
+
 ### 3.1 标准、监管与现场工艺
 
 目标：找适用范围、禁止事项、接地/隔离、验收、机械/电气安全和作业许可。

@@ -7,7 +7,16 @@
   "title": "职工创新技术方案研究报告",
   "sections": [
     {
-      "title": "现场问题与推荐",
+      "title": "1. 研究对象与任务边界",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text_template": "课题：{{/project/title}}；当前成熟度：{{/project/maturity}}。研究对象、现场边界、证据状态和适用限制以 research-record 为唯一事实源。"
+        }
+      ]
+    },
+    {
+      "title": "2. 现场问题与推荐",
       "blocks": [
         {
           "type": "paragraph",
@@ -16,21 +25,132 @@
       ]
     },
     {
-      "title": "核心作用机理",
+      "title": "3. TRIZ 完整分析",
       "blocks": [
         {
-          "type": "figure",
-          "figure_ref": "FIG-MECH",
-          "figure_id": "FIG-MECH",
-          "figure_type": "F4-mechanism-section",
-          "design_status": "V0",
-          "main_message": "按真实领域填写并从图示记录取值",
-          "claim_limit": "按实际证据填写当前边界，不使用教学尺寸代替现场数据"
+          "type": "table",
+          "table_ref": "/contradictions",
+          "columns": [
+            {
+              "header": "矛盾",
+              "field": "id"
+            },
+            {
+              "header": "改善方向",
+              "field": "useful_result"
+            },
+            {
+              "header": "恶化结果",
+              "field": "worsened_result"
+            },
+            {
+              "header": "因果依据",
+              "field": "causality_basis"
+            },
+            {
+              "header": "TRIZ 资格",
+              "field": "eligibility"
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "table_ref": "/mechanisms",
+          "columns": [
+            {
+              "header": "机理",
+              "field": "id"
+            },
+            {
+              "header": "方法",
+              "field": "method"
+            },
+            {
+              "header": "输入",
+              "field": "input"
+            },
+            {
+              "header": "作用路径",
+              "field": "action_path",
+              "join": " → "
+            },
+            {
+              "header": "输出",
+              "field": "output"
+            },
+            {
+              "header": "反证",
+              "field": "falsification"
+            }
+          ]
         }
       ]
     },
     {
-      "title": "技术构成与创新归属",
+      "title": "4. 深度查新与技术空间",
+      "blocks": [
+        {
+          "type": "table",
+          "table_ref": "/research_tracks",
+          "columns": [
+            {
+              "header": "轨道",
+              "field": "track"
+            },
+            {
+              "header": "状态",
+              "field": "status"
+            },
+            {
+              "header": "查询",
+              "field": "query_ids",
+              "join": "、",
+              "empty_text": "不适用/受阻；见说明"
+            },
+            {
+              "header": "来源",
+              "field": "source_ids",
+              "join": "、",
+              "empty_text": "无纳入来源"
+            },
+            {
+              "header": "说明",
+              "field": "rationale"
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "table_ref": "/queries",
+          "columns": [
+            {
+              "header": "查询ID",
+              "field": "id"
+            },
+            {
+              "header": "轨道",
+              "field": "track"
+            },
+            {
+              "header": "原始检索式",
+              "field": "query"
+            },
+            {
+              "header": "状态",
+              "field": "status"
+            },
+            {
+              "header": "纳入来源",
+              "field": "included_source_ids",
+              "join": "、",
+              "empty_text": "无"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "5. 候选方案与推荐系统架构",
       "blocks": [
         {
           "type": "table",
@@ -41,18 +161,64 @@
               "field": "id"
             },
             {
+              "header": "组合角色",
+              "field": "portfolio_roles",
+              "join": "、",
+              "empty_text": "待确定",
+              "missing_text": "未纳入候选组合"
+            },
+            {
+              "header": "成熟度",
+              "field": "maturity"
+            },
+            {
+              "header": "失效回退",
+              "field": "failure_fallback"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text_template": "超系统路线适用性：{{/assessments/route_portfolio/supersystem_applicable}}；说明：{{/assessments/route_portfolio/supersystem_rationale}}。"
+        }
+      ]
+    },
+    {
+      "title": "6. 各备选方案的技术原理、创新归属与进一步提升",
+      "blocks": [
+        {
+          "type": "figure",
+          "figure_ref": "FIG-MECH",
+          "figure_id": "FIG-MECH",
+          "figure_type": "F4-mechanism-section",
+          "design_status": "V0",
+          "main_message": "按真实领域填写并从图示记录取值",
+          "claim_limit": "按实际证据填写当前边界，不使用教学尺寸代替现场数据"
+        },
+        {
+          "type": "table",
+          "table_ref": "/routes",
+          "columns": [
+            {
+              "header": "路线",
+              "field": "id"
+            },
+            {
               "header": "成熟技术判定",
-              "field": "innovation_attribution/mature_technology_status"
+              "field": "innovation_attribution/mature_technology_status",
+              "missing_text": "未进入最终比较"
             },
             {
               "header": "成熟已有技术",
-              "field": "innovation_attribution/mature_existing_technology"
+              "field": "innovation_attribution/mature_existing_technology",
+              "missing_text": "未进入最终比较"
             },
             {
               "header": "成熟技术来源",
               "field": "innovation_attribution/existing_technology_source_ids",
               "join": "、",
-              "empty_text": "未列出；以成熟技术判定为准"
+              "empty_text": "未列出；以成熟技术判定为准",
+              "missing_text": "未进入最终比较"
             }
           ]
         },
@@ -65,47 +231,182 @@
               "field": "id"
             },
             {
-              "header": "本项目场景化集成",
-              "field": "innovation_attribution/scenario_integration"
+              "header": "场景化集成",
+              "field": "innovation_attribution/scenario_integration",
+              "missing_text": "未进入最终比较"
             },
             {
               "header": "候选创新",
-              "field": "innovation_attribution/candidate_innovation"
+              "field": "innovation_attribution/candidate_innovation",
+              "missing_text": "未进入最终比较"
             },
             {
               "header": "创新边界",
-              "field": "innovation_attribution/innovation_boundary"
+              "field": "innovation_attribution/innovation_boundary",
+              "missing_text": "未进入最终比较"
             },
             {
               "header": "待验证项",
-              "field": "innovation_attribution/validation_needed"
+              "field": "innovation_attribution/validation_needed",
+              "missing_text": "未进入最终比较"
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "table_ref": "/routes",
+          "columns": [
+            {
+              "header": "路线",
+              "field": "id"
+            },
+            {
+              "header": "提升状态",
+              "field": "improvement_outlook/status",
+              "missing_text": "未进入最终比较"
+            },
+            {
+              "header": "进一步提升",
+              "field": "improvement_outlook/items",
+              "join": "；",
+              "empty_text": "无新增提升项",
+              "missing_text": "未进入最终比较"
+            },
+            {
+              "header": "说明",
+              "field": "improvement_outlook/rationale",
+              "missing_text": "未进入最终比较"
+            },
+            {
+              "header": "验证需要",
+              "field": "improvement_outlook/validation_needed",
+              "missing_text": "未进入最终比较"
             }
           ]
         }
       ]
     },
     {
-      "title": "设计参数与证据",
+      "title": "7. 方案比较、选择与强反证",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text_template": "最强反对意见：{{/assessments/robustness_review/strongest_objection}}；退出条件：{{/assessments/robustness_review/exit_condition}}；移除最强支持证据后的结论：{{/assessments/robustness_review/without_strongest_support}}；说明：{{/assessments/robustness_review/rationale}}。"
+        }
+      ]
+    },
+    {
+      "title": "8. 安全、FMEA 与验证",
       "blocks": [
         {
           "type": "table",
-          "table_ref": "/parameters",
+          "table_ref": "/hazards",
           "columns": [
             {
-              "header": "参数",
-              "field": "name"
+              "header": "危险/失效事件",
+              "field": "event"
             },
             {
-              "header": "值",
-              "field": "value"
+              "header": "关联路线",
+              "field": "route_ids",
+              "join": "、"
+            },
+            {
+              "header": "原因",
+              "field": "causes",
+              "join": "；"
+            },
+            {
+              "header": "后果",
+              "field": "consequences",
+              "join": "；"
+            },
+            {
+              "header": "控制",
+              "field": "controls",
+              "join": "；"
+            },
+            {
+              "header": "残余风险",
+              "field": "residual_risk"
+            },
+            {
+              "header": "验证协议",
+              "field": "protocol_id"
+            },
+            {
+              "header": "停止条件",
+              "field": "stop_condition"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "9. 社会效益与经济效益",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text_template": "经济效益状态：{{/models_and_tests/benefit_assessment/economic/status}}；公式/计算框架：{{/models_and_tests/benefit_assessment/economic/formula}}；情景计划：{{/models_and_tests/benefit_assessment/economic/scenario_plan}}；说明：{{/models_and_tests/benefit_assessment/economic/rationale}}。"
+        },
+        {
+          "type": "table",
+          "table_ref": "/models_and_tests/benefit_assessment/social/metrics",
+          "columns": [
+            {
+              "header": "指标",
+              "field": "name"
             },
             {
               "header": "单位",
               "field": "unit"
             },
             {
-              "header": "依据",
+              "header": "目标方向",
+              "field": "target_direction"
+            },
+            {
+              "header": "测量方式",
+              "field": "measurement"
+            },
+            {
+              "header": "证据",
               "field": "evidence_status"
+            },
+            {
+              "header": "验证需要",
+              "field": "validation_needed"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "10. 实施路径与结论",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text_template": "下一项决定性试验：{{/implementation_plan/next_decisive_test}}；当前适用边界：{{/implementation_plan/current_boundary}}；实施摘要：{{/implementation_plan/report_summary}}。"
+        },
+        {
+          "type": "table",
+          "table_ref": "/implementation_plan/stage_gates",
+          "columns": [
+            {
+              "header": "阶段",
+              "field": "stage"
+            },
+            {
+              "header": "进入条件",
+              "field": "entry_condition"
+            },
+            {
+              "header": "通过条件",
+              "field": "pass_condition"
+            },
+            {
+              "header": "停止/退出条件",
+              "field": "exit_condition"
             }
           ]
         }

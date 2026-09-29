@@ -66,6 +66,159 @@ class PipelineTests(unittest.TestCase):
     def audit(self):
         return audit_record(self.record, root=self.root)
 
+    def complete_core_case(self):
+        record = copy.deepcopy(self.record)
+        manifest = {
+            'status': 'complete',
+            'delivery_level': 'standard',
+            'maturity': 'V0',
+            'primary_routes': ['R1'],
+            'shortlisted_routes': ['R0', 'R1', 'R2'],
+        }
+        record['workflow'].update(current_stage='G5', completed_stage='G5')
+        record['decisions'] = [{
+            'id': 'DEC-DIR', 'kind': 'direction_confirmation', 'status': 'confirmed',
+            'user_text': '继续按当前方向完成教学回归。', 'scope': '教学回归中的全部候选路线'
+        }]
+        source = {
+            'id': 'SRC-T', 'title': 'Synthetic source', 'creator': 'fixture',
+            'date_or_version': '2026', 'stable_identifier': 'FIXTURE-001',
+            'url': 'https://example.com/fixture', 'locator': 'section 1',
+            'supporting_excerpt_or_fact': 'Synthetic fixture only',
+            'target_kind': 'source_component', 'authority': 'low',
+            'directness': 'direct', 'independence': 'fixture',
+            'currency': 'current', 'scope_match': 'fixture',
+            'critical': False, 'limitations': 'Not engineering evidence'
+        }
+        record['sources'] = [source]
+        tracks = [
+            'standard_regulation', 'object_structure_material', 'mature_products_process',
+            'patent', 'mechanism_literature', 'cross_industry_analogy',
+            'opposition_supersystem'
+        ]
+        record['queries'] = []
+        record['research_tracks'] = []
+        for index, track in enumerate(tracks, 1):
+            qid = f'Q-{index:02d}'
+            record['queries'].append({
+                'id': qid, 'track': track, 'date': '2026-09-06',
+                'entry': 'synthetic fixture', 'query': f'{track} synthetic query',
+                'filters': 'none', 'attempt_count': 1, 'status': 'completed',
+                'included_source_ids': ['SRC-T'], 'excluded': []
+            })
+            record['research_tracks'].append({
+                'id': f'TRK-{index:02d}', 'track': track, 'status': 'completed',
+                'query_ids': [qid], 'source_ids': ['SRC-T'],
+                'rationale': 'Synthetic coverage record for contract regression.'
+            })
+        r0, r1 = record['routes']
+        r0['portfolio_roles'] = ['baseline']
+        r0['improvement_outlook'] = {
+            'status': 'not_applicable', 'items': [],
+            'rationale': '成熟基准仅用于对照，不声明本研究进一步提升。',
+            'validation_needed': '完成同边界基准节拍复核'
+        }
+        r1['portfolio_roles'] = ['backup']
+        r1['improvement_outlook'] = {
+            'status': 'identified',
+            'items': ['降低调节步骤中的误操作机会'],
+            'rationale': 'Synthetic improvement item',
+            'validation_needed': 'Compare process error rate'
+        }
+        r2 = copy.deepcopy(r1)
+        r2['id'] = 'R2'
+        r2['role'] = 'alternative'
+        r2['portfolio_roles'] = ['exploratory']
+        r2['improvement_outlook'] = {
+            'status': 'unknown', 'items': [],
+            'rationale': '进一步提升方向尚需试验后判断',
+            'validation_needed': '先完成代表性短样否证'
+        }
+        for component in r2.get('components', []):
+            component['id'] = 'R2-' + str(component['id'])
+        for effect in r2.get('active_effects', []):
+            effect['source'] = 'R2-' + str(effect.get('source', 'SRC'))
+        record['routes'].append(r2)
+        record['assessments']['route_portfolio'] = {
+            'supersystem_applicable': False,
+            'supersystem_rationale': '本教学回归不模拟可适用的超系统替代。'
+        }
+        record['assessments']['robustness_review'] = {
+            'status': 'reviewed',
+            'strongest_objection': '当前候选的保持作用可能在真实载荷下失效。',
+            'objection_evidence_status': 'H',
+            'opposing_source_ids': [],
+            'exit_condition': '若代表性短样在冻结载荷下超过滑移判据则退出该路线。',
+            'strongest_support_claim_id': 'CLM-001',
+            'without_strongest_support': 'unknown',
+            'rationale': '移除当前主机理假设后，路线尚无足够证据维持推荐。'
+        }
+        protocols = [
+            {
+                'id': 'P-R1', 'route_ids': ['R1'], 'scope': 'short_sample',
+                'sampling_plan': 'Synthetic protocol for R1',
+                'metrics': [{'id': 'M1', 'unit': '1', 'criterion': {'operator': '<=', 'value': 1}}],
+                'stop_rule': 'Stop on criterion failure'
+            },
+            {
+                'id': 'P-R2', 'route_ids': ['R2'], 'scope': 'short_sample',
+                'sampling_plan': 'Synthetic protocol for R2',
+                'metrics': [{'id': 'M2', 'unit': '1', 'criterion': {'operator': '<=', 'value': 1}}],
+                'stop_rule': 'Stop on criterion failure'
+            }
+        ]
+        record['models_and_tests']['protocols'] = protocols
+        record['hazards'] = [
+            {
+                'id': 'HZ-R1', 'route_ids': ['R1'],
+                'event': '夹紧不足导致滑移', 'causes': ['预紧力不足'],
+                'consequences': ['定位失效'], 'controls': ['限位与预紧检查'],
+                'residual_risk': '仍需短样确认保持能力',
+                'protocol_id': 'P-R1', 'stop_condition': '滑移超过冻结判据即停止',
+                'evidence_ids': ['IN-01']
+            },
+            {
+                'id': 'HZ-R2', 'route_ids': ['R2'],
+                'event': '探索结构作用不稳定', 'causes': ['参数窗口未知'],
+                'consequences': ['无法保持目标状态'], 'controls': ['先做低能量短样'],
+                'residual_risk': '机理未验证',
+                'protocol_id': 'P-R2', 'stop_condition': '任一硬门槛失败即停止',
+                'evidence_ids': ['IN-01']
+            }
+        ]
+        record['models_and_tests']['benefit_assessment'] = {
+            'economic': {
+                'status': 'pending-data',
+                'formula': 'ΔH=(H0-H1)×Q',
+                'inputs_needed': ['H0', 'H1', 'Q'],
+                'scenario_plan': '分别计算保守、基准和理想三种情景。',
+                'rationale': '尚无真实节拍和成本数据。'
+            },
+            'social': {
+                'status': 'pending-data',
+                'metrics': [{
+                    'id': 'SB-01', 'name': '误操作次数', 'unit': '次/任务',
+                    'target_direction': 'decrease', 'measurement': '逐任务记录异常操作',
+                    'evidence_status': 'H', 'validation_needed': '完整流程对照记录'
+                }],
+                'rationale': '指标已定义，等待流程试验。'
+            }
+        }
+        record['implementation_plan'] = {
+            'status': 'ready',
+            'next_decisive_test': '执行冻结载荷下的代表性短样滑移试验。',
+            'stage_gates': [{
+                'stage': 'V1', 'entry_condition': '对象与载荷冻结',
+                'pass_condition': '全部短样满足滑移判据',
+                'exit_condition': '任一安全或质量硬门槛失败'
+            }],
+            'procurement_or_exit_conditions': ['成熟采购方案满足接口时优先比较', '短样失败则退出自研路线'],
+            'current_boundary': '仅限教学回归和 V0 概念，不代表现场可用。',
+            'open_unknowns': ['真实载荷和目标对象适配仍未知'],
+            'report_summary': '先做最低成本机理否证，再决定进入完整流程或转向成熟替代。'
+        }
+        return record, manifest
+
     def delivery_case(self, mutate=None, text=None):
         root = self.root / 'delivery'
         shutil.copytree(self.base / 'delivery', root)
@@ -115,6 +268,58 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(result['status'], 'PASS')
         self.assertEqual(result['bound_blocks'], 7)
         self.assertGreater(result['unbound_narrative_blocks'], 0)
+
+    def test_complete_core_contract_passes(self):
+        record, manifest = self.complete_core_case()
+        self.assertEqual(audit_record(record, manifest, root=self.root)['errors'], [])
+
+    def test_complete_requires_all_deep_research_tracks(self):
+        record, manifest = self.complete_core_case()
+        record['research_tracks'].pop()
+        errors = audit_record(record, manifest, root=self.root)['errors']
+        self.assertTrue(any('seven-track coverage' in e for e in errors), errors)
+
+    def test_complete_requires_distinct_portfolio_roles(self):
+        record, manifest = self.complete_core_case()
+        record['routes'][2]['portfolio_roles'] = ['backup']
+        errors = audit_record(record, manifest, root=self.root)['errors']
+        self.assertTrue(any('exploratory' in e or 'distinct routes' in e for e in errors), errors)
+
+    def test_complete_requires_fmea_per_active_route(self):
+        record, manifest = self.complete_core_case()
+        record['hazards'] = [record['hazards'][0]]
+        errors = audit_record(record, manifest, root=self.root)['errors']
+        self.assertTrue(any('FMEA/hazard' in e and 'R2' in e for e in errors), errors)
+
+    def test_complete_requires_further_improvement_outlook(self):
+        record, manifest = self.complete_core_case()
+        record['routes'][1].pop('improvement_outlook')
+        errors = audit_record(record, manifest, root=self.root)['errors']
+        self.assertTrue(any('improvement_outlook' in e for e in errors), errors)
+
+    def test_complete_requires_social_benefit_metric(self):
+        record, manifest = self.complete_core_case()
+        record['models_and_tests']['benefit_assessment']['social']['metrics'] = []
+        errors = audit_record(record, manifest, root=self.root)['errors']
+        self.assertTrue(any('social benefit' in e for e in errors), errors)
+
+    def test_complete_requires_economic_plan_when_unmodeled(self):
+        record, manifest = self.complete_core_case()
+        record['models_and_tests']['benefit_assessment']['economic']['formula'] = ''
+        errors = audit_record(record, manifest, root=self.root)['errors']
+        self.assertTrue(any('pending economic benefit requires formula' in e for e in errors), errors)
+
+    def test_complete_requires_strong_counterevidence_review(self):
+        record, manifest = self.complete_core_case()
+        record['assessments']['robustness_review']['status'] = 'pending'
+        errors = audit_record(record, manifest, root=self.root)['errors']
+        self.assertTrue(any('robustness_review' in e for e in errors), errors)
+
+    def test_complete_requires_implementation_plan(self):
+        record, manifest = self.complete_core_case()
+        record['implementation_plan']['status'] = 'pending'
+        errors = audit_record(record, manifest, root=self.root)['errors']
+        self.assertTrue(any('implementation_plan.status=ready' in e for e in errors), errors)
 
     def test_hard_gate_blocks_selected_route(self):
         self.record['assessments']['gates'] = [{'id': 'HARD-1', 'target_id': 'R1', 'status': 'fail'}]

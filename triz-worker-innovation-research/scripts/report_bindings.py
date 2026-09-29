@@ -101,11 +101,14 @@ def compile_source(source, record, root):
                 for item in items:
                     values=[]
                     for col in columns:
-                        value=item
+                        value=item; missing=False
                         for key in col['field'].split('/'):
-                            if not isinstance(value,dict) or key not in value:raise ValueError('unresolved bound table column')
+                            if not isinstance(value,dict) or key not in value:
+                                if 'missing_text' in col:
+                                    value=str(col['missing_text']);missing=True;break
+                                raise ValueError('unresolved bound table column')
                             value=value[key]
-                        if isinstance(value,list) and 'join' in col:
+                        if not missing and isinstance(value,list) and 'join' in col:
                             if value:
                                 value=str(col['join']).join(scalar(item) for item in value)
                             elif col.get('empty_text'):

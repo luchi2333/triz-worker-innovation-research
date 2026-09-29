@@ -92,5 +92,55 @@
         ]
       }
     }
-  ]
+  ],
+  "report_sections": {
+    "scope_and_problem": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    },
+    "triz_analysis": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    },
+    "deep_research": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    },
+    "route_portfolio": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    },
+    "decision_and_robustness": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    },
+    "fmea_and_validation": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    },
+    "benefits": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    },
+    "implementation_path": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    }
+  }
 }

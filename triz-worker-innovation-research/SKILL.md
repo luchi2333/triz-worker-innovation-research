@@ -137,7 +137,8 @@ G0 按 [research-record-contract.md](references/research-record-contract.md) 连
 6. 推荐前按工程一致性卡核查变量方向、步骤衔接、主动作用互扰和失败回退；未知即缩小结论；
 7. 最终推荐前逐句执行 `身份—证据—适配—类比—安全—专利—验证` 七问，任一未知即降低结论；
 8. 进入最终比较或主推荐的路线必须有 `innovation_attribution`，并在主报告正文显式区分成熟已有技术、场景化集成、候选创新与创新边界；
-9. G5 固定执行“研究记录更新→能力探测→Report Plan→领域 Figure Plan→具体发现复核→四类成果→DOCX→manifest→渲染→结构/计算/工程三类状态→交付回执”，不得把图示或 Word 留作后续扩展。
+9. 完整 standard/engineering 交付还必须满足七轨查新覆盖、不同路线承担 baseline/backup/exploratory、每条活跃路线 FMEA、进一步提升状态、强反证、社会/经济效益状态和实施路径；任一缺失不得标 complete；
+10. G5 固定执行“研究记录更新→能力探测→Report Plan→领域 Figure Plan→具体发现复核→四类成果→DOCX→manifest→渲染→结构/计算/工程三类状态→交付回执”，不得把图示或 Word 留作后续扩展。
 
 ## 跨平台与自包含规则
 
@@ -154,9 +155,11 @@ G0 按 [research-record-contract.md](references/research-record-contract.md) 连
 
 - 用户原始事实与修正已保留，F/M/S/H 未混淆；原始标识未静默改写；
 - TRIZ 方向稿已有用户确认或明确委托的有效范围记录，之后才进入深研；
-- 每个技术矛盾均由内置矩阵确定性查询；深研覆盖七轨且原始查询日志可逐条复跑；
-- 候选包含成熟基准、工程后备、探索路线和超系统替代；每条路线说明“方法—难点—作用机制—来源—创新—风险—试验”；
-- 安全/质量硬门槛先于效率和经济性；效益中的实测、现场报告和情景假设分开；
+- 每个技术矛盾均由内置矩阵确定性查询；深研七轨均有 completed/not_applicable 记录，原始查询日志可逐条复跑；
+- 候选包含不同路线承担成熟基准、工程后备和探索角色；超系统路线明确适用性；每条活跃路线说明“方法—难点—作用机制—来源—创新—风险—试验—进一步提升”；
+- 每条非基准保留路线有 FMEA/hazard 与验证协议；最强反对意见、退出条件和移除最强支持证据后的稳健性已复核；
+- 安全/质量硬门槛先于效率和经济性；经济效益有模型或待数据公式/情景计划，社会效益有可测指标，实测、现场报告和情景假设分开；
+- 实施路径已明确下一项决定性试验、阶段闸门、采购/退出条件、当前边界和关键未知；
 - 摘要技术导向，主报告完整，证据附件可审计；文件已实际打开/渲染逐页检查；
 - 交付清单与实际文件一致；每个入选路线有机理图；核心方案存在实体、运动或安全机理时已有 F4 机理剖面、F5 运动序列及适用的 F7 安全边界，架构图未冒充原理图；文档能力可用时已主动生成 DOCX；`validate_deliverables.py` 已通过或已明确记录不可运行的降级状态；
 - 最强反对意见和能推翻推荐的证据已处理。
@@ -164,6 +167,7 @@ G0 按 [research-record-contract.md](references/research-record-contract.md) 连
 ## 资源路由
 
 - 大白话信息采集与补问策略：[intake-guide.md](references/intake-guide.md)
+- 核心要求防回退覆盖矩阵：[core-requirement-coverage.md](references/core-requirement-coverage.md)
 - 全流程与阶段闸门：[research-workflow.md](references/research-workflow.md)
 - 首次完整 TRIZ 输出和白话确认卡：[triz-analysis-output.md](references/triz-analysis-output.md)
 - 39 参数映射、查询命令和现场说法词汇：[matrix-usage.md](references/matrix-usage.md)、[parameter-guidance.json](references/parameter-guidance.json)
