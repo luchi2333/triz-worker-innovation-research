@@ -18,28 +18,26 @@
 
 适用于工具改进、设备优化、检修工艺和作业流程创新。正式安装路径面向 **OpenAI Codex**；同时按可移植 `SKILL.md` 结构设计，可由支持 Skill 目录或上下文加载的其他 Agent 平台适配使用。
 
-## v2.9：工程一致性与领域原理图
+## 核心亮点
 
-v2.9 进一步核对基准试验可比性、效益单位与倍率、最终 Word 图片字号和关键正文绑定；增加电气端口/元件及机械接触/限位/尺寸图元。运行 `python triz-worker-innovation-research/scripts/run_engineering_examples.py --output examples` 可生成黑白图文教学样例。详见 [工程绘图](triz-worker-innovation-research/references/engineering-diagram-authoring.md) 和 [迁移要求](triz-worker-innovation-research/references/engineering-correctness-contract.md)。
+本 Skill 面向真实工程现场创新，不把 TRIZ 停留在“查矩阵、列原理、脑暴点子”，而是把问题建模、技术研究、方案推导、风险控制、验证和正式报告串成一条可追溯闭环。
 
-## v2.7：具体方案验收与黑白报告
+| 能力 | 亮点 |
+|---|---|
+| 工程问题建模 | 保留原始型号、术语和现场描述，用 `F/M/S/H` 区分现场事实、实测、外部来源和工程假设，先冻结系统边界与硬约束 |
+| TRIZ 分析 | 内置经典 39×39 矛盾矩阵，支持 Python、Node 和可读行分片确定性查询；同时覆盖因果、功能、资源、技术/物理矛盾、物—场和演化方向 |
+| Deep Research | 围绕产品、专利、标准、论文、原厂资料、跨行业类比和反对证据开展可复现检索，记录查询式、来源身份、适配边界和证据强度 |
+| 多路线决策 | 不只优化一个想法，同时保留成熟基准、工程后备、探索路线和超系统替代，并明确最强反对意见、退出条件和证据不确定性 |
+| 工程正确性 | 要求方案写清输入/输出、作用链、接口、关键参数、失效回退和技术原理；区分成熟已有技术、场景化集成与候选创新 |
+| 安全与验证 | 先做硬门槛和 FMEA，再设计决定性试验；使用 V0–V3 成熟度约束结论强度，负面试验结果也作为研究证据保留 |
+| 效益评估 | 经济效益、人工时、返工、一次合格率和社会效益尽量量化；数据不足时保留公式、缺失输入和测量计划，不用虚构数字补齐 |
+| 工程图与报告 | 可生成原理图、动作序列、安全边界等黑白工程图，以及 DOCX、SVG/PNG、HTML、技术证据附件和交付清单 |
+| 可审计交付 | 结构化研究记录作为单一事实源，正文、图示、参数和计算可绑定核验；CI 检查结构、计算一致性、跨平台执行和渲染结果 |
+| 人机协同 | 在关键方向、授权和现场实施边界保留人工决策点；支持暂停、恢复和阶段化推进，不把研究授权自动扩展为现场执行授权 |
 
-v2.7.1 补充模型与输出保真检查：旧 schema 不能借非 strict 获得完整交付 PASS；拒绝空表和列数错配；提供标准参数名称/证据定义文本引用；增加图—方程、可辨识反例和误差转换审阅规则。
+一句话概括：**它不是一个 TRIZ Prompt，而是一套让 AI 像工程研究助手一样完成“问题 → 研究 → 方案 → 反证 → 验证 → 报告”的可复现工作流。**
 
-V0 报告也须展开输入、机理、实现、例算和验证协议。新增绑定最终 DOCX 的读者复核收据；结构一致、图数齐全不再等同于方案完整。Word 默认黑白三线表，SVG/HTML 默认单色，检查实际文件样式。自动检查仅核验内容证据覆盖，不能证明工程原理或评审真实性。详见 [技术报告质量规则](triz-worker-innovation-research/references/technical-report-quality.md)。
-
-既有研究记录 1.1、报告源 1.3、交付清单 1.2 继续读取；旧报告重新申请 complete 时须补齐具体方案、路线协议与 `report-quality-review.json`，不能把旧 PASS 当作 v2.7 内容验收。
-
-## v2.6：现场记录与图文报告贯通
-
-新增原始输入→问题→需求→机制→参数→试验的稳定引用；正文、参数表、SVG/PNG 和动作图解共用同一记录。实际 Word 文字或图片被改动、参数更新后沿用旧图，都会在绑定校验中被发现。内置可独立运行的 H 教学样例。详见 [升级与迁移说明](docs/v2.6-upgrade.md)。
-
-```bash
-cd triz-worker-innovation-research
-python scripts/run_tutorial.py --output tutorial-output
-```
-
-输出 Word、可编辑 SVG、分步 HTML 和生成回执。可选 `--png-browser` 生成 PNG；初步设计是待验证的二维表达，不是制造放行图。
+版本变化、迁移说明和历史修复统一记录在 [CHANGELOG](triz-worker-innovation-research/CHANGELOG.md) 与 [Releases](https://github.com/luchi2333/triz-worker-innovation-research/releases) 中。
 
 ## 一分钟开始
 
