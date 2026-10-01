@@ -1,5 +1,49 @@
 {
   "schema_version": "1.0",
+  "report_sections": {
+    "problem_scope": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    },
+    "triz_analysis": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    },
+    "deep_research": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    },
+    "route_comparison": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    },
+    "safety_fmea": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    },
+    "benefits": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    },
+    "implementation_path": {
+      "artifact_path": "report.docx",
+      "artifact_sha256": "",
+      "location": "",
+      "quote": ""
+    }
+  },
   "technical_dossiers": [
     {
       "route_id": "",
@@ -37,6 +81,18 @@
         "quote": ""
       },
       "innovation_attribution": {
+        "artifact_path": "report.docx",
+        "artifact_sha256": "",
+        "location": "",
+        "quote": ""
+      },
+      "further_improvement": {
+        "artifact_path": "report.docx",
+        "artifact_sha256": "",
+        "location": "",
+        "quote": ""
+      },
+      "challenge_review": {
         "artifact_path": "report.docx",
         "artifact_sha256": "",
         "location": "",
