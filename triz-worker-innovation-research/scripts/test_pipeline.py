@@ -150,6 +150,27 @@ class PipelineTests(unittest.TestCase):
             'social_rationale': ''
         }
 
+    def promote_to_g5(self):
+        self.promote_to_g4()
+        self.record['workflow'].update(current_stage='G5', completed_stage='G5')
+        self.record['implementation_plan'] = {
+            'status': 'ready',
+            'next_decisive_test': '执行冻结载荷下的代表性短样滑移试验。',
+            'stage_gates': [{
+                'stage': 'V1',
+                'entry_condition': '对象与载荷冻结',
+                'pass_condition': '全部短样满足滑移判据',
+                'exit_condition': '任一安全或质量硬门槛失败'
+            }],
+            'procurement_or_exit_conditions': [
+                '成熟采购方案满足接口时优先比较',
+                '短样失败则退出自研路线'
+            ],
+            'current_boundary': '仅限教学回归和 V0 概念，不代表现场可用。',
+            'open_unknowns': ['真实载荷和目标对象适配仍未知'],
+            'report_summary': '先做最低成本机理否证，再决定进入完整流程或转向成熟替代。'
+        }
+
     def delivery_case(self, mutate=None, text=None):
         root = self.root / 'delivery'
         shutil.copytree(self.base / 'delivery', root)
@@ -327,6 +348,30 @@ class PipelineTests(unittest.TestCase):
         self.promote_to_g4()
         self.record['models_and_tests']['benefit_assessment']['social_metrics'] = []
         self.assertTrue(any('measurable social_metrics' in e for e in self.audit()['errors']))
+
+    def test_g5_requires_implementation_plan(self):
+        baseline = copy.deepcopy(self.record)
+        self.promote_to_g5()
+        self.assertEqual(self.audit()['errors'], [])
+
+        self.record['implementation_plan']['status'] = 'pending'
+        self.assertTrue(any(
+            'implementation_plan.status=ready' in e for e in self.audit()['errors']
+        ))
+
+        self.record = copy.deepcopy(baseline)
+        self.promote_to_g5()
+        self.record['implementation_plan']['stage_gates'][0].pop('stage')
+        self.assertTrue(any(
+            'stage_gates[0] requires stage' in e for e in self.audit()['errors']
+        ))
+
+        self.record = copy.deepcopy(baseline)
+        self.promote_to_g5()
+        self.record['implementation_plan']['stage_gates'][0]['entry_condition'] = ''
+        self.assertTrue(any(
+            'stage_gates[0] requires entry_condition' in e for e in self.audit()['errors']
+        ))
 
     def test_unknown_formula_is_unchecked(self):
         self.record['models_and_tests']['benefit_scenarios'] = [{'id': 'BEN-1', 'formula_type': 'custom', 'expected_result': 999}]

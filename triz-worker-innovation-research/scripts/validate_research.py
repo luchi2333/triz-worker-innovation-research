@@ -33,6 +33,15 @@ def migrate(record):
         "economic_status":"not-assessed","economic_formula_plan":"","missing_economic_inputs":[],
         "economic_rationale":"","social_status":"not-assessed","social_metrics":[],"social_rationale":""
     })
+    result.setdefault("implementation_plan", {
+        "status": "pending",
+        "next_decisive_test": "",
+        "stage_gates": [],
+        "procurement_or_exit_conditions": [],
+        "current_boundary": "",
+        "open_unknowns": [],
+        "report_summary": "",
+    })
     if previous=="1.0":result.setdefault("migration_notes",[]).append("1.0 to 1.1: original values preserved; new research-track, candidate-portfolio, hazard, benefit, input/requirement/mechanism and authorization fields remain empty/not-assessed until supported by evidence.")
     return result
 

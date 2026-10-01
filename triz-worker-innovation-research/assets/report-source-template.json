@@ -295,7 +295,33 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "填写下一项最低成本决定性试验、阶段闸门、采购/许可/预制或退出自研条件、当前适用边界和关键未知。"
+          "text_template": "下一项决定性试验：{{/implementation_plan/next_decisive_test}}；当前适用边界：{{/implementation_plan/current_boundary}}；实施摘要：{{/implementation_plan/report_summary}}。"
+        },
+        {
+          "type": "table",
+          "table_ref": "/implementation_plan/stage_gates",
+          "columns": [
+            {
+              "header": "阶段",
+              "field": "stage"
+            },
+            {
+              "header": "进入条件",
+              "field": "entry_condition"
+            },
+            {
+              "header": "通过条件",
+              "field": "pass_condition"
+            },
+            {
+              "header": "停止/退出条件",
+              "field": "exit_condition"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "采购/许可/预制或退出自研条件与关键未知必须在正文中逐项说明，并与阶段闸门保持一致。"
         }
       ]
     }

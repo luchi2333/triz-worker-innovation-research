@@ -115,6 +115,20 @@
       "regression_token": "test_g3_requires_challenge_review_and_further_improvement"
     },
     {
+      "id": "implementation-plan",
+      "level": "must",
+      "spec_file": "references/research-record-contract.md",
+      "spec_token": "implementation_plan",
+      "record_file": "assets/research-record-template.json",
+      "record_token": "implementation_plan",
+      "report_file": "assets/report-source-template.json",
+      "report_token": "/implementation_plan/stage_gates",
+      "validator_file": "scripts/research_contract.py",
+      "validator_token": "complete delivery requires implementation_plan.status=ready",
+      "regression_file": "scripts/test_pipeline.py",
+      "regression_token": "test_g5_requires_implementation_plan"
+    },
+    {
       "id": "complete-report",
       "level": "must",
       "spec_file": "references/final-report-blueprint.md",

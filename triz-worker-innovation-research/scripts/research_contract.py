@@ -463,6 +463,38 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
         elif len(str(benefit_assessment.get("social_rationale", "")).strip()) < 8:
             errors.append("not_applicable social benefit requires rationale")
 
+    if current and complete:
+        implementation = record.get("implementation_plan")
+        if not isinstance(implementation, dict) or implementation.get("status") != "ready":
+            errors.append("complete delivery requires implementation_plan.status=ready")
+        else:
+            for key in ["next_decisive_test", "current_boundary", "report_summary"]:
+                if len(str(implementation.get(key, "")).strip()) < 6:
+                    errors.append(f"implementation_plan requires {key}")
+            for key in ["stage_gates", "procurement_or_exit_conditions", "open_unknowns"]:
+                value = implementation.get(key)
+                if not isinstance(value, list) or not value:
+                    errors.append(f"implementation_plan requires nonempty {key}")
+            for index, gate in enumerate(
+                implementation.get("stage_gates", [])
+                if isinstance(implementation.get("stage_gates"), list)
+                else []
+            ):
+                if not isinstance(gate, dict):
+                    errors.append(f"implementation_plan.stage_gates[{index}] must be an object")
+                    continue
+                if len(str(gate.get("stage", "")).strip()) < 2:
+                    errors.append(f"implementation_plan.stage_gates[{index}] requires stage")
+                for key in ["entry_condition", "pass_condition", "exit_condition"]:
+                    if len(str(gate.get(key, "")).strip()) < 3:
+                        errors.append(f"implementation_plan.stage_gates[{index}] requires {key}")
+            for key in ["procurement_or_exit_conditions", "open_unknowns"]:
+                value = implementation.get(key, [])
+                if isinstance(value, list) and any(
+                    not isinstance(item, str) or not item.strip() for item in value
+                ):
+                    errors.append(f"implementation_plan.{key} must contain nonempty text")
+
     for test in list(valid_tests.values()):
         baseline=test.get("baseline_test_id")
         if baseline and (baseline==test['id'] or baseline not in valid_tests):

@@ -483,7 +483,7 @@ def check_required_content(files: dict[str, str], errors: list[str]) -> None:
         research_template = {}
     if research_template.get("schema_version") != "1.1":
         fail(errors, "Research record template must use schema_version 1.1")
-    for key in ["variables", "contradictions", "queries", "research_tracks", "sources", "claims", "routes", "hazards", "assessments", "models_and_tests"]:
+    for key in ["variables", "contradictions", "queries", "research_tracks", "sources", "claims", "routes", "hazards", "assessments", "models_and_tests", "implementation_plan"]:
         if key not in research_template:
             fail(errors, f"Research record template missing: {key}")
     if "candidate_portfolio" not in research_template.get("assessments", {}):

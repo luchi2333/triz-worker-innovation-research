@@ -80,6 +80,20 @@ G2 不是“有过搜索”即可完成。每条 `queries[]` 增加 `track`，�
 
 主推荐路线填写 `challenge_review`：`strongest_objection/exit_condition/strongest_support_evidence_id/without_strongest_support/opposition_search_status/opposition_evidence_ids/rationale`。这样“最强反对意见”和“去掉最强支持证据后结论是否仍成立”成为事实记录，不只是一段报告文案。
 
+
+### 3.2 实施路径与阶段闸门
+
+`implementation_plan` 在完整 G5 交付中必须为 `status=ready`，并作为实施路径的结构化事实源。必须记录：
+
+- `next_decisive_test`：下一项最低成本、能够改变路线判断的决定性试验；
+- `stage_gates[]`：每项包含 `stage/entry_condition/pass_condition/exit_condition`。阶段代码允许使用既有成熟度 `V1/V2/V3`，不能因为代码较短而被当成缺失内容；进入、通过和退出条件仍必须是实质性文字；
+- `procurement_or_exit_conditions[]`：采购、许可、预制、转成熟方案或退出自研的触发条件；
+- `current_boundary`：当前结论适用边界；
+- `open_unknowns[]`：仍会改变实施决策的关键未知；
+- `report_summary`：进入主报告第 10 章的实施摘要。
+
+完整交付缺少上述任一核心项时不得通过 G5；阶段闸门必须进入主报告正文，不能只停留在研究记录或说明文档中。
+
 ## 4. 实测、试验与成熟度
 
 计划放在 `models_and_tests.protocols`，结果放在 `tests`。协议包含 `id/route_ids/scope/sampling_plan/metrics/stop_rule`；`metrics` 每项有 `id/unit/criterion`，判据为 `{operator: <= 或 >= 或 ==, value: 数值}`。脚本只支持这类明确数值判据；复杂判据需扩展实现并加回归，不使用任意表达式执行。

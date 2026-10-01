@@ -66,5 +66,14 @@
     "operating_boundary": null,
     "measurement_basis": null,
     "proxy_scenarios": []
+  },
+  "implementation_plan": {
+    "status": "pending",
+    "next_decisive_test": "",
+    "stage_gates": [],
+    "procurement_or_exit_conditions": [],
+    "current_boundary": "",
+    "open_unknowns": [],
+    "report_summary": ""
   }
 }
