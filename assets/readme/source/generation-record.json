@@ -1,0 +1,21 @@
+{
+  "generator": "Supervisor tools.image_gen__imagegen",
+  "parameters": {
+    "size": "1536x1024",
+    "transparent_background": false,
+    "format": "PNG",
+    "reference_images": false,
+    "api_key": false,
+    "cli": false
+  },
+  "material": "source/dir-b-material.png",
+  "layouts": [
+    "source/hero-zh.svg",
+    "source/hero-en.svg"
+  ],
+  "published": [
+    "hero-zh.png",
+    "hero-en.png"
+  ],
+  "concept_note": "The image illustrates a teaching example; it is not a measurement or engineering drawing."
+}

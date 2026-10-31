@@ -1,43 +1,42 @@
 # TRIZ Worker Innovation Research
 
-**Evidence-based Engineering Innovation Agent Skill**
+**An engineering-research Agent Skill for tool, equipment, maintenance and process innovation**
 
-[简体中文](README.md) · [Install](#quick-start) · [Demo](#from-one-field-problem-to-an-auditable-research-package) · [Contributing](CONTRIBUTING.md)
+[简体中文](README.md) · [Quick start](#quick-start) · [Teaching example](#from-a-field-description-to-an-inspectable-study) · [Workflow](#how-the-research-progresses) · [Contributing](CONTRIBUTING.md)
 
 [![Release](https://img.shields.io/github/v/release/luchi2333/triz-worker-innovation-research?label=release)](https://github.com/luchi2333/triz-worker-innovation-research/releases)
 [![Validation](https://github.com/luchi2333/triz-worker-innovation-research/actions/workflows/validate.yml/badge.svg)](https://github.com/luchi2333/triz-worker-innovation-research/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-16a085.svg)](LICENSE)
 
-> **Not a prompt that generates more ideas. A reproducible workflow that turns a field problem into evidence-backed, falsifiable and testable engineering concepts.**
+Turn a field problem into traceable, falsifiable and testable engineering research. Reconstruct the process, system boundary and constraints first; then use TRIZ analysis, deterministic matrix lookup and technical research to develop concepts, FMEA, decisive experiments and a technical report.
 
-**Problem framing → TRIZ contradictions → deterministic 39×39 matrix → Deep Research → engineering concepts → risk/FMEA → validation → benefits → technical report**
+![TRIZ Worker Innovation Research for tool, equipment, maintenance and process innovation. Concept illustration of a tube-clamping teaching example. The 10×12 lookup returns Preliminary action, Parameter changes, Composite materials, and Discarding and recovering in that order.](assets/readme/hero-en.png)
 
-![TRIZ Worker Innovation Research: from field problem to testable engineering concept](assets/triz-worker-innovation-research-hero-v3.png)
+## From a field description to an inspectable study
 
-Built for tool improvement, equipment optimization, maintenance processes and frontline Engineering Innovation. OpenAI Codex has a documented installation path. The package also uses a portable `SKILL.md` structure that can be adapted by Agent platforms able to load Skill folders or persistent task context.
+This **fully fictional thin-wall tube teaching example** shows how the research chain unfolds. See [examples/thin-wall-tube-clamping.md](examples/thin-wall-tube-clamping.md) for the complete walkthrough.
 
-## Highlights
+> A training workshop clamps thin-wall copper tube in a bench vise for sawing. The tube often becomes oval. The grip must become more stable without increasing deformation.
 
-This Skill is built for real engineering innovation work. It does not stop at matrix lookup, principle lists or brainstorming; it connects problem framing, technical research, concept development, risk control, validation and formal reporting into one auditable workflow.
+The Skill first organizes the description into a problem model and separates evidence states with `F/M/S/H`:
 
-| Capability | What stands out |
-|---|---|
-| Engineering problem framing | Preserves original identifiers and field wording, separates `F/M/S/H` evidence states, and freezes system boundaries and hard constraints before concept generation |
-| TRIZ analysis | Bundles the classical 39×39 contradiction matrix with deterministic Python, Node and human-readable lookup paths, plus cause/function, resources, technical/physical contradictions, substance-field and evolution analysis |
-| Deep Research | Uses reproducible searches across products, patents, standards, papers, manufacturer documentation, cross-industry analogies and counter-evidence, with source identity and applicability checks |
-| Multi-route decisions | Keeps a mature baseline, engineering fallback, exploratory route and supersystem alternative instead of optimizing one attractive idea in isolation |
-| Engineering correctness | Requires explicit inputs/outputs, action chains, interfaces, parameters, fallback behavior and mechanism explanations, while separating mature technology, scenario integration and candidate innovation |
-| Safety and validation | Applies hard gates and FMEA before benefit claims, designs decisive experiments, and constrains conclusions with V0–V3 evidence maturity |
-| Benefit assessment | Models labor, rework, quality and economic/social benefits when data exists; otherwise records formulas, missing inputs and measurement plans instead of inventing numbers |
-| Engineering figures and reports | Can produce mechanism figures, motion sequences, safety-boundary diagrams, DOCX reports, SVG/PNG, HTML explainers, evidence appendices and delivery manifests |
-| Auditable delivery | Uses one structured research record as the source of truth and can verify report bindings, calculations, package structure, cross-platform execution and rendering |
-| Human-in-the-loop control | Keeps explicit checkpoints for direction, authorization and field-action boundaries, with resumable staged work rather than silent autonomous escalation |
+| Label | Meaning | In this example |
+|---|---|---|
+| `F` | Field-reported fact | The object, process and report that clamping causes ovality |
+| `M` | Controlled measurement | Tube diameter, wall thickness, clamping force and scrap rate; unknown values remain unmeasured |
+| `S` | Traceable external source | Standards, products, patents and papers found in subsequent real research |
+| `H` | Engineering hypothesis or derivation | Explanations and candidate mechanisms to test, such as uneven contact pressure |
 
-In one sentence: **this is not a TRIZ prompt; it is a reproducible engineering-research workflow that takes AI from problem → research → concepts → counter-evidence → validation → report.**
+The main contradiction maps improving **#10 Force (intensity)** to worsening **#12 Shape**, queried in the fixed **10×12** direction. The bundled classical matrix returns, in order:
 
-Release history, migration notes and implementation changes belong in the [CHANGELOG](triz-worker-innovation-research/CHANGELOG.md) and [Releases](https://github.com/luchi2333/triz-worker-innovation-research/releases).
+1. **#10 Preliminary action** — investigate a pre-installed removable liner;
+2. **#35 Parameter changes** — investigate jaw curvature, contact length and surface hardness;
+3. **#40 Composite materials** — investigate a rigid support combined with a compliant surface;
+4. **#34 Discarding and recovering** — investigate a replaceable wear surface.
 
-## Quick Start
+These principles move into source verification, route comparison, risk analysis and decisive experiments rather than becoming a finalized design. The teaching example contains no real company, model, project data, external research results or measured performance.
+
+## Quick start
 
 Copy this instruction to Codex:
 
@@ -56,84 +55,47 @@ Desired improvement: ...
 Must not sacrifice: ...
 ```
 
-No separate contradiction-matrix or Deep Research Skill is required. Live Product Research, Patent Research, Standards Research and literature research still require the host Agent to have Web/Search access.
+No prior TRIZ knowledge or separate matrix or Deep Research Skill is required. Live product, patent, standards and literature research still requires the host Agent to have Web/Search access.
 
-## Why this Skill?
+After the first complete TRIZ draft, the Skill pauses at `G1.5` to confirm the research direction. You can correct facts and boundaries, retain, pause or add directions. Existing explicit delegation is recorded with its scope; silence is not approval.
 
-A normal AI conversation can jump from a short problem statement directly to attractive concepts. This project makes the Engineering Research chain inspectable:
+## How the research progresses
 
 ```text
-field facts → process and system boundary → TRIZ model → deterministic matrix
-            → user confirmation → technical research → concepts → counter-evidence
-            → safety/FMEA → decisive experiment → report
+G0 Problem Definition → G1 System & TRIZ Modeling → G1.5 USER CONFIRMATION
+                      → G2 Deep Research → G3 Concepts
+                      → G4 Validation / Safety / Benefits → G5 Report
 ```
+
+| Stage | What you receive |
+|---|---|
+| Problem and contradiction | Original identifiers and terminology, complete process, system boundary, constraints and an `F/M/S/H` problem model |
+| Deterministic analysis | 39 engineering parameters, 40 inventive principles and the classical 39×39 matrix, with Python, Node and readable row-shard lookup paths |
+| Deep research | Products, patents, standards, papers, manufacturer documentation, cross-industry analogies and counter-evidence, with reproducible search logs |
+| Candidate decisions | A mature baseline, engineering fallback, exploratory route and supersystem alternative, with action chains, sources, risks and exit conditions |
+| Validation and benefits | FMEA, samples and metrics, acceptance/stop criteria, V0–V3 maturity, and reproducible economic and social benefit models |
+| Formal delivery | Decision summary, engineering figures, main report, technical evidence appendix, research ledger, DOCX and delivery manifest |
+
+Key facts live in `research-record.json`. Summaries, prose, parameters, calculations and figures read from the same source of truth. G5 plans the figure set before drawing and selects mechanical, electrical/measurement, control/software, thermal/fluid or process representations as appropriate. Structure, computational consistency and engineering review are reported separately.
+
+## Why not ask AI to brainstorm directly?
+
+A normal AI conversation can jump from a short field description to plausible-looking concepts while leaving the system boundary, matrix source, applicability checks and validation conditions unexamined. This Skill connects those steps:
 
 | Prompt or matrix lookup tool | This Skill |
 |---|---|
 | Returns principles or brainstormed ideas | Reconstructs the process, root cause, system boundary and constraints first |
-| May answer a matrix cell from model memory | Uses bundled JSON, Python, Node or human-readable row shards |
-| Treats retrieved pages as conclusions | Records search strings and verifies identity, source quality and applicability |
-| Optimizes one proposed concept | Preserves a mature baseline, low-risk fallback, exploration route and supersystem alternative |
-| Stops after concept generation | Adds FMEA, acceptance/stop criteria, decisive experiments and claim limits |
-| Declares success after Markdown | Probes capabilities, generates required figures and DOCX, then validates a delivery manifest |
+| May answer a matrix cell from model memory | Uses bundled JSON, Python, Node or 39 human-readable row shards for reproducible lookup |
+| Treats retrieved pages as conclusions | Records search strings and verifies identity, applicability and counter-evidence |
+| Optimizes one proposed concept | Compares a mature baseline, low-risk fallback, exploration route and supersystem alternative |
+| Stops after concept generation | Continues with FMEA, decisive experiments, stop criteria and evidence maturity |
+| Declares success after Markdown | Produces required figures and DOCX, then validates a delivery manifest |
 
-The goal is not more prose. The goal is traceable Inventive Problem Solving and testable Engineering Design.
-
-## From one field problem to an auditable research package
-
-This is a **fully fictional training example**. It contains no company, site, product model, unpublished data or measured performance. See [examples/thin-wall-tube-clamping.md](examples/thin-wall-tube-clamping.md) for the full walkthrough.
-
-> A training workshop clamps thin-wall copper tube in a bench vise for sawing. The tube often becomes oval and needs rework or is scrapped. The grip must become more stable without increasing deformation.
-
-1. **Evidence-labelled problem model.** Field reports are tagged `F`; controlled measurements `M`; traceable external sources `S`; engineering hypotheses `H`.
-2. **TRIZ model.** The main contradiction is mapped as improving **#10 Force (intensity)** while worsening **#12 Shape**, queried in the fixed **10×12** direction.
-3. **Deterministic matrix result.** The bundled classical matrix returns principles **#10 Preliminary action, #35 Parameter changes, #40 Composite materials, #34 Discarding and recovering**.
-4. **Mechanisms, not principle names.** Candidate mechanisms include a pre-installed sacrificial liner, a contact-profile change, a rigid-support/soft-surface composite, and a replaceable wear insert.
-5. **Human confirmation.** At `G1.5`, record the user's direction choice or existing explicit delegation. Wait when authorization is missing; do not request the same confirmation twice.
-6. **Research and synthesis.** Products, patents, standards, papers, manufacturer documents, cross-industry analogies and negative evidence are tied to explicit claims.
-7. **Decision package.** Concepts are compared with risks, FMEA, decisive experiments, benefit scenarios and a formal technical report.
-
-This demo illustrates the workflow. It does not claim field performance, patentability or deployability.
-
-## What You Get
-
-| Deliverable | Purpose |
-|---|---|
-| Problem model | Preserves raw identifiers, labels `F/M/S/H`, and freezes process boundaries and hard constraints |
-| TRIZ analysis | Cause/function analysis, IFR, resources, technical and physical contradictions, substance-field and evolution directions |
-| Deterministic matrix record | Improving parameter as row, worsening parameter as column, with reproducible lookup evidence |
-| Deep Research evidence pack | Products, patents, standards, papers, manufacturer documents, analogies and negative evidence |
-| Concept decision table | For every route: method, problem addressed, mechanism, source, novelty boundary, risk and test |
-| Validation and FMEA | Sample, metric, acceptance/stop criteria, decisive experiment and V0–V3 maturity |
-| Benefit model | Separates field reports, controlled measurements and scenario assumptions |
-| Technical report | Figure Plan first, then structure/motion/action/safety figures, decision summary, main report, evidence appendix, ledger, DOCX and an inspectable manifest |
-
-## Human-in-the-loop by Design
-
-```text
-G0 Problem Definition → G1 TRIZ Modeling → G1.5 USER CONFIRMATION
-                      → G2 Deep Research → G3 Concepts
-                      → G4 Validation/Safety/Benefits → G5 Report
-```
-
-After the first complete direction draft, the user can correct boundaries, mappings and research priorities. Record existing explicit delegation and continue within its scope; otherwise wait for the direction choice. Silence is not approval, and research delegation does not authorize field implementation.
-
-## Reliability by construction
-
-- **Deterministic contradiction matrix:** 39 parameters, 40 inventive principles, a classical 39×39 matrix and 1,248 populated cells; Python, Node and readable row shards can be cross-checked.
-- **Claim-level evidence:** conclusions remain attached to field facts, measurements, traceable sources or hypotheses; search logs retain raw queries and inclusion/exclusion decisions.
-- **Applicability and counter-evidence:** similar products are not treated as target fit, cross-industry analogies are not treated as proven feasibility, and “not found” is not expanded into “does not exist.”
-- **Hard gates before scoring:** failures in identity, evidence, applicability, transfer, safety, patent scope or validation reduce downstream maturity.
-- **Execution support for ordinary models:** a state machine, decision trees, fill-in templates and stage checks reduce omission and improvisation.
-- **Artifacts are not an afterthought:** G5 probes diagram, DOCX and rendering capabilities first. Available capabilities must be used; real blockers produce an explicit degraded delivery.
-- **Engineering figures are planned before drawing:** nine figure types answer different questions; dynamic mechanisms use 3–6 frames, safety boundaries are separate, and architecture diagrams cannot stand in for mechanical mechanism figures.
-- **Generated work is machine-checkable:** `validate_deliverables.py` checks required figure types, SVG/PNG pairs, labels, numbering, minimum font size, figure-text consistency, query logs, score maturity, DOCX media/links and page-review evidence.
-
-## Installation and portability
+## Installation, portability and local validation
 
 ### OpenAI Codex
 
-The one-line instruction above is recommended. The bundled installer can also be invoked directly:
+Use the Quick Start above, or invoke the bundled installer directly:
 
 ```bash
 python ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
@@ -141,13 +103,19 @@ python ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github
   --path triz-worker-innovation-research
 ```
 
+Windows PowerShell:
+
+```powershell
+python "$env:USERPROFILE\.codex\skills\.system\skill-installer\scripts\install-skill-from-github.py" `
+  --repo luchi2333/triz-worker-innovation-research `
+  --path triz-worker-innovation-research
+```
+
 ### Claude Code and other Agent platforms
 
-Copy the complete `triz-worker-innovation-research/` folder into the platform's Skill directory and load `SKILL.md` as the entrypoint. On a platform without a Skill mechanism, load `SKILL.md` as top-level task context and follow its resource routing into `references/`.
+Copy the complete `triz-worker-innovation-research/` folder into the platform's Skill directory and load `SKILL.md` as the entrypoint. On a platform without a Skill mechanism, use it as top-level task context and follow its resource routing into `references/`. This describes the intended adaptation path, not a blanket compatibility claim. Submit real results through the [Compatibility Report](https://github.com/luchi2333/triz-worker-innovation-research/issues/new?template=compatibility_report.md).
 
-This describes the intended adaptation path, not a blanket compatibility claim. Platform versions, permission systems and tool interfaces differ. Please submit real results through the [Compatibility Report](https://github.com/luchi2333/triz-worker-innovation-research/issues/new?template=compatibility_report.md).
-
-## Validation
+### Local validation
 
 ```bash
 python triz-worker-innovation-research/scripts/validate_skill.py --strict
@@ -156,7 +124,9 @@ python triz-worker-innovation-research/scripts/build_report.py --self-test
 python triz-worker-innovation-research/scripts/validate_deliverables.py --self-test
 ```
 
-Strict validation covers the release manifest, version, matrix hash, golden cells, 39 row shards, the README example, 18 Python/Node parity cases, the DOCX builder and the generated-deliverable validator. Deliverable schema 1.2 reads `research-record.json` and verifies actual query/source/score counts, resolvable evidence IDs, end-to-end route coverage, domain-appropriate figures, effective font size, actual DOCX caption order, hashes and page-level review evidence. After a real research run, copy and fill `assets/research-record-template.json`, then copy the deliverables manifest template and run:
+Strict validation covers the release manifest, version, matrix hash, golden cells, 39 row shards, README example, Python/Node parity, and self-tests for the DOCX builder and deliverable validator.
+
+After a real research run, copy and complete `triz-worker-innovation-research/assets/research-record-template.json`, copy the deliverables manifest template, then run:
 
 ```bash
 python triz-worker-innovation-research/scripts/validate_deliverables.py \
@@ -165,32 +135,30 @@ python triz-worker-innovation-research/scripts/validate_deliverables.py \
   --strict
 ```
 
-## What this Skill does not claim
+## Research, validation and field responsibilities
 
-This is an **AI-assisted engineering research workflow**, not an automatic invention generator. It does not:
+The Skill keeps evidence origins clear with `F/M/S/H`: field benefits rely on `M` controlled measurements, while product parameters and cross-industry mechanisms go through target-fit and feasibility checks. Patentability and FTO questions belong to the appropriate legal review process. Structure, computational consistency and engineering-content review are reported separately; users and field engineers retain validation, approval and final safety decisions. A research commission covers analysis and reporting, with field implementation confirmed separately.
 
-- treat model output as controlled measurement;
-- claim efficiency, zero damage or field benefit without `M` evidence;
-- treat a similar product as proof of target applicability;
-- treat a cross-industry analogy as demonstrated feasibility;
-- provide patentability or freedom-to-operate legal opinions;
-- claim deployment readiness without validation and approval;
-- replace the engineer's final safety decision.
+## Documentation and repository map
 
-## Roadmap
+```text
+.
+├── README.md / README_EN.md       # Chinese and English homepages
+├── examples/                      # Fully fictional, de-identified workflow examples
+├── assets/readme/                 # Homepage images and editable sources
+├── triz-worker-innovation-research/
+│   ├── SKILL.md                   # Skill entrypoint and execution contract
+│   ├── references/                # Workflow, matrix, research, templates and delivery gates
+│   ├── scripts/                   # Lookup, DOCX, deliverable and skill validation
+│   └── assets/                    # Research record, report source and SVG templates
+└── docs/                          # Upgrade notes and release material
+```
 
-- [x] Classical 39×39 matrix with three deterministic lookup paths
-- [x] G0–G5 workflow with a G1.5 user confirmation gate
-- [x] Deep Research, evidence labels, validation and FMEA
-- [x] Python/Node parity regression and GitHub Actions
-- [x] Bilingual project pages, a public fictional demo and community templates
-- [x] Engineering Figure Planning, motion sequences, safety boundaries and deterministic figure-contract validation
-- [ ] More public, de-identified engineering examples
-- [ ] Tested compatibility records for more Agent platforms
-- [ ] A community-contributed regression problem set
+- [Complete fictional teaching example](examples/thin-wall-tube-clamping.md)
+- [CHANGELOG and migration history](triz-worker-innovation-research/CHANGELOG.md): current development changes appear under `Unreleased`, separate from published releases.
+- [Contributing guide](CONTRIBUTING.md): report matrix or script errors, installation issues and compatibility results, or contribute public, de-identified test problems.
+- [Update and rollback](triz-worker-innovation-research/references/skill-update.md): run `python scripts/update_skill.py --check` in the installed Skill directory. Before `--apply`, verify the release package, per-file hashes and backup. Stable Releases are the default; use `--channel main` explicitly for the development branch.
 
-## Contributing and license
+## License and attribution
 
-Bug reports, matrix corrections, installation feedback, compatibility reports, documentation improvements and fully public fictional examples are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting any field material.
-
-Original code, workflows, templates and explanatory text are released under the [MIT License](LICENSE). Classical TRIZ concepts remain attributed to their original authors and rights holders; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Original code, workflows, templates and explanatory text are released under the [MIT License](LICENSE). Classical TRIZ concepts, parameters, inventive principles and the matrix remain attributed to their original authors and rights holders. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for sources and redistribution notices.
