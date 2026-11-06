@@ -1,0 +1,19 @@
+{
+  "run_id": null,
+  "case_id": null,
+  "arm": null,
+  "status": "pending",
+  "baseline_commit": "19e20f4a2b4d2d9e0b46a214fd609146be0a7d7c",
+  "skill_commit": null,
+  "model": "unavailable",
+  "prompt_sha256": null,
+  "tool_permissions": [],
+  "loaded_skills": [],
+  "budget": {"seconds": null, "search_calls": null, "output_tokens": null},
+  "usage": {"seconds": "unavailable", "input_tokens": "unavailable", "output_tokens": "unavailable"},
+  "search_log": [],
+  "confirmation_transcript": [],
+  "output_path": null,
+  "retry_of": null,
+  "retry_reason": null
+}
