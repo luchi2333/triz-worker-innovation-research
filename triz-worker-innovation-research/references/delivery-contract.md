@@ -159,3 +159,11 @@ G5 交付回执
 11. 输出 G5 交付回执。
 
 任何一步失败均回到对应步骤修复，不得把插图和 Word 留作“后续扩展”。
+
+## 全长报告及可选 PNG 渲染
+
+`render_smoke.py` 默认沿用教学样例 12 页上限。正式长报告显式传 `--max-pages 0`；空白页、文字边界、替换字形与逐页截图检查仍启用，人工/串行视觉复核依旧必需。
+
+Chromium 无法启动时，可显式改用本机 Inkscape：`build_figures.py --record research-record.json --output figures --png-browser inkscape --png-renderer inkscape`。该路径同样校验 PNG 尺寸和哈希，不关闭浏览器沙箱，不引入包的必需外部依赖。记录实际 renderer；SVG 和 DOCX 仍受原有绑定校验。
+
+生成的 DOCX 使用 Arial / Noto Sans CJK SC；渲染机安装对应字体（Linux 可用 fonts-noto-cjk），避免缺字回退。渲染检查还核对每个 DOCX 正文段落是否完整出现在 PDF 提取文字中；缺段、缺字和越界仍需修复，不能以 PDF 文件存在替代验收。该检查不判断语义、SVG 内文字完整性或图示物理正确性。

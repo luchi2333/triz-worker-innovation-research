@@ -162,3 +162,7 @@ The Skill keeps evidence origins clear with `F/M/S/H`: field benefits rely on `M
 ## License and attribution
 
 Original code, workflows, templates and explanatory text are released under the [MIT License](LICENSE). Classical TRIZ concepts, parameters, inventive principles and the matrix remain attributed to their original authors and rights holders. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for sources and redistribution notices.
+
+## Quality integration (2.10.0 candidate)
+
+Optional mapping cards and claim-support reviews default to off. Reader entry profiles reuse bound claims and figures; experimental-design guidance loads on demand. Existing records remain compatible. Full-report rendering supports an explicit page-limit override and optional Inkscape PNG output. See the [completion record](docs/optimization-completion-2026-11-06.md). Independent effectiveness has not been established; deterministic checks do not certify engineering correctness.

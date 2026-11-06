@@ -643,7 +643,16 @@ def _audit_record(record, manifest=None, root=None, public_documents=None):
 
 def audit_record(record, manifest=None, root=None, public_documents=None):
     try:
-        return _audit_record(record,manifest,root,public_documents)
+        from research_review import audit_review, selection_errors
+        result = _audit_record(record,manifest,root,public_documents)
+        complete = (manifest or {}).get('status') == 'complete' or record.get('workflow', {}).get('completed_stage') == 'G5'
+        review = audit_review(record, require_ready=complete)
+        result['quality_review'] = review
+        result['errors'].extend(review['errors'])
+        result['errors'].extend(selection_errors(record, manifest))
+        if result['errors']:
+            result['computational_consistency'] = 'FAIL'
+        return result
     except (TypeError,KeyError,AttributeError,ValueError) as exc:
         return {'errors':['malformed research record: '+str(exc)],'warnings':[],'unchecked':[],
                 'route_eligibility':{},'maturity_support':{},'research_progress':'unknown',

@@ -2,8 +2,8 @@
 name: triz-worker-innovation-research
 description: "用于一线职工创新课题的端到端 TRIZ 研究：把现场问题转化为带证据标记的问题模型，对经典 39×39 矛盾矩阵做确定性查询，完成可复现的标准/产品/专利/文献查新、可追溯候选方案、安全与验证闸门、效益测算和技术方案报告。End-to-end TRIZ research for frontline worker innovation: evidence-labelled problem modelling, deterministic Altshuller 39x39 matrix lookup, reproducible research, gated concepts, benefit estimates and a technical-solution report. 自包含：不得要求用户另装 deep-research、矩阵插件或多智能体框架。Do not use as a patentability/FTO legal opinion or to claim field performance without measured evidence."
 metadata:
-  version: "2.9.0"
-  last_updated: "2026-09-09"
+  version: "2.10.0"
+  last_updated: "2026-11-06"
   portability: "standalone-cross-platform"
 ---
 
@@ -12,6 +12,12 @@ metadata:
 把一线现场问题转化为可追溯、可查新、可验证并可形成正式技术报告的创新研究。完成质量以“事实—矛盾—矩阵—机理—证据—方案—风险—试验—效益—报告”链条是否闭合为准，不以点子数量或华丽表述为准。
 
 本 Skill 已内置完成研究所需的深度检索、来源核验、跨来源综合、反证审查、报告编排、39×39 矛盾矩阵和 TRIZ 扩展工具。不得要求用户另装 `deep-research`、其他 TRIZ Skill、特定 MCP、特定厂商 Agent 或多智能体框架。
+
+## 可选审查与阅读入口（评估期）
+
+本轮集成提供 `quality_review` 扩展，默认关闭；既有 1.0/1.1 记录保持兼容，不把缺少新字段报告为已完成审查。G1 参数歧义或 G3 摘要强主张需要细查时，按 [research-quality-review.md](references/research-quality-review.md) 选择 focused（最多三条关键主张）或 complete。启用后的完整交付必须完成所声明范围并绑定报告证据附件；不能自动把草稿、H 推算或审查记录升级为实测支持。它的独立效果尚待评估。
+
+G4 涉及重复测量或方案效果对比时，按需加载 [experimental-design-and-statistics.md](references/experimental-design-and-statistics.md)，缺数据时交付协议。G5 可用报告源 `reader_entry` 选择工程审查或评奖答辩入口，复用相同 claim/figure ID 和证据等级。`priority_for_validation` 表示优先验证假设，不能证明工程胜出；`no_robust_winner` 可明确保留在阶段稿，完整交付要求仍适用。
 
 ## 检查与更新 Skill
 

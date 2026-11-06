@@ -518,6 +518,33 @@ class PipelineTests(unittest.TestCase):
         self.record['parameters'] = [False]
         self.assertTrue(self.audit()['errors'])
 
+    def test_no_winner_draft_exception_preserves_complete_gate_and_other_errors(self):
+        root = self.base/'delivery'
+        manifest = copy.deepcopy(self.captured)
+        path = root/manifest['research_record']['path']
+        original = path.read_bytes()
+        record = json.loads(original)
+        ids = [route['id'] for route in record['routes']][:2]
+        self.assertEqual(len(ids), 2)
+        record.setdefault('workflow', {})['completed_stage'] = None
+        record.setdefault('assessments', {})['selection'] = {
+            'status':'no_robust_winner', 'compared_route_ids':ids,
+            'rationale':'缺少可比数据，阶段稿不能稳健排名', 'next_decisive_test':'同条件配对的下一项试验'}
+        for route in record['routes']:
+            if route.get('role') == 'primary':route['role'] = 'exploratory'
+        manifest.update(status='degraded', primary_routes=[])
+        manifest['checks']['patent_citation_tracking'] = 'pending'
+        try:
+            write_json(path, record)
+            result = delivery.validate(root, manifest, strict=True)
+            self.assertNotIn('primary_routes must identify at least one recommended route', result['errors'])
+            self.assertIn('manual/structured check not passed: patent_citation_tracking', result['errors'])
+            manifest['status'] = 'complete'
+            result = delivery.validate(root, manifest, strict=True)
+            self.assertIn('primary_routes must identify at least one recommended route', result['errors'])
+        finally:
+            path.write_bytes(original)
+
 
 if __name__ == '__main__':
     result = unittest.TextTestRunner(verbosity=1).run(unittest.defaultTestLoader.loadTestsFromTestCase(PipelineTests))
