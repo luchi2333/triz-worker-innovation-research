@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "kind": "engineering_integration_validation",
+  "candidate_version": "2.10.0",
+  "implementation_commit": "dd80f7c20de025e29cd566f0134ff84fb6c57b01",
+  "baseline_commit": "19e20f4a2b4d2d9e0b46a214fd609146be0a7d7c",
+  "local": {
+    "strict": "PASS",
+    "package_files": 102,
+    "pipeline_tests": 34,
+    "review_tests": 18,
+    "eval_tests": 23,
+    "render_guard_tests": 3,
+    "reader_reports": 3,
+    "pages_per_report": 5,
+    "docx_bindings": "PASS",
+    "pdf_text_coverage": "PASS",
+    "page_checks": "PASS",
+    "visual_review": "serial, not independent",
+    "inkscape_pngs": 3,
+    "installed_copy": "102 file SHA256 match"
+  },
+  "github": {
+    "pull_request": "https://github.com/luchi2333/triz-worker-innovation-research/pull/5",
+    "mergeable": "MERGEABLE",
+    "merge_state_at_implementation_commit": "CLEAN",
+    "run": "https://github.com/luchi2333/triz-worker-innovation-research/actions/runs/42205869543",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "render",
+        "conclusion": "success",
+        "url": "https://github.com/luchi2333/triz-worker-innovation-research/actions/runs/42205869543/job/127852220661"
+      },
+      {
+        "name": "validate (macos-latest, 3.12)",
+        "conclusion": "success",
+        "url": "https://github.com/luchi2333/triz-worker-innovation-research/actions/runs/42205869543/job/127852220895"
+      },
+      {
+        "name": "validate (ubuntu-latest, 3.12)",
+        "conclusion": "success",
+        "url": "https://github.com/luchi2333/triz-worker-innovation-research/actions/runs/42205869543/job/127852220966"
+      },
+      {
+        "name": "validate (windows-latest, 3.12)",
+        "conclusion": "success",
+        "url": "https://github.com/luchi2333/triz-worker-innovation-research/actions/runs/42205869543/job/127852220980"
+      },
+      {
+        "name": "validate (ubuntu-latest, 3.10)",
+        "conclusion": "success",
+        "url": "https://github.com/luchi2333/triz-worker-innovation-research/actions/runs/42205869543/job/127852221096"
+      }
+    ]
+  },
+  "package": {
+    "archive": "triz-worker-innovation-research-v2.10.0.zip",
+    "sha256": "1f3efca1176dbb45512c62348e4f13091a8d8af442c1d9a4bc9635ec3b6f6d97",
+    "files": 102,
+    "release_published": false
+  },
+  "usage": {
+    "input_tokens": "unavailable",
+    "output_tokens": "unavailable",
+    "total_implementation_seconds": "unavailable"
+  },
+  "formal_effect_evaluation": {
+    "status": "not_performed",
+    "default_review_policy": "off",
+    "independent_human_reviews": 0,
+    "quality_improvement": "not_established",
+    "cost_improvement": "not_established"
+  },
+  "scope_note": "This receipt records deterministic engineering validation at the implementation commit. Subsequent documentation-only commits do not change the tested package. It does not count teaching artifacts as formal C0/C1 model runs."
+}
