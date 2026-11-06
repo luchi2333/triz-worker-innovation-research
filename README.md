@@ -158,3 +158,7 @@ Skill 用 `F/M/S/H` 保持证据来源清晰：现场收益以 `M` 受控实测�
 ## 许可与归属
 
 原创代码、工作流、模板和说明采用 [MIT License](LICENSE)。经典 TRIZ 方法、参数、发明原理和矩阵归其原始作者及相关权利人；来源与再分发说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+## 本轮质量优化（2.10.0 候选）
+
+提供默认关闭的参数映射与主张支持审查、按需试验统计指南、工程审查/评奖答辩阅读入口、完整报告渲染和 Inkscape PNG 路径。旧记录兼容，开启审查时覆盖声明范围并生成绑定附件。功能与限制见 [研究质量审查](triz-worker-innovation-research/references/research-quality-review.md)，实施清单见 [完成记录](docs/optimization-completion-2026-11-06.md)。独立评估效果尚未建立，不把自检通过当作效果证明。

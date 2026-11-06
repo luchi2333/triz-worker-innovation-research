@@ -326,5 +326,6 @@
       ]
     }
   ],
-  "sources": []
+  "sources": [],
+  "quality_review_surface": true
 }

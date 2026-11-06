@@ -174,6 +174,27 @@ class CollectionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             bench.safe_path(self.run, '../outside.md')
 
+    def test_c1_requires_frozen_commit_and_preserves_confirmation_gate(self):
+        args = argparse.Namespace(case='S01', arm='C1', runtime=self.runtime,
+                                  output=self.run, budget=None, retry_of=None, retry_reason=None,
+                                  candidate=None, scope='research-brief')
+        with self.assertRaisesRegex(ValueError, 'frozen full'):
+            bench.prepare(args)
+        args.candidate = bench.BASELINE  # Historical export fixture, no effectiveness comparison.
+        bench.prepare(args)
+        self.assertTrue((self.run / 'c1-skill/SKILL.md').is_file())
+        self.assertFalse((self.run / 'c0-skill').exists())
+        record = bench.read(self.run / 'run-record.json')
+        self.assertEqual(record['task_scope'], 'research-brief')
+        self.assertIn('prompts/C1-claim-review.md', record['asset_sha256'])
+        with self.assertRaises(ValueError):
+            self.finish()
+        self.request(); self.confirm(); self.finish()
+        self.assertEqual(bench.audit(argparse.Namespace(run=self.run))['integrity'], 'PASS')
+        path = self.run / 'c1-skill/SKILL.md'
+        path.write_text('modified', encoding='utf-8')
+        self.assertEqual(bench.audit(argparse.Namespace(run=self.run))['integrity'], 'FAIL')
+
 
 if __name__ == '__main__':
     unittest.main()

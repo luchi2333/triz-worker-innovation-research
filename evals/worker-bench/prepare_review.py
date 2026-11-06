@@ -33,7 +33,8 @@ def prepare(records, output, mapping, calibration=False):
         # No run metadata or source paths are copied to the reviewer pack.
         anon = 'R-' + secrets.token_hex(6)
         entries.append((anon, body))
-        identities[anon] = {'record': str(record_path), 'arm': record['arm'],
+        identities[anon] = {'record': str(record_path), 'case_id': record['case_id'], 'arm': record['arm'],
+                            'task_scope': record.get('task_scope', 'full'), 'input_sha256': record['input_sha256'],
                             'model': record['model'], 'skill_commit': record['skill_commit'],
                             'output_sha256': sha(body), 'condition_findings': result['condition_findings']}
     output.mkdir(parents=True)

@@ -44,6 +44,12 @@
     "candidate_portfolio": {
       "supersystem_status": "not-assessed",
       "supersystem_rationale": ""
+    },
+    "selection": {
+      "status": "not_assessed",
+      "compared_route_ids": [],
+      "rationale": "",
+      "next_decisive_test": ""
     }
   },
   "models_and_tests": {
@@ -75,5 +81,12 @@
     "current_boundary": "",
     "open_unknowns": [],
     "report_summary": ""
+  },
+  "quality_review": {
+    "policy": "off",
+    "claim_ids": [],
+    "mapping_cards": [],
+    "claim_checks": [],
+    "experiment_designs": []
   }
 }

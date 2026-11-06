@@ -62,7 +62,9 @@ class Tests(unittest.TestCase):
     def test_domain_examples_render(self):
         for spec in examples():
             svg,size=render_figure(spec,{})
-            self.assertIn('data-',svg)
+            self.assertIn('role="img"',svg)
+            if spec.get('semantic_diagram'):
+                self.assertIn('data-',svg)
             target=self.root/(spec['id']+'.svg');target.write_text(svg,encoding='utf-8')
             self.assertGreater(svg_font_points(target,450,450*size['height']/size['width']),6)
             self.assertLess(svg_font_points(target,100,100*size['height']/size['width']),6)

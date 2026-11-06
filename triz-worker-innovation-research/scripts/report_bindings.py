@@ -43,6 +43,11 @@ def canonical_text(text):
 
 def compile_source(source, record, root):
     data=copy.deepcopy(source);bindings=[];figure_numbers={};figures={};critical_issues=[]
+    from research_review import report_sections
+    extras = report_sections(data, record)
+    entries = [s for s in extras if s['title'].endswith('入口')]
+    appendices = [s for s in extras if not s['title'].endswith('入口')]
+    data['sections'] = entries + data.get('sections', []) + appendices
     if data.get('figure_manifest_path'):
         figure_path=local_file(root,data['figure_manifest_path'])
         payload=json.loads(figure_path.read_text(encoding='utf-8'))
@@ -103,7 +108,10 @@ def compile_source(source, record, root):
                     for col in columns:
                         value=item
                         for key in col['field'].split('/'):
-                            if not isinstance(value,dict) or key not in value:raise ValueError('unresolved bound table column')
+                            if not isinstance(value,dict) or key not in value:
+                                if 'missing_text' in col:
+                                    value=col['missing_text'];break
+                                raise ValueError('unresolved bound table column')
                             value=value[key]
                         if isinstance(value,list) and 'join' in col:
                             if value:
@@ -112,7 +120,7 @@ def compile_source(source, record, root):
                                 value=str(col['empty_text'])
                             else:
                                 raise ValueError('bound table list column cannot be empty')
-                        values.append(col.get('unknown_text','待确定') if value is None else scalar(value))
+                        values.append(col.get('unknown_text','待确定') if value is None else col['empty_text'] if value == '' and 'empty_text' in col else scalar(value))
                     block['rows'].append(values)
                 refs.append(ref);expected=block['headers']+[v for row in block['rows'] for v in row];bound=True
             elif kind=='figure' and 'figure_ref' in block:
@@ -146,6 +154,8 @@ def verify_docx_bindings(docx_path, source_path, require_critical=False):
     if require_critical or source.get('critical_facts_policy')=='bound':
         if source.get('critical_facts_policy')!='bound':errors.append('complete report requires critical_facts_policy=bound')
         errors.extend(compiled['_critical_issues'])
+    if require_critical and record.get('quality_review', {}).get('policy', 'off') != 'off' and source.get('quality_review_surface') is not True:
+        errors.append('enabled quality review requires quality_review_surface in complete report')
     with zipfile.ZipFile(docx_path) as package:
         document=ET.fromstring(package.read('word/document.xml'))
         source_hash=hashlib.sha256(source_path.read_bytes()).hexdigest()

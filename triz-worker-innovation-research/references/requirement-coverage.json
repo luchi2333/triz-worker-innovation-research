@@ -141,6 +141,20 @@
       "validator_token": "GLOBAL_SECTIONS",
       "regression_file": "scripts/test_report_quality.py",
       "regression_token": "test_each_required_report_section_cannot_be_omitted"
+    },
+    {
+      "id": "optional-review-when-enabled",
+      "level": "must",
+      "spec_file": "references/research-quality-review.md",
+      "spec_token": "conditional MUST",
+      "record_file": "assets/research-record-template.json",
+      "record_token": "quality_review",
+      "report_file": "scripts/report_bindings.py",
+      "report_token": "quality_review_surface",
+      "validator_file": "scripts/research_review.py",
+      "validator_token": "complete review must cover every recorded claim",
+      "regression_file": "scripts/test_research_review.py",
+      "regression_token": "test_complete_scope_cannot_omit_claim"
     }
   ]
 }

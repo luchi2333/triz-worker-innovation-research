@@ -321,7 +321,7 @@ def _check_figure_numbering(figures: list[dict], errors: list[str]) -> None:
         previous_chapter = chapter
 
 
-def _validate_v11(root: Path, manifest: dict, strict: bool = False) -> dict[str, object]:
+def _validate_v11(root: Path, manifest: dict, strict: bool = False, selection_record=None) -> dict[str, object]:
     root = root.resolve()
     errors: list[str] = []
     warnings: list[str] = []
@@ -512,7 +512,11 @@ def _validate_v11(root: Path, manifest: dict, strict: bool = False) -> dict[str,
                 _fail(errors, f"shortlisted route lacks mechanism figure: {route}")
 
         primary_routes = manifest.get("primary_routes", [])
-        if not isinstance(primary_routes, list) or not primary_routes:
+        empty_primary_allowed = False
+        if selection_record is not None and not primary_routes:
+            from research_review import allow_empty_primary
+            empty_primary_allowed = allow_empty_primary(selection_record, manifest)
+        if not isinstance(primary_routes, list) or (not primary_routes and not empty_primary_allowed):
             _fail(errors, "primary_routes must identify at least one recommended route")
             primary_routes = []
         if profile.get("primary_engineering_concept") is True and any(
@@ -1364,7 +1368,7 @@ def _validate_v12(root: Path, manifest: dict, strict: bool = False) -> dict[str,
         for name in ["physical_structure", "relative_motion", "force_energy_transfer", "material_deformation"]:
             legacy_profile[name] = False
 
-    base = _validate_v11(root, legacy, strict=strict)
+    base = _validate_v11(root, legacy, strict=strict, selection_record=record)
     diagram_available = manifest.get("capabilities", {}).get("diagram", {}).get("status") == "available"
     review_paths = _check_bound_review(root, manifest.get("figure_review"), diagram_available, v12_errors)
     if diagram_available:
@@ -1404,6 +1408,7 @@ def _validate_v12(root: Path, manifest: dict, strict: bool = False) -> dict[str,
                 "route_eligibility": contract["route_eligibility"],
                 "maturity_support": contract["maturity_support"],
                 "action_authorization": contract["action_authorization"],
+                "claim_support_review": contract.get("quality_review", {"status": "NOT_CHECKED"}),
             },
             "unchecked": contract["unchecked"],
             "report_bindings": binding_results,

@@ -13,6 +13,7 @@ import json
 import math
 from pathlib import Path
 import re
+import shutil
 import struct
 import subprocess
 import sys
@@ -146,10 +147,21 @@ def render_figure(spec, record, frame_id=None):
     return ''.join(parts), {'width':total_w,'height':total_h}
 
 
-def render_png(svg_path, png_path, browser, width, height):
+def render_png(svg_path, png_path, browser, width, height, renderer='chromium'):
     """Optional local Chromium executable; isolated profile, no shell interpolation."""
-    executable=Path(browser).resolve()
+    executable=Path(shutil.which(str(browser)) or browser).resolve()
     if not executable.is_file():raise ValueError('PNG browser executable does not exist')
+    if renderer not in {'chromium','inkscape'}:raise ValueError('unknown PNG renderer')
+    if renderer == 'inkscape':
+        done=subprocess.run([str(executable),str(svg_path.resolve()),'--export-type=png',
+                             '--export-filename='+str(png_path.resolve()),
+                             '--export-width='+str(int(width)),'--export-height='+str(int(height))],
+                            capture_output=True,text=True,timeout=45)
+        if done.returncode or not png_path.is_file():raise ValueError('Inkscape PNG rendering failed: '+done.stderr[-500:])
+        header=png_path.read_bytes()[:24]
+        if header[:8]!=b'\x89PNG\r\n\x1a\n' or struct.unpack('>II',header[16:24])!=(int(width),int(height)):
+            raise ValueError('rendered PNG dimensions do not match the planned canvas')
+        return
     with tempfile.TemporaryDirectory(prefix='triz-render-') as tmp:
         temp=Path(tmp);page=temp/'figure.html'
         page.write_text('<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:white}svg{display:block;width:100%;height:auto}</style>'+svg_path.read_text(encoding='utf-8'),encoding='utf-8')
@@ -163,7 +175,7 @@ def render_png(svg_path, png_path, browser, width, height):
             raise ValueError('rendered PNG dimensions do not match the planned canvas')
 
 
-def build_figures(record_path, output, png_browser=None):
+def build_figures(record_path, output, png_browser=None, png_renderer='chromium'):
     record_path=Path(record_path).resolve();output=Path(output).resolve()
     # Keep generated paths portable relative to the research directory.
     output.relative_to(record_path.parent)
@@ -177,8 +189,8 @@ def build_figures(record_path, output, png_browser=None):
         entry={k:spec.get(k) for k in ['id','title','figure_type','purpose','design_status','main_message','claim_limit','route_ids']}
         entry.update({'svg_path':path.relative_to(record_path.parent).as_posix(),'svg_sha256':digest(path),'dimensions':dimensions,'png_status':'not-rendered','visual_review':'pending'})
         if png_browser:
-            png=output/(fid+'.png');render_png(path,png,png_browser,**dimensions)
-            entry.update({'png_path':png.relative_to(record_path.parent).as_posix(),'png_sha256':digest(png),'png_status':'rendered'})
+            png=output/(fid+'.png');render_png(path,png,png_browser,**dimensions,renderer=png_renderer)
+            entry.update({'png_path':png.relative_to(record_path.parent).as_posix(),'png_sha256':digest(png),'png_status':'rendered','png_renderer':png_renderer})
         frame_pages=[]
         for frame in spec.get('frames',[]):
             frame_svg,_=render_figure(spec,record,frame['id'])
@@ -198,8 +210,9 @@ def build_figures(record_path, output, png_browser=None):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--record',required=True,type=Path);parser.add_argument('--output',required=True,type=Path);parser.add_argument('--png-browser')
+    parser.add_argument('--png-renderer',choices=['chromium','inkscape'],default='chromium',help='Use --png-browser for the selected executable, including inkscape. No new mandatory renderer dependency.')
     args=parser.parse_args()
-    try:result=build_figures(args.record,args.output,args.png_browser)
+    try:result=build_figures(args.record,args.output,args.png_browser,args.png_renderer)
     except (OSError,ValueError,TypeError,KeyError,SyntaxError,subprocess.TimeoutExpired) as exc:
         print(json.dumps({'status':'FAIL','errors':[str(exc)]},ensure_ascii=False));return 2
     print(json.dumps(result,ensure_ascii=False,indent=2));return 0

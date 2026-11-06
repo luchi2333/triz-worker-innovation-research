@@ -43,7 +43,28 @@ def examples():
                 {'kind':'protected_surface','body':'WORK','a':[480,180],'b':[665,180],'label':'顶面受保护','label_at':[500,106]},
                 {'kind':'clearance','a':[665,370],'b':[775,370],'label':'g 待定（H）','label_at':[680,416]}],
             'notes':[{'text':'几何不按比例；g 的选择需依据工况、公差链与验证结果。','at':[170,468]}]})
-    return [electrical,mechanical]
+    process=dict(common,id='FIG-PROCESS',title='工艺控制：废料垫片离线筛选与异常隔离',
+        figure_type='F8-process-operation',width=1000,height=500,
+        main_message='样片编号后保持载荷与恢复时间，记录位移和压痕；判据未冻结前仅保存观察，不把候选样片投入现场。',
+        primitives=[
+            {'kind':'rect','x':45,'y':110,'width':215,'height':95},
+            {'kind':'text','x':60,'y':145,'text':'样片编号 / 外观记录'},
+            {'kind':'text','x':60,'y':180,'text':'资源：废料，同批留对照'},
+            {'kind':'arrow','x1':260,'y1':155,'x2':330,'y2':155},
+            {'kind':'rect','x':330,'y':110,'width':265,'height':95},
+            {'kind':'text','x':345,'y':145,'text':'同载荷、保持时间与恢复时间'},
+            {'kind':'text','x':345,'y':180,'text':'记录位移 / 压痕 / 测量误差'},
+            {'kind':'arrow','x1':595,'y1':155,'x2':660,'y2':155},
+            {'kind':'rect','x':660,'y':110,'width':290,'height':95},
+            {'kind':'text','x':675,'y':145,'text':'判据冻结后才进行样片比较'},
+            {'kind':'text','x':675,'y':180,'text':'当前：存档观察，等待验证'},
+            {'kind':'arrow','x1':805,'y1':205,'x2':805,'y2':330},
+            {'kind':'text','x':820,'y':265,'text':'破损 / 失稳'},
+            {'kind':'rect','x':565,'y':330,'width':385,'height':95,'semantic':'hypothesis'},
+            {'kind':'text','x':580,'y':365,'text':'停止、隔离样片、保留异常数据'},
+            {'kind':'text','x':580,'y':400,'text':'记录原因；另立返工方案，不直接回投'},
+            {'kind':'text','x':65,'y':470,'text':'H 教学工艺；仪器、载荷和判据待确定，不表示试验已执行。'}])
+    return [electrical,mechanical,process]
 
 
 def run(output,browser=None):
@@ -52,21 +73,26 @@ def run(output,browser=None):
     output.mkdir(parents=True,exist_ok=True)
     record={'schema_version':'1.1','project':{'title':'工程原理图教学样例','maturity':'V0'},'routes':[],
             'parameters':[], 'figure_specs':examples(), 'claims':[
-                {'id':'CLM-EX','evidence_status':'H','allowed_wording':'本文件展示电气端口与机械接触的绘图方法；两例均为教学假设，未取得实测证据。'}]}
+                {'id':'CLM-EX','evidence_status':'H','allowed_wording':'本文件展示电气端口、机械接触与工艺控制的绘图方法；三例均为教学假设，未取得实测证据。'}]}
     record_path=output/'research-record.json'
-    record_path.write_text(json.dumps(record,ensure_ascii=False,indent=2),encoding='utf-8')
-    figure_manifest=build_figures(record_path,output/'figures',browser)
     source={'schema_version':'1.3','title':record['project']['title'],'subtitle':'黑白原理图 端口与接触关系 图文配合','cover_page':False,
-            'research_record_path':'research-record.json','research_record_sha256':digest(record_path),
+            'research_record_path':'research-record.json',
             'figure_manifest_path':'figures/figure-manifest.json','critical_facts_policy':'bound',
             'sections':[{'title':'阅读说明','blocks':[{'type':'paragraph','claim_ref':'/claims/CLM-EX'}]}]}
     text=[
         '从左侧激励源沿上方支路读图：开关决定连接状态，限流元件改变充电过程，储能元件两端的电压由测量端口读取。测量端口画出两个连接点，避免把单端悬空读数误认为跨端测量。',
-        '从输入力箭头开始读图：滑块向右运动，在左侧接触面向工件传力。工件右侧靠上止挡后停止，顶面的被保护区域不与止挡接触。止挡不能消除输入力，过载仍需独立的限力措施及验证。图中的间隙需要回到设计记录确定，不能从示意图比例量取。']
+        '从输入力箭头开始读图：滑块向右运动，在左侧接触面向工件传力。工件右侧靠上止挡后停止，顶面的被保护区域不与止挡接触。止挡不能消除输入力，过载仍需独立的限力措施及验证。图中的间隙需要回到设计记录确定，不能从示意图比例量取。',
+        '沿上方正常路径读取：先编号和保留对照，再保持同载荷、保持时间和恢复时间，分别记录位移、压痕及测量误差。右侧节点当前只存档观察，判据与仪器尚未确定。出现破损或失稳时沿向下的异常路径停止并隔离样片，保留不利数据；返工要另立方案，不能直接回投。该图说明工艺控制关系，没有记录任何实测结果。']
     for index,spec in enumerate(record['figure_specs']):
-        source['sections'].append({'title':spec['title'],'page_break_before':index>0,'blocks':[
-            {'type':'figure','figure_ref':spec['id']}, {'type':'paragraph','text':text[index]},
+        cid='CLM-DOMAIN-'+str(index+1)
+        record['claims'].append({'id':cid,'evidence_status':'H','allowed_wording':text[index],
+                                 'conditions':'仅解释教学图，不作为现场方案','next_validation':'按实际工况另立验证协议'})
+        source['sections'].append({'title':spec['title'],'page_break_before':True,'blocks':[
+            {'type':'figure','figure_ref':spec['id']}, {'type':'paragraph','claim_ref':'/claims/'+cid},
             {'type':'paragraph','text':'读者复核：沿真实连接或接触关系复述作用路径，指出一个可能失效的环节，再对照正文解释。'}]})
+    record_path.write_text(json.dumps(record,ensure_ascii=False,indent=2),encoding='utf-8')
+    figure_manifest=build_figures(record_path,output/'figures',browser)
+    source['research_record_sha256']=digest(record_path)
     path=output/'report-source.json';path.write_text(json.dumps(source,ensure_ascii=False,indent=2),encoding='utf-8')
     report=build_report(path,output/'engineering-examples.docx')
     receipt={'report':report,'figures':figure_manifest,'visual_review':'pending','engineering_validation':'not-performed'}

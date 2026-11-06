@@ -5,6 +5,7 @@ import datetime as dt
 import hashlib
 import json
 import pathlib
+import re
 import subprocess
 import sys
 
@@ -84,6 +85,10 @@ def conditions(record):
         isinstance(s, dict) and s.get('commit') == BASELINE for s in triz
     ):
         reasons.append('unverified: actual C0 baseline loading not attested')
+    if record['arm'] == 'C1' and not any(
+        isinstance(s, dict) and s.get('commit') == record.get('skill_commit') for s in triz
+    ):
+        reasons.append('unverified: actual C1 candidate loading not attested')
     if runtime.get('context_isolation') != 'isolated':
         reasons.append('formal_ineligible: session is not isolated')
     if runtime.get('execution_kind') != 'live_host':
@@ -101,6 +106,17 @@ def conditions(record):
 def prepare(args):
     if bool(args.retry_of) != bool(args.retry_reason):
         raise ValueError('retry-of and retry-reason must be supplied together')
+    candidate = getattr(args, 'candidate', None)
+    scope = getattr(args, 'scope', 'full')
+    if args.arm == 'C1':
+        if not candidate or not re.fullmatch(r'[0-9a-f]{40}', candidate):
+            raise ValueError('C1 requires a frozen full candidate commit SHA')
+        if git('rev-parse', candidate + '^{commit}').decode().strip() != candidate:
+            raise ValueError('candidate must resolve to the specified commit')
+    elif candidate:
+        raise ValueError('candidate commit applies only to C1')
+    if scope != 'full' and args.arm not in ('C0', 'C1'):
+        raise ValueError('research-brief scope is shared by C0/C1 only')
     run = pathlib.Path(args.output).resolve()
     if run.exists():
         raise ValueError('use a new output directory; previous attempts must be retained')
@@ -122,7 +138,8 @@ def prepare(args):
     run.mkdir(parents=True)
     record.update(run_id=run.name, case_id=args.case, arm=args.arm,
                   status='prepared', baseline_commit=BASELINE,
-                  skill_commit=BASELINE if args.arm == 'C0' else UNAVAILABLE,
+                  skill_commit=BASELINE if args.arm == 'C0' else candidate if args.arm == 'C1' else UNAVAILABLE,
+                  task_scope=scope,
                   model=runtime.get('model', UNAVAILABLE), runtime=runtime,
                   loaded_skills=runtime['loaded_skills'],
                   tool_permissions=runtime.get('tool_permissions', []),
@@ -142,20 +159,34 @@ def prepare(args):
     prompt = (HERE / 'prompts/common.md').read_text(encoding='utf-8')
     if args.arm == 'B':
         prompt += '\n' + (HERE / 'prompts/B.md').read_text(encoding='utf-8')
-    if args.arm == 'C0':
+    if args.arm in ('C0', 'C1'):
         # Never inspect or export Skill content for A/B.
         prefix = 'triz-worker-innovation-research/'
-        files = git('ls-tree', '-r', '--name-only', BASELINE, '--', prefix).decode().splitlines()
+        commit = record['skill_commit']
+        folder = args.arm.lower() + '-skill'
+        files = git('ls-tree', '-r', '--name-only', commit, '--', prefix).decode().splitlines()
+        if not files or prefix + 'SKILL.md' not in files:
+            raise ValueError('selected commit has no complete Skill package')
         record['baseline_resource_sha256'] = {}
         for name in files:
-            body = git('show', BASELINE + ':' + name)
+            body = git('show', commit + ':' + name)
             relative = name[len(prefix):]
-            path = safe_path(run, 'c0-skill/' + relative)
+            path = safe_path(run, folder + '/' + relative)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(body)
             record['baseline_resource_sha256'][relative] = sha(body)
-        prompt += '\n' + (run / 'c0-skill/SKILL.md').read_text(encoding='utf-8')
-        prompt += '\n参考资料仅从本次 c0-skill 目录按阶段读取。\n'
+        record['skill_resource_directory'] = folder
+        prompt += '\n' + (run / folder / 'SKILL.md').read_text(encoding='utf-8')
+        prompt += '\n参考资料仅从本次 ' + folder + ' 目录按阶段读取。\n'
+    additions = []
+    if scope == 'research-brief':
+        additions.append('prompts/research-brief.md')
+    if args.arm == 'C1':
+        additions.append('prompts/C1-claim-review.md')
+    for name in additions:
+        body = (HERE / name).read_bytes()
+        record['asset_sha256'][name] = sha(body)
+        prompt += '\n' + body.decode('utf-8')
     prompt += '\n题面：\n' + json.dumps(visible, ensure_ascii=False, indent=2) + '\n'
     artifact(run, record, 'prompt.md', prompt.encode('utf-8'))
     record['prompt_sha256'] = sha(prompt.encode('utf-8'))
@@ -176,14 +207,14 @@ def collect(args):
     if not body.strip():
         raise ValueError('raw output cannot be empty')
     if args.action == 'request':
-        if record['arm'] != 'C0' or record['status'] != 'prepared':
-            raise ValueError('G1.5 request requires prepared C0 state')
+        if record['arm'] not in ('C0', 'C1') or record['status'] != 'prepared':
+            raise ValueError('G1.5 request requires prepared C0/C1 state')
         name = 'direction-output.md'
         record['status'] = 'awaiting_confirmation'
         event(record, 'confirmation_requested', output=name, mode='host_collected')
     else:
-        if record['arm'] == 'C0' and record['status'] != 'confirmed':
-            raise ValueError('C0 cannot finish before a real or authorized simulated reply')
+        if record['arm'] in ('C0', 'C1') and record['status'] != 'confirmed':
+            raise ValueError('C0/C1 cannot finish before a real or authorized simulated reply')
         name = 'final-output.md'
         record['status'] = 'completed_smoke'
         record['output_path'] = name
@@ -253,10 +284,10 @@ def audit(args):
     if record['prompt_sha256'] != record.get('artifacts', {}).get('prompt.md'):
         errors.append('prompt hash mismatch')
     for name, expected in record.get('baseline_resource_sha256', {}).items():
-        path = safe_path(run, 'c0-skill/' + name)
+        path = safe_path(run, record.get('skill_resource_directory', 'c0-skill') + '/' + name)
         if not path.is_file() or sha(path.read_bytes()) != expected:
             errors.append('baseline resource missing or changed: ' + name)
-    if record['status'] == 'completed_smoke' and record['arm'] == 'C0':
+    if record['status'] == 'completed_smoke' and record['arm'] in ('C0', 'C1'):
         if not record['confirmation_transcript']:
             errors.append('completed C0 has no confirmation')
         kinds = [e['kind'] for e in record['events']]
@@ -284,7 +315,9 @@ def main():
     sub = parser.add_subparsers(dest='action', required=True)
     p = sub.add_parser('prepare')
     p.add_argument('--case', required=True, choices=['S01', 'S02', 'S03', 'M01', 'M02', 'M03', 'E01', 'E02', 'P01', 'P02', 'P03'])
-    p.add_argument('--arm', required=True, choices=['A', 'B', 'C0'])
+    p.add_argument('--arm', required=True, choices=['A', 'B', 'C0', 'C1'])
+    p.add_argument('--candidate', help='C1 frozen full commit SHA; never exports dirty working files')
+    p.add_argument('--scope', choices=['full', 'research-brief'], default='full')
     p.add_argument('--runtime', required=True)
     p.add_argument('--output', required=True)
     p.add_argument('--budget')

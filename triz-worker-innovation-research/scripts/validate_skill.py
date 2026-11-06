@@ -41,6 +41,11 @@ if hasattr(sys.stderr, "reconfigure"):
 
 # 发布清单：必须存在
 REQUIRED = [
+    "scripts/research_review.py",
+    "scripts/test_research_review.py",
+    "scripts/test_render_smoke.py",
+    "references/research-quality-review.md",
+    "references/experimental-design-and-statistics.md",
     "scripts/engineering_checks.py",
     "scripts/engineering_diagrams.py",
     "scripts/figure_readability.py",
@@ -928,6 +933,11 @@ def main(argv: list[str]) -> int:
         "Engineering", errors, warnings, strict,
         marker="ENGINEERING_SELF_TEST_PASS",
     )
+    research_review = run_self_test(
+        [sys.executable, "scripts/test_research_review.py"],
+        "ResearchReview", errors, warnings, strict,
+        marker="RESEARCH_REVIEW_SELF_TEST_PASS",
+    )
     readme_golden = check_readme_golden(data, errors, warnings)
     check_readme_golden_negative(data, errors)
 
@@ -968,6 +978,7 @@ def main(argv: list[str]) -> int:
             "sha256": data.get("audit", {}).get("matrix_payload_sha256") if data else None,
         },
         "runtimes": runtimes,
+        "research_review": research_review,
         "row_shards": row_shards,
         "report_builder": report_builder,
         "deliverable_validator": deliverable_validator,

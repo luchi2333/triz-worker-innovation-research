@@ -174,3 +174,9 @@ python scripts/run_tutorial.py --output <新的空目录>
 ```
 
 可加 `--png-browser <可执行文件>` 检查 SVG→PNG→DOCX。教学记录全部是 H，不含现场试验，输出回执明确未开展工程/视觉复核。此命令用于了解字段和生成链路，不作为真实研究成绩。
+
+## 可选质量审查与选择结果扩展（1.1 兼容）
+
+`quality_review` 默认 off，缺失返回 NOT_CHECKED。focused/complete 字段、哈希与完成条件见 [研究质量审查](research-quality-review.md)。使用既有 claim/source/test ID，不增加第二套来源或成熟度。`validate_research.py --migrate` 幂等补关闭字段，保留 ID、原文和证据。
+
+`assessments.selection` 包含 status、compared_route_ids、rationale、next_decisive_test；完整交付的优先验证方向不等于实测优胜。阶段稿的 no_robust_winner 需至少两条真实已记录路线，不豁免其余校验。

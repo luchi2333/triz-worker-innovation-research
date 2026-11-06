@@ -42,6 +42,10 @@ def migrate(record):
         "open_unknowns": [],
         "report_summary": "",
     })
+    from research_review import empty_review
+    result.setdefault('quality_review', empty_review())
+    assessments.setdefault('selection', {'status': 'not_assessed', 'compared_route_ids': [],
+                                         'rationale': '', 'next_decisive_test': ''})
     if previous=="1.0":result.setdefault("migration_notes",[]).append("1.0 to 1.1: original values preserved; new research-track, candidate-portfolio, hazard, benefit, input/requirement/mechanism and authorization fields remain empty/not-assessed until supported by evidence.")
     return result
 
