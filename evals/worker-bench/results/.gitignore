@@ -1,0 +1,4 @@
+# Local raw outputs, tool snapshots and private review mappings stay on disk.
+# Curated results require an explicit publication decision.
+*
+!.gitignore

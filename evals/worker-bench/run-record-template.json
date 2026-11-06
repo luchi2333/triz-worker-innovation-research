@@ -9,7 +9,7 @@
   "prompt_sha256": null,
   "tool_permissions": [],
   "loaded_skills": [],
-  "budget": {"seconds": null, "search_calls": null, "output_tokens": null},
+  "budget": {"seconds": "unavailable", "search_calls": "unavailable", "output_tokens": "unavailable"},
   "usage": {"seconds": "unavailable", "input_tokens": "unavailable", "output_tokens": "unavailable"},
   "search_log": [],
   "confirmation_transcript": [],
